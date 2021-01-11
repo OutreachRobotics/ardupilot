@@ -41,6 +41,9 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_stabilize;
             break;
 
+        case Mode::Number::MAMBA_YH:
+            ret = &mode_mambaYH;
+
         case Mode::Number::ALT_HOLD:
             ret = &mode_althold;
             break;

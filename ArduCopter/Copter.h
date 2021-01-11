@@ -222,6 +222,7 @@ public:
     friend class ModeThrow;
     friend class ModeZigZag;
     friend class ModeAutorotate;
+    friend class ModeMambaYH;
 
     Copter(void);
 
@@ -922,6 +923,9 @@ private:
 #endif
 #if MODE_FOLLOW_ENABLED == ENABLED
     ModeFollow mode_follow;
+#endif
+#if MODE_MAMBA_YH_ENABLED == ENABLED
+    ModeMambaYH mode_mambaYH;
 #endif
 #if MODE_GUIDED_ENABLED == ENABLED
     ModeGuided mode_guided;

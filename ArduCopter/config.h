@@ -290,6 +290,12 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
+// Mamba Yaw Hold
+#ifndef MODE_MAMBA_YH_ENABLED
+# define MODE_MAMBA_YH_ENABLED ENABLED
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
 // Guided mode - control vehicle's position or angles from GCS
 #ifndef MODE_GUIDED_ENABLED
 # define MODE_GUIDED_ENABLED ENABLED
