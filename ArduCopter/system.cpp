@@ -475,6 +475,8 @@ MAV_TYPE Copter::get_frame_mav_type()
             return MAV_TYPE_DODECAROTOR;
         case AP_Motors::MOTOR_FRAME_DECA:
             return MAV_TYPE_DECAROTOR;
+        case AP_Motors::MOTOR_FRAME_MAMBA:
+            return MAV_TYPE_SUBMARINE;
     }
     // unknown frame so return generic
     return MAV_TYPE_GENERIC;
@@ -512,6 +514,8 @@ const char* Copter::get_frame_string()
             return "DODECA_HEXA";
         case AP_Motors::MOTOR_FRAME_DECA:
             return "DECA";
+        case AP_Motors::MOTOR_FRAME_MAMBA:
+            return "MAMBA";
         case AP_Motors::MOTOR_FRAME_UNDEFINED:
         default:
             return "UNKNOWN";
@@ -532,6 +536,7 @@ void Copter::allocate_motors(void)
         case AP_Motors::MOTOR_FRAME_OCTAQUAD:
         case AP_Motors::MOTOR_FRAME_DODECAHEXA:
         case AP_Motors::MOTOR_FRAME_DECA:
+        case AP_Motors::MOTOR_FRAME_MAMBA:
         default:
             motors = new AP_MotorsMatrix(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsMatrix::var_info;

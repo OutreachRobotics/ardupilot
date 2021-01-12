@@ -12,6 +12,7 @@
 #include <RC_Channel/RC_Channel.h>
 #include <SRV_Channel/SRV_Channel.h>
 
+
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 // declare functions
@@ -42,11 +43,7 @@ void setup()
 
     // motor initialisation
     motors.set_update_rate(490);
-    motors.init(AP_Motors::MOTOR_FRAME_QUAD, AP_Motors::MOTOR_FRAME_TYPE_X);
-#if HELI_TEST == 0
-    motors.set_throttle_range(1000,2000);
-    motors.set_throttle_avg_max(0.5f);
-#endif
+    motors.init(AP_Motors::MOTOR_FRAME_MAMBA, AP_Motors::MOTOR_FRAME_TYPE_PROTO1);
     motors.output_min();
 
     // setup radio
@@ -60,31 +57,47 @@ void setup()
     SRV_Channels::srv_channel(3)->set_angle(4500);
 
     hal.scheduler->delay(1000);
+
+    // arm motors
+    motors.armed(true);
+    motors.set_interlock(true);
+    SRV_Channels::enable_aux_servos();
+    motors.set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
+
 }
+
+int k = 0;
 
 // loop
 void loop()
 {
-    int16_t value;
 
-    // display help
-    hal.console->printf("Press 't' to run motor orders test, 's' to run stability patch test.  Be careful the motors will spin!\n");
+    hal.scheduler->delay(500);
 
-    // wait for user to enter something
-    while( !hal.console->available() ) {
-        hal.scheduler->delay(20);
-    }
+    motors.set_throttle(0.5);
+    motors.set_roll((k+2)%3==0?0.5f:0);
+    motors.set_pitch((k+1)%3==0?0.5f:0);
+    motors.set_yaw((k+2)%3==0?0.5f:0);
+    update_motors();
 
-    // get character from user
-    value = hal.console->read();
+    hal.console->printf("%3.1f\t%3.1f\t%3.1f\t%3.1f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
+        motors.get_roll(),
+        motors.get_pitch(),
+        motors.get_yaw(),
+        motors.get_throttle(),
+        (int)hal.rcout->read(0),
+        (int)hal.rcout->read(1),
+        (int)hal.rcout->read(2),
+        (int)hal.rcout->read(3),
+        (int)hal.rcout->read(4),
+        (int)hal.rcout->read(5),
+        (int)motors.limit.roll,
+        (int)motors.limit.pitch,
+        (int)motors.limit.yaw,
+        (int)motors.limit.throttle_lower,
+        (int)motors.limit.throttle_upper);
 
-    // test motors
-    if (value == 't' || value == 'T') {
-        motor_order_test();
-    }
-    if (value == 's' || value == 'S') {
-        stability_test();
-    }
+    k++;
 }
 
 // stability_test
