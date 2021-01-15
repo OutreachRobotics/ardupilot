@@ -628,12 +628,12 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
         case MOTOR_FRAME_HEXA:
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
-                    add_motor(AP_MOTORS_MOT_1,   0, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
-                    add_motor(AP_MOTORS_MOT_2, 180, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 4);
-                    add_motor(AP_MOTORS_MOT_3,-120, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  5);
-                    add_motor(AP_MOTORS_MOT_4,  60, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
-                    add_motor(AP_MOTORS_MOT_5, -60, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 6);
-                    add_motor(AP_MOTORS_MOT_6, 120, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
+                    add_motor_raw(AP_MOTORS_MOT_1, 0, 0, 0,  1);
+                    add_motor_raw(AP_MOTORS_MOT_2, 0, 0, 0,  2);
+                    add_motor_raw(AP_MOTORS_MOT_3,  1, 0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
+                    add_motor_raw(AP_MOTORS_MOT_4, -1, 0, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 4);
+                    add_motor_raw(AP_MOTORS_MOT_5,  1, 0, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 5);
+                    add_motor_raw(AP_MOTORS_MOT_6, -1, 0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 6);
                     break;
                 case MOTOR_FRAME_TYPE_X:
                     add_motor(AP_MOTORS_MOT_1,  90, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2);

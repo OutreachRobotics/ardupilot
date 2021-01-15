@@ -333,6 +333,7 @@ void AC_AttitudeControl_Multi::rate_controller_run()
     // move throttle vs attitude mixing towards desired (called from here because this is conveniently called on every iteration)
     update_throttle_rpy_mix();
 
+    // command coming from mode controller += system identification
     _rate_target_ang_vel += _rate_sysid_ang_vel;
 
     Vector3f gyro_latest = _ahrs.get_gyro_latest();

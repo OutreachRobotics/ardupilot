@@ -60,6 +60,8 @@ void loop(void)
 {
     static uint16_t counter;
     static uint32_t last_t, last_print, last_compass;
+    static Vector3f velocity_NED;
+    static float dt;
     uint32_t now = AP_HAL::micros();
     float heading = 0;
 
@@ -82,8 +84,7 @@ void loop(void)
     if (now - last_print >= 100000 /* 100ms : 10hz */) {
         Vector3f drift  = ahrs.get_gyro_drift();
         hal.console->printf(
-                "r:%4.1f  p:%4.1f y:%4.1f "
-                    "drift=(%5.1f %5.1f %5.1f) hdg=%.1f rate=%.1f\n",
+                "r:%4.1f  p:%4.1f y:%4.1f drift=(%5.1f %5.1f %5.1f) hdg=%.1f rate=%.1f\r\n",
                 (double)ToDeg(ahrs.roll),
                 (double)ToDeg(ahrs.pitch),
                 (double)ToDeg(ahrs.yaw),
@@ -94,6 +95,11 @@ void loop(void)
                 (double)((1.0e6f * counter) / (now-last_print)));
         last_print = now;
         counter = 0;
+
+        ahrs.get_velocity_NED(velocity_NED);
+        hal.console->printf("NED Velocity x: %4.2f y: %4.2f  z: %4.2f\r\n",velocity_NED.x, velocity_NED.y, velocity_NED.z);
+        ahrs.getCorrectedDeltaVelocityNED(velocity_NED, dt);
+        hal.console->printf("Delta NED Velocity x: %4.4f y: %4.4f  z: %4.4f  dt: %4.4f\r\n",velocity_NED.x, velocity_NED.y, velocity_NED.z,dt);
     }
 }
 
