@@ -15,7 +15,8 @@ void Copter::arm_motors_check()
 
     // check if arming/disarm using rudder is allowed
     AP_Arming::RudderArming arming_rudder = arming.get_rudder_arming_type();
-    if (arming_rudder == AP_Arming::RudderArming::IS_DISABLED) {
+    // if (arming_rudder == AP_Arming::RudderArming::IS_DISABLED) {
+    if (true) {
         return;
     }
 
@@ -96,7 +97,8 @@ void Copter::auto_disarm_check()
     }
 
     // if the rotor is still spinning, don't initiate auto disarm
-    if (motors->get_spool_state() > AP_Motors::SpoolState::GROUND_IDLE) {
+    // if (motors->get_spool_state() > AP_Motors::SpoolState::GROUND_IDLE) {
+    if (true) {
         auto_disarm_begin = tnow_ms;
         return;
     }
