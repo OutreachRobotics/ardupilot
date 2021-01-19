@@ -22,11 +22,11 @@ void Copter::update_land_and_crash_detectors()
 
 #if PARACHUTE == ENABLED
     // check parachute
-    parachute_check();
+    // parachute_check();
 #endif
 
-    crash_check();
-    thrust_loss_check();
+    // crash_check();
+    // thrust_loss_check();
 }
 
 // update_land_detector - checks if we have landed and updates the ap.land_complete flag
@@ -41,55 +41,57 @@ void Copter::update_land_detector()
     // range finder :                       tend to be problematic at very short distances
     // input throttle :                     in slow land the input throttle may be only slightly less than hover
 
-    if (!motors->armed()) {
-        // if disarmed, always landed.
-        set_land_complete(true);
-    } else if (ap.land_complete) {
-#if FRAME_CONFIG == HELI_FRAME
-        // if rotor speed and collective pitch are high then clear landing flag
-        if (motors->get_takeoff_collective() && motors->get_spool_state() == AP_Motors::SpoolState::THROTTLE_UNLIMITED) {
-#else
-        // if throttle output is high then clear landing flag
-        if (motors->get_throttle() > get_non_takeoff_throttle()) {
-#endif
-            set_land_complete(false);
-        }
-    } else if (standby_active) {
-        // land detector will not run in standby mode
-        land_detector_count = 0;
-    } else {
+//     if (!motors->armed()) {
+//         // if disarmed, always landed.
+//         set_land_complete(true);
+//     } else if (ap.land_complete) {
+// #if FRAME_CONFIG == HELI_FRAME
+//         // if rotor speed and collective pitch are high then clear landing flag
+//         if (motors->get_takeoff_collective() && motors->get_spool_state() == AP_Motors::SpoolState::THROTTLE_UNLIMITED) {
+// #else
+//         // if throttle output is high then clear landing flag
+//         if (motors->get_throttle() > get_non_takeoff_throttle()) {
+// #endif
+//             set_land_complete(false);
+//         }
+//     } else if (standby_active) {
+//         // land detector will not run in standby mode
+//         land_detector_count = 0;
+//     } else {
 
-#if FRAME_CONFIG == HELI_FRAME
-        // check that collective pitch is below mid collective (zero thrust) position
-        bool motor_at_lower_limit = (motors->get_below_mid_collective() && fabsf(ahrs.get_roll()) < M_PI/2.0f);
-#else
-        // check that the average throttle output is near minimum (less than 12.5% hover throttle)
-        bool motor_at_lower_limit = motors->limit.throttle_lower && attitude_control->is_throttle_mix_min();
-#endif
+// #if FRAME_CONFIG == HELI_FRAME
+//         // check that collective pitch is below mid collective (zero thrust) position
+//         bool motor_at_lower_limit = (motors->get_below_mid_collective() && fabsf(ahrs.get_roll()) < M_PI/2.0f);
+// #else
+//         // check that the average throttle output is near minimum (less than 12.5% hover throttle)
+//         bool motor_at_lower_limit = motors->limit.throttle_lower && attitude_control->is_throttle_mix_min();
+// #endif
 
-        // check that the airframe is not accelerating (not falling or braking after fast forward flight)
-        bool accel_stationary = (land_accel_ef_filter.get().length() <= LAND_DETECTOR_ACCEL_MAX);
+//         // check that the airframe is not accelerating (not falling or braking after fast forward flight)
+//         bool accel_stationary = (land_accel_ef_filter.get().length() <= LAND_DETECTOR_ACCEL_MAX);
 
-        // check that vertical speed is within 1m/s of zero
-        bool descent_rate_low = fabsf(inertial_nav.get_velocity_z()) < 100;
+//         // check that vertical speed is within 1m/s of zero
+//         bool descent_rate_low = fabsf(inertial_nav.get_velocity_z()) < 100;
 
-        // if we have a healthy rangefinder only allow landing detection below 2 meters
-        bool rangefinder_check = (!rangefinder_alt_ok() || rangefinder_state.alt_cm_filt.get() < LAND_RANGEFINDER_MIN_ALT_CM);
+//         // if we have a healthy rangefinder only allow landing detection below 2 meters
+//         bool rangefinder_check = (!rangefinder_alt_ok() || rangefinder_state.alt_cm_filt.get() < LAND_RANGEFINDER_MIN_ALT_CM);
 
-        if (motor_at_lower_limit && accel_stationary && descent_rate_low && rangefinder_check) {
-            // landed criteria met - increment the counter and check if we've triggered
-            if( land_detector_count < ((float)LAND_DETECTOR_TRIGGER_SEC)*scheduler.get_loop_rate_hz()) {
-                land_detector_count++;
-            } else {
-                set_land_complete(true);
-            }
-        } else {
-            // we've sensed movement up or down so reset land_detector
-            land_detector_count = 0;
-        }
-    }
+//         if (motor_at_lower_limit && accel_stationary && descent_rate_low && rangefinder_check) {
+//             // landed criteria met - increment the counter and check if we've triggered
+//             if( land_detector_count < ((float)LAND_DETECTOR_TRIGGER_SEC)*scheduler.get_loop_rate_hz()) {
+//                 land_detector_count++;
+//             } else {
+//                 set_land_complete(true);
+//             }
+//         } else {
+//             // we've sensed movement up or down so reset land_detector
+//             land_detector_count = 0;
+//         }
+//     }
 
-    set_land_complete_maybe(ap.land_complete || (land_detector_count >= LAND_DETECTOR_MAYBE_TRIGGER_SEC*scheduler.get_loop_rate_hz()));
+    // set_land_complete_maybe(ap.land_complete || (land_detector_count >= LAND_DETECTOR_MAYBE_TRIGGER_SEC*scheduler.get_loop_rate_hz()));
+    set_land_complete_maybe(false);
+    set_land_complete(false);
 }
 
 // set land_complete flag and disarm motors if disarm-on-land is configured

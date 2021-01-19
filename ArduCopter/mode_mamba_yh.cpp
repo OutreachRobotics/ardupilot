@@ -3,6 +3,11 @@
 /*
  * Init and run calls for stabilize flight mode
  */
+bool ModeMambaYH::init(bool ignore_checks)
+{
+    hal.console->printf("Mode MAMBA");
+    return true;
+}
 
 // stabilize_run - runs the main stabilize controller
 // should be called at 100hz or more

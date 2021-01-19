@@ -333,7 +333,7 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     _throttle_out = throttle_thrust_best_plus_adj / compensation_gain;
 
     // check for failed motor
-    check_for_failed_motor(throttle_thrust_best_plus_adj);
+    // check_for_failed_motor(throttle_thrust_best_plus_adj);
 }
 
 // check for failed motor
