@@ -229,29 +229,58 @@ AP_MotorsMulticopter::AP_MotorsMulticopter(uint16_t loop_rate, uint16_t speed_hz
 // output - sends commands to the motors
 void AP_MotorsMulticopter::output()
 {
-    // update throttle filter
-    update_throttle_filter();
+    // Actuator are 
+    // 0 => thrust left
+    // 1 => thrust right
+    // 2 => front left (creates a force toward the right of the platform)
+    // 3 => front right (creates a force toward the left of the platform)
+    // 4 => back left (creates a force toward the right of the platform)
+    // 5 => back right (creates a force toward the left of the platform)
+    // _pitch_in has no effect on the control
+    // _roll_in is for lateral force
 
-    // calc filtered battery voltage and lift_max
-    update_lift_max_from_batt_voltage();
+    float _roll_adjustment = 0.5f;
+    
+    if(_roll_in + _yaw_in > 1.0f)
+    {
+        _roll_in = _roll_in/(_roll_in + _yaw_in);
+        _yaw_in = _yaw_in/(_roll_in + _yaw_in);
+    }
 
-    // run spool logic
-    output_logic();
+    _actuator[0] = _throttle_in;
+    _actuator[1] = _throttle_in;   
+    _actuator[2] = constrain_float(_roll_in + _yaw_in, 0, 1);
+    _actuator[3] = constrain_float(-(_roll_in + _yaw_in), 0, 1);
+    _actuator[4] = constrain_float(_roll_adjustment * _roll_in - _yaw_in, 0, 1);
+    _actuator[5] = constrain_float(-_roll_adjustment * _roll_in + _yaw_in, 0, 1);
 
-    // calculate thrust
-    output_armed_stabilizing();
+    for (int i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
+        rc_write(i, output_to_pwm(_actuator[i]));
+    }
 
-    // apply any thrust compensation for the frame
-    thrust_compensation();
+    // // update throttle filter
+    // update_throttle_filter();
 
-    // convert rpy_thrust values to pwm
-    output_to_motors();
+    // // calc filtered battery voltage and lift_max
+    // update_lift_max_from_batt_voltage();
 
-    // output any booster throttle
-    output_boost_throttle();
+    // // run spool logic
+    // output_logic();
+
+    // // calculate thrust
+    // output_armed_stabilizing();
+
+    // // apply any thrust compensation for the frame
+    // thrust_compensation();
+
+    // // convert rpy_thrust values to pwm
+    // output_to_motors();
+
+    // // output any booster throttle
+    // output_boost_throttle();
 
     // output raw roll/pitch/yaw/thrust
-    output_rpyt();
+    // output_rpyt();
 };
 
 // output booster throttle, if any
@@ -268,10 +297,10 @@ void AP_MotorsMulticopter::output_boost_throttle(void)
 // output roll/pitch/yaw/thrust
 void AP_MotorsMulticopter::output_rpyt(void)
 {
-    SRV_Channels::set_output_scaled(SRV_Channel::k_roll_out, _roll_in_ff * 4500);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_pitch_out, _pitch_in_ff * 4500);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_yaw_out, _yaw_in_ff * 4500);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_thrust_out, get_throttle() * 1000);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_roll_out, _roll_in * 4500);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_pitch_out, _pitch_in * 4500);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_yaw_out, _yaw_in * 4500);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_thrust_out, _throttle_in * 1000);
 }
 
 // sends minimum values out to the motors
@@ -401,15 +430,10 @@ float AP_MotorsMulticopter::get_compensation_gain() const
 int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
 {
     float pwm_output;
-    if (_spool_state == SpoolState::SHUT_DOWN) {
-        // in shutdown mode, use PWM 0 or minimum PWM
-        if (_disarm_disable_pwm && !armed()) {
-            pwm_output = 0;
-        } else {
-            pwm_output = get_pwm_output_min();
-        }
+
+    if (!armed()) {
+        pwm_output = 1000;
     } else {
-        // in all other spool modes, covert to desired PWM
         pwm_output = get_pwm_output_min() + (get_pwm_output_max() - get_pwm_output_min()) * actuator;
     }
 

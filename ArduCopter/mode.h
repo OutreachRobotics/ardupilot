@@ -1223,6 +1223,8 @@ public:
     using Mode::Mode;
 
     virtual void run() override;
+    void get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, int16_t yaw_in, float &roll_out, float &pitch_out, float &yaw_out);
+
 
     bool requires_GPS() const override { return false; }
     bool has_manual_throttle() const override { return true; }
