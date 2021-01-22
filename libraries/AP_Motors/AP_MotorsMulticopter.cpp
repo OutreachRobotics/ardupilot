@@ -237,50 +237,27 @@ void AP_MotorsMulticopter::output()
     // 4 => back left (creates a force toward the right of the platform)
     // 5 => back right (creates a force toward the left of the platform)
     // _pitch_in has no effect on the control
-    // _roll_in is for lateral force
+    // _lateral_in is for lateral force
 
     float _roll_adjustment = 0.5f;
     
-    if(_roll_in + _yaw_in > 1.0f)
+    if(_lateral_in + _yaw_in > 1.0f)
     {
-        _roll_in = _roll_in/(_roll_in + _yaw_in);
-        _yaw_in = _yaw_in/(_roll_in + _yaw_in);
+        _lateral_in = _lateral_in/(_lateral_in + _yaw_in);
+        _yaw_in = _yaw_in/(_lateral_in + _yaw_in);
     }
 
     _actuator[0] = _throttle_in;
     _actuator[1] = _throttle_in;   
-    _actuator[2] = constrain_float(_roll_in + _yaw_in, 0, 1);
-    _actuator[3] = constrain_float(-(_roll_in + _yaw_in), 0, 1);
-    _actuator[4] = constrain_float(_roll_adjustment * _roll_in - _yaw_in, 0, 1);
-    _actuator[5] = constrain_float(-_roll_adjustment * _roll_in + _yaw_in, 0, 1);
+    _actuator[2] = constrain_float(_lateral_in + _yaw_in, 0, 1);
+    _actuator[3] = constrain_float(-(_lateral_in + _yaw_in), 0, 1);
+    _actuator[4] = constrain_float(_roll_adjustment * _lateral_in - _yaw_in, 0, 1);
+    _actuator[5] = constrain_float(-_roll_adjustment * _lateral_in + _yaw_in, 0, 1);
 
     for (int i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         rc_write(i, output_to_pwm(_actuator[i]));
     }
 
-    // // update throttle filter
-    // update_throttle_filter();
-
-    // // calc filtered battery voltage and lift_max
-    // update_lift_max_from_batt_voltage();
-
-    // // run spool logic
-    // output_logic();
-
-    // // calculate thrust
-    // output_armed_stabilizing();
-
-    // // apply any thrust compensation for the frame
-    // thrust_compensation();
-
-    // // convert rpy_thrust values to pwm
-    // output_to_motors();
-
-    // // output any booster throttle
-    // output_boost_throttle();
-
-    // output raw roll/pitch/yaw/thrust
-    // output_rpyt();
 };
 
 // output booster throttle, if any
@@ -297,7 +274,7 @@ void AP_MotorsMulticopter::output_boost_throttle(void)
 // output roll/pitch/yaw/thrust
 void AP_MotorsMulticopter::output_rpyt(void)
 {
-    SRV_Channels::set_output_scaled(SRV_Channel::k_roll_out, _roll_in * 4500);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_roll_out, _lateral_in * 4500);
     SRV_Channels::set_output_scaled(SRV_Channel::k_pitch_out, _pitch_in * 4500);
     SRV_Channels::set_output_scaled(SRV_Channel::k_yaw_out, _yaw_in * 4500);
     SRV_Channels::set_output_scaled(SRV_Channel::k_thrust_out, _throttle_in * 1000);
