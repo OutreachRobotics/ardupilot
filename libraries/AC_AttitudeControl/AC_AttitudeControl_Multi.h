@@ -69,7 +69,7 @@ public:
     void set_throttle_mix_value(float value) override { _throttle_rpy_mix_desired = _throttle_rpy_mix = value; }
     float get_throttle_mix(void) const override { return _throttle_rpy_mix; }
 
-    void deleaves_controller(float lateral, float pitch, float yaw, float throttle);
+    void deleaves_controller(float lateral, float forward, float yaw, float throttle);
 
     // are we producing min throttle?
     bool is_throttle_mix_min() const override { return (_throttle_rpy_mix < 1.25f * _thr_mix_min); }
