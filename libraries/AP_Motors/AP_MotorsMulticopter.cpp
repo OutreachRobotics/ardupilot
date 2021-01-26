@@ -230,16 +230,17 @@ AP_MotorsMulticopter::AP_MotorsMulticopter(uint16_t loop_rate, uint16_t speed_hz
 void AP_MotorsMulticopter::output()
 {
     // Actuator are 
-    // 0 => thrust left
-    // 1 => thrust right
+    // 0 => left forward thruster 
+    // 1 => right forward thrust 
     // 2 => front left (creates a force toward the right of the platform)
     // 3 => front right (creates a force toward the left of the platform)
     // 4 => back left (creates a force toward the right of the platform)
     // 5 => back right (creates a force toward the left of the platform)
-    // _pitch_in has no effect on the control
+    // _throttle_in has no effect on the control
     // _lateral_in is for lateral force
+    // _forward_in is for forward force
 
-    float _roll_adjustment = 0.5f;
+    float _roll_adjustment = 0.6f;
     
     if(_lateral_in + _yaw_in > 1.0f)
     {
@@ -247,8 +248,14 @@ void AP_MotorsMulticopter::output()
         _yaw_in = _yaw_in/(_lateral_in + _yaw_in);
     }
 
-    _actuator[0] = _throttle_in;
-    _actuator[1] = _throttle_in;   
+    if(_lateral_in + _yaw_in < -1.0f)
+    {
+        _lateral_in = _lateral_in/abs(_lateral_in + _yaw_in);
+        _yaw_in = _yaw_in/abs(_lateral_in + _yaw_in);
+    }
+
+    _actuator[0] = _forward_in;
+    _actuator[1] = _forward_in;   
     _actuator[2] = constrain_float(_lateral_in + _yaw_in, 0, 1);
     _actuator[3] = constrain_float(-(_lateral_in + _yaw_in), 0, 1);
     _actuator[4] = constrain_float(_roll_adjustment * _lateral_in - _yaw_in, 0, 1);

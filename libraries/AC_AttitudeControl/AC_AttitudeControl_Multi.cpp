@@ -356,7 +356,7 @@ void AC_AttitudeControl_Multi::parameter_sanity_check()
     }
 }
 
-void AC_AttitudeControl_Multi::deleaves_controller(float lateral, float pitch, float yaw, float throttle)
+void AC_AttitudeControl_Multi::deleaves_controller(float lateral, float forward, float yaw, float throttle)
 {
     // Vector3f ang_vel = _ahrs.get_gyro_latest();
     // Quaternion attitude_vehicle_quat;
@@ -365,7 +365,7 @@ void AC_AttitudeControl_Multi::deleaves_controller(float lateral, float pitch, f
     // attitude_vehicle_quat.to_euler(ahrs_roll, ahrs_pitch, ahrs_yaw);
 
     _motors.set_lateral(lateral);
-    _motors.set_pitch(pitch);
+    _motors.set_forward(constrain_float(-forward,0,1));
     _motors.set_yaw(yaw);
-    _motors.set_throttle(constrain_float(-pitch,0,1));
+    _motors.set_throttle(throttle);
 }

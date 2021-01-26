@@ -92,6 +92,7 @@ public:
     void                set_lateral(float lateral_in) { _lateral_in = lateral_in; };        // range -1 ~ +1
     void                set_roll_ff(float roll_in) { _roll_in_ff = roll_in; };    // range -1 ~ +1
     void                set_pitch(float pitch_in) { _pitch_in = pitch_in; };    // range -1 ~ +1
+    void                set_forward(float forward_in) { _forward_in = forward_in; };    // range -1 ~ +1
     void                set_pitch_ff(float pitch_in) { _pitch_in_ff = pitch_in; };  // range -1 ~ +1
     void                set_yaw(float yaw_in) { _yaw_in = yaw_in; };            // range -1 ~ +1
     void                set_yaw_ff(float yaw_in) { _yaw_in_ff = yaw_in; };      // range -1 ~ +1
