@@ -280,20 +280,14 @@ public:
     bool has_manual_throttle() const override { return true; }
     bool allows_arming(bool from_gcs) const override { return true; };
     bool is_autopilot() const override { return false; }
-    bool init(bool ignore_checks) override;
-    void exit();
     // whether an air-mode aux switch has been toggled
     void air_mode_aux_changed();
+    void exit();
 
 protected:
 
     const char *name() const override { return "ACRO"; }
     const char *name4() const override { return "ACRO"; }
-
-    void get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, int16_t yaw_in, float &roll_out, float &pitch_out, float &yaw_out);
-
-    float throttle_hover() const override;
-
 private:
     bool disable_air_mode_reset;
 };
@@ -1235,29 +1229,6 @@ protected:
 
     const char *name() const override { return "STABILIZE"; }
     const char *name4() const override { return "STAB"; }
-
-private:
-
-};
-
-class ModeMambaYH : public Mode {
-
-public:
-    // inherit constructor
-    using Mode::Mode;
-
-    bool init(bool ignore_checks) override;
-    virtual void run() override;
-
-    bool requires_GPS() const override { return false; }
-    bool has_manual_throttle() const override { return true; }
-    bool allows_arming(bool from_gcs) const override { return true; };
-    bool is_autopilot() const override { return false; }
-
-protected:
-
-    const char *name() const override { return "MAMBA_YH"; }
-    const char *name4() const override { return "MYAW"; }
 
 private:
 
