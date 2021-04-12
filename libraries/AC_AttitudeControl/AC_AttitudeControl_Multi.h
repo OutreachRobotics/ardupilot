@@ -38,6 +38,12 @@
  # define AC_ATC_MULTI_RATE_YAW_FILT_HZ     2.5f
 #endif
 
+#define YAW_SENSITIVITY                    0.032f // reach pi/2 in 1 second at 400 hz-> (pi/2)*(1/400)=0.0039
+#define YAW_D_GAIN                         4.0f 
+#define YAW_P_GAIN                         4.0f 
+#define MAX_ACTUATOR_THRUST                8.0f
+
+
 
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
 public:
@@ -68,8 +74,9 @@ public:
     void set_throttle_mix_max(float ratio) override;
     void set_throttle_mix_value(float value) override { _throttle_rpy_mix_desired = _throttle_rpy_mix = value; }
     float get_throttle_mix(void) const override { return _throttle_rpy_mix; }
+    void deleaves_controller_acro(float lateral, float forward, float yaw, float throttle);
+    void deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed);
 
-    void deleaves_controller(float lateral, float forward, float yaw, float throttle);
 
     // are we producing min throttle?
     bool is_throttle_mix_min() const override { return (_throttle_rpy_mix < 1.25f * _thr_mix_min); }
@@ -90,6 +97,7 @@ protected:
 
     // get maximum value throttle can be raised to based on throttle vs attitude prioritisation
     float get_throttle_avg_max(float throttle_in);
+  
 
     AP_MotorsMulticopter& _motors_multi;
     AC_PID                _pid_rate_roll;
@@ -99,4 +107,6 @@ protected:
     AP_Float              _thr_mix_man;     // throttle vs attitude control prioritisation used when using manual throttle (higher values mean we prioritise attitude control over throttle)
     AP_Float              _thr_mix_min;     // throttle vs attitude control prioritisation used when landing (higher values mean we prioritise attitude control over throttle)
     AP_Float              _thr_mix_max;     // throttle vs attitude control prioritisation used during active flight (higher values mean we prioritise attitude control over throttle)
+
+    float target_yaw, yaw_angle_error, yaw_angle_error_last, yaw_angle_error_dt, yaw_input;
 };

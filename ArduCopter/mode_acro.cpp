@@ -32,7 +32,7 @@ void ModeAcro::run()
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
     }
 
-    attitude_control->deleaves_controller(lateral_input, pitch_input, yaw_input, thrust_input);
+    attitude_control->deleaves_controller_acro(lateral_input, pitch_input, yaw_input, thrust_input);
 }
 
 void ModeAcro::exit()

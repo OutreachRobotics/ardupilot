@@ -1217,6 +1217,7 @@ public:
     using Mode::Mode;
 
     virtual void run() override;
+    bool init(bool ignore_checks) override;
     void get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, int16_t yaw_in, float &roll_out, float &pitch_out, float &yaw_out);
 
 
@@ -1229,6 +1230,7 @@ protected:
 
     const char *name() const override { return "STABILIZE"; }
     const char *name4() const override { return "STAB"; }
+    int counter;
 
 private:
 

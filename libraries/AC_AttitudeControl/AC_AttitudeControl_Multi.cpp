@@ -246,6 +246,11 @@ AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_
     _pid_rate_yaw(AC_ATC_MULTI_RATE_YAW_P, AC_ATC_MULTI_RATE_YAW_I, AC_ATC_MULTI_RATE_YAW_D, 0.0f, AC_ATC_MULTI_RATE_YAW_IMAX, AC_ATC_MULTI_RATE_RP_FILT_HZ, AC_ATC_MULTI_RATE_YAW_FILT_HZ, 0.0f, dt)
 {
     AP_Param::setup_object_defaults(this, var_info);
+    target_yaw=0;
+    yaw_angle_error=0;
+    yaw_angle_error_last=0;
+    yaw_angle_error_dt=0;
+    yaw_input=0;
 }
 
 // Update Alt_Hold angle maximum
@@ -356,7 +361,7 @@ void AC_AttitudeControl_Multi::parameter_sanity_check()
     }
 }
 
-void AC_AttitudeControl_Multi::deleaves_controller(float lateral, float forward, float yaw, float throttle)
+void AC_AttitudeControl_Multi::deleaves_controller_acro(float lateral, float forward, float yaw, float throttle)
 {
     // Vector3f ang_vel = _ahrs.get_gyro_latest();
     // Quaternion attitude_vehicle_quat;
@@ -368,4 +373,52 @@ void AC_AttitudeControl_Multi::deleaves_controller(float lateral, float forward,
     _motors.set_forward(constrain_float(-forward,0,1));
     _motors.set_yaw(yaw);
     _motors.set_throttle(throttle);
+}
+
+
+
+void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed)
+{
+    //run at 50Hz
+        //Vector3f ang_vel = _ahrs.get_gyro_latest();
+        Quaternion attitude_vehicle_quat;
+        _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
+
+        float ahrs_roll, ahrs_pitch, ahrs_yaw;
+        attitude_vehicle_quat.to_euler(ahrs_roll, ahrs_pitch, ahrs_yaw);
+
+        //Initialize target yaw to the value of yaw when not armed or update it with joystick when armed
+        target_yaw = !armed ? ahrs_yaw : target_yaw + yaw*YAW_SENSITIVITY;
+
+
+        // Yaw PD control here
+        float GainP = _pid_rate_yaw.kP();
+        float GainD = _pid_rate_yaw.kD();
+        yaw_angle_error= target_yaw-ahrs_yaw ;
+
+        //Correction for target angle more than half-turn away
+        if (yaw_angle_error>M_PI){
+            target_yaw=target_yaw-2*M_PI;
+            yaw_angle_error= target_yaw-ahrs_yaw ;
+            yaw_angle_error_last=yaw_angle_error_last-2*M_PI;
+        }
+
+        if (yaw_angle_error<-M_PI){
+            target_yaw=target_yaw+2*M_PI;
+            yaw_angle_error= target_yaw-ahrs_yaw;
+            yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
+        }
+
+        yaw_angle_error_dt=(yaw_angle_error-yaw_angle_error_last)*50; //50 Hz
+        yaw_input= GainP*yaw_angle_error+GainD*yaw_angle_error_dt;
+        yaw_angle_error_last=yaw_angle_error; //assign new error to last
+
+        // Convert force command to motor command (0 to 1)
+        yaw_input=constrain_float(yaw_input,-MAX_ACTUATOR_THRUST,MAX_ACTUATOR_THRUST)/MAX_ACTUATOR_THRUST;
+
+        _motors.set_lateral(lateral);
+        _motors.set_forward(constrain_float(-forward,0,1));
+        _motors.set_yaw(yaw_input);
+        _motors.set_throttle(throttle);
+    
 }
