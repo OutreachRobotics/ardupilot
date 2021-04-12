@@ -79,6 +79,23 @@ void Copter::Log_Write_Attitude()
     }
 }
 
+struct PACKED log_MAMBA {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint16_t yaw_value;
+};
+
+// Write a MAMBA packet
+void Copter::Log_Write_MAMBA()
+{
+    struct log_MAMBA pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_MAMBA_MSG),
+        time_us  : AP_HAL::micros64(),
+        yaw_value  : (uint16_t)wrap_360_cd(ahrs.yaw_sensor),  //output 360deg*100
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+};
+
 // Write an EKF and POS packet
 void Copter::Log_Write_EKF_POS()
 {
@@ -465,6 +482,15 @@ const struct LogStructure Copter::log_structure[] = {
 
     { LOG_PARAMTUNE_MSG, sizeof(log_ParameterTuning),
       "PTUN", "QBfff",         "TimeUS,Param,TunVal,TunMin,TunMax", "s----", "F----" },
+
+// @LoggerMessage: MAMB
+// @Description: MAMBA Interesting log info
+// @URL: 
+// @Field: TimeUS: Time since system startup
+// @Field: yaw_value: Yaw angle in degree
+
+    {LOG_MAMBA_MSG, sizeof(log_MAMBA),
+      "MAMB", "QH",  "TimeUS,yaw_value", "sd", "FB" },  // Message Name, Format, Variables names, Units, Multiplier
 
 // @LoggerMessage: CTUN
 // @Description: Control Tuning information

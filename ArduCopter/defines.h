@@ -159,6 +159,7 @@ enum LoggingParameters {
      LOG_GUIDEDTARGET_MSG,
      LOG_SYSIDD_MSG,
      LOG_SYSIDS_MSG,
+     LOG_MAMBA_MSG,
 };
 
 #define MASK_LOG_ATTITUDE_FAST          (1<<0)
@@ -180,6 +181,7 @@ enum LoggingParameters {
 #define MASK_LOG_MOTBATT                (1UL<<17)
 #define MASK_LOG_IMU_FAST               (1UL<<18)
 #define MASK_LOG_IMU_RAW                (1UL<<19)
+#define MASK_LOG_MAMBA                  (1UL<<20) // added
 #define MASK_LOG_ANY                    0xFFFF
 
 // Radio failsafe definitions (FS_THR parameter)
