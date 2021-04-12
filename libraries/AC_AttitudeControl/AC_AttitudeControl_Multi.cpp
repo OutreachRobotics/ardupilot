@@ -370,7 +370,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_acro(float lateral, float for
     // attitude_vehicle_quat.to_euler(ahrs_roll, ahrs_pitch, ahrs_yaw);
 
     _motors.set_lateral(lateral);
-    _motors.set_forward(constrain_float(-forward,0,1));
+    _motors.set_forward(-forward);
     _motors.set_yaw(yaw);
     _motors.set_throttle(throttle);
 }
@@ -417,7 +417,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
         yaw_input=constrain_float(yaw_input,-MAX_ACTUATOR_THRUST,MAX_ACTUATOR_THRUST)/MAX_ACTUATOR_THRUST;
 
         _motors.set_lateral(lateral);
-        _motors.set_forward(constrain_float(-forward,0,1));
+        _motors.set_forward(-forward);
         _motors.set_yaw(yaw_input);
         _motors.set_throttle(throttle);
     

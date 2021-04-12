@@ -236,6 +236,7 @@ void AP_MotorsMulticopter::output()
     // 3 => front right (creates a force toward the left of the platform)
     // 4 => back left (creates a force toward the right of the platform)
     // 5 => back right (creates a force toward the left of the platform)
+    // 6 => backward thruster
     // _throttle_in has no effect on the control
     // _lateral_in is for lateral force
     // _forward_in is for forward force
@@ -254,12 +255,14 @@ void AP_MotorsMulticopter::output()
         _yaw_in = _yaw_in/abs(_lateral_in + _yaw_in);
     }
 
-    _actuator[0] = _forward_in;
-    _actuator[1] = _forward_in;   
+    _actuator[0] = constrain_float(_forward_in, 0, 1);
+    _actuator[1] = constrain_float(_forward_in, 0, 1);   
     _actuator[2] = constrain_float(_lateral_in + _yaw_in, 0, 1);
     _actuator[3] = constrain_float(-(_lateral_in + _yaw_in), 0, 1);
     _actuator[4] = constrain_float(_roll_adjustment * _lateral_in - _yaw_in, 0, 1);
     _actuator[5] = constrain_float(-_roll_adjustment * _lateral_in + _yaw_in, 0, 1);
+    _actuator[6] = constrain_float(_forward_in, -1, 0);   
+
 
     for (int i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         rc_write(i, output_to_pwm(_actuator[i]));
