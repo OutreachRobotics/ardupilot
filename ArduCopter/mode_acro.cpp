@@ -20,7 +20,7 @@ void ModeAcro::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
     lateral_input = (float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT;
-    pitch_input = (float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
+    pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
     yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
     thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
 

@@ -329,9 +329,11 @@ public:
 
 protected:
 
-    const char *name() const override { return "ALT_HOLD"; }
-    const char *name4() const override { return "ALTH"; }
-
+    const char *name() const override { return "ANG_HOLD"; }
+    const char *name4() const override { return "ANGH"; }
+    int counter;
+    bool forwardSequenceArmed;
+    uint32_t forwardSequenceStart;
 private:
 
 };

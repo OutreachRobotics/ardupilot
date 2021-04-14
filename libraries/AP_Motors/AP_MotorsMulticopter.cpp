@@ -261,7 +261,7 @@ void AP_MotorsMulticopter::output()
     _actuator[3] = constrain_float(-(_lateral_in + _yaw_in), 0, 1);
     _actuator[4] = constrain_float(_roll_adjustment * _lateral_in - _yaw_in, 0, 1);
     _actuator[5] = constrain_float(-_roll_adjustment * _lateral_in + _yaw_in, 0, 1);
-    _actuator[6] = constrain_float(_forward_in, -1, 0);   
+    _actuator[6] = constrain_float(-_forward_in, 0, 1);   
 
 
     for (int i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {

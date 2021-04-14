@@ -29,7 +29,7 @@ void ModeStabilize::run()
     // Thrust is between 0 and 1
 
     lateral_input = (float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
-    pitch_input = (float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
+    pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
     yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
     thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
 
