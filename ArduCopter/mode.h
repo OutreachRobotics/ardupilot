@@ -332,8 +332,8 @@ protected:
     const char *name() const override { return "ANG_HOLD"; }
     const char *name4() const override { return "ANGH"; }
     int counter;
-    bool forwardSequenceArmed;
-    uint32_t forwardSequenceStart;
+    bool sequenceArmed;
+    uint32_t sequenceStart;
 private:
 
 };
@@ -1209,6 +1209,8 @@ protected:
     int counter;
     bool lateralSequenceArmed;
     uint32_t lateralSequenceStart;
+    bool forwardSequenceArmed;
+    uint32_t forwardSequenceStart;
 private:
 
 };

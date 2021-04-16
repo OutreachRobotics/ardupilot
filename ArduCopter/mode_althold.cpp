@@ -12,8 +12,8 @@
 bool ModeAltHold::init(bool ignore_checks)
 {
     counter = 0;
-    forwardSequenceArmed = 0;
-    forwardSequenceStart = AP_HAL::micros();
+    sequenceArmed = 0;
+    sequenceStart = AP_HAL::micros();
     return true;
 }
 
@@ -23,6 +23,7 @@ void ModeAltHold::run()
 {
     float lateral_input, pitch_input, yaw_input, thrust_input;
     float forward_target = 0.0f;
+    float lateral_target = 0.0f;
 
     // We use a NED frame as per the UAV standard
     // Roll, pitch, yaw channel are between -1 and 1
@@ -41,47 +42,60 @@ void ModeAltHold::run()
     pitch_input = abs(pitch_input)<DEADBAND ? 0.0f : pitch_input;
     yaw_input = abs(yaw_input)<DEADBAND ? 0.0f : yaw_input;
 
-    if(forwardSequenceArmed && pitch_input<-0.8)
+    if(sequenceArmed && pitch_input<-0.8)
     {
         forward_target = 0.0f;
-        forwardSequenceArmed = false;
-        forwardSequenceStart = AP_HAL::millis();
+        lateral_target = 0.0f;
+        sequenceArmed = false;
+        sequenceStart = AP_HAL::millis();
     }
-    else if(!forwardSequenceArmed && pitch_input>0.8)
+    else if(!sequenceArmed && pitch_input>0.8)
     {
         forward_target = 0.0f;
-        forwardSequenceArmed = true;
-        forwardSequenceStart = AP_HAL::millis();
+        lateral_target = 0.0f;
+        sequenceArmed = true;
+        sequenceStart = AP_HAL::millis();
     }
-    else if(forwardSequenceArmed)
+    else if(sequenceArmed)
     {
         uint32_t now = AP_HAL::millis();
-        if(now-forwardSequenceStart<5000)
+        if(now-sequenceStart<10000)
         {
             forward_target = 0.0f;
+            lateral_target = 0.0f;
         }
-        else if(now-forwardSequenceStart<15000)
+        else if(now-sequenceStart<20000)
         {
             forward_target = (L1+L2)*sinf(0.2f);
+            lateral_target = 0.0f;
         }
-        else if(now-forwardSequenceStart<25000)
+        else if(now-sequenceStart<30000)
         {
             forward_target = (L1+L2)*sinf(0.25f);
+            lateral_target = 0.0f;
         }
-        else if(now-forwardSequenceStart<35000)
+        else if(now-sequenceStart<40000)
         {
-            forward_target = (L1+L2)*sinf(0.3f);
+            forward_target = (L1+L2)*sinf(0.25f);
+            lateral_target = -(L1+L2)*sinf(0.1f);
+        }
+        else if(now-sequenceStart<50000)
+        {
+            forward_target = (L1+L2)*sinf(0.25f);
+            lateral_target = -(L1+L2)*sinf(-0.2f);
         }
         else
         {
-            forward_target = 0.0f;
+            forward_target = (L1+L2)*sinf(0.25f);
+            lateral_target = -(L1+L2)*sinf(-0.25f);
         }       
     }
     else
     {
         forward_target = 0.0f;
-        forwardSequenceArmed = false;
-        forwardSequenceStart = AP_HAL::millis();
+        lateral_target = 0.0f;
+        sequenceArmed = false;
+        sequenceStart = AP_HAL::millis();
     }
 
     if (!motors->armed()) {
@@ -95,7 +109,7 @@ void ModeAltHold::run()
 
     // Only call controller each 8 timestep to have 50Hz
     if (counter>7){
-        attitude_control->deleaves_controller_forHold(lateral_input, forward_target, yaw_input, thrust_input, forwardSequenceArmed, motors->armed());
+        attitude_control->deleaves_controller_angHold_PD(lateral_target, forward_target, yaw_input, thrust_input, sequenceArmed, motors->armed());
         counter=0;
     }
     counter++;

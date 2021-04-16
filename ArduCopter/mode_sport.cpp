@@ -15,8 +15,10 @@
 bool ModeSport::init(bool ignore_checks)
 {
     counter = 0;
-    lateralSequenceArmed = 0;
+    lateralSequenceArmed = false;
     lateralSequenceStart = AP_HAL::micros();
+    forwardSequenceArmed = false;
+    forwardSequenceStart = AP_HAL::micros();
     return true;
 }
 
@@ -26,6 +28,7 @@ void ModeSport::run()
 {
     float lateral_input, pitch_input, yaw_input, thrust_input;
     float lateral_target = 0.0f;
+    float forward_target = 0.0f;
 
     // We use a NED frame as per the UAV standard
     // Roll, pitch, yaw channel are between -1 and 1
@@ -47,14 +50,38 @@ void ModeSport::run()
     if(lateralSequenceArmed && lateral_input<-0.8)
     {
         lateral_target = 0.0f;
+        forward_target = 0.0f;
         lateralSequenceArmed = false;
+        forwardSequenceArmed = false;
         lateralSequenceStart = AP_HAL::millis();
+        forwardSequenceStart = AP_HAL::millis();
     }
-    else if(!lateralSequenceArmed && lateral_input>0.8)
+    else if(forwardSequenceArmed && pitch_input<-0.8)
     {
         lateral_target = 0.0f;
-        lateralSequenceArmed = true;
+        forward_target = 0.0f;
+        lateralSequenceArmed = false;
+        forwardSequenceArmed = false;
         lateralSequenceStart = AP_HAL::millis();
+        forwardSequenceStart = AP_HAL::millis();
+    }
+    else if(!lateralSequenceArmed && !forwardSequenceArmed && lateral_input>0.8)
+    {
+        lateral_target = 0.0f;
+        forward_target = 0.0f;
+        lateralSequenceArmed = true;
+        forwardSequenceArmed = false;
+        lateralSequenceStart = AP_HAL::millis();
+        forwardSequenceStart = AP_HAL::millis();
+    }
+    else if(!lateralSequenceArmed && !forwardSequenceArmed && pitch_input>0.8)
+    {
+        lateral_target = 0.0f;
+        forward_target = 0.0f;
+        lateralSequenceArmed = false;
+        forwardSequenceArmed = true;
+        lateralSequenceStart = AP_HAL::millis();
+        forwardSequenceStart = AP_HAL::millis();
     }
     else if(lateralSequenceArmed)
     {
@@ -62,29 +89,36 @@ void ModeSport::run()
         if(now-lateralSequenceStart<5000)
         {
             lateral_target = 0.0f;
+            forward_target = 0.0f;
         }
-        // else if(now-lateralSequenceStart<15000)
-        // {
-        //     lateral_target = (L1+L2)*sinf(0.2f);
-        // }
-        // else if(now-lateralSequenceStart<25000)
-        // {
-        //     lateral_target = (L1+L2)*sinf(-0.2f);
-        // }
-        // else if(now-lateralSequenceStart<35000)
-        // {
-        //     lateral_target = (L1+L2)*sinf(-0.25f);
-        // }
         else
         {
             lateral_target = -(L1+L2)*sinf(0.2f);
+            forward_target = 0.0f;
         }       
+    }
+    else if(forwardSequenceArmed)
+    {
+        uint32_t now = AP_HAL::millis();
+        if(now-forwardSequenceStart<5000)
+        {
+            lateral_target = 0.0f;
+            forward_target = 0.0f;
+        }
+        else
+        {
+            lateral_target = 0.0f;
+            forward_target = (L1+L2)*sinf(0.2f);
+        }
     }
     else
     {
         lateral_target = 0.0f;
+        forward_target = 0.0f;
         lateralSequenceArmed = false;
+        forwardSequenceArmed = false;
         lateralSequenceStart = AP_HAL::millis();
+        forwardSequenceStart = AP_HAL::millis();
     }
 
     if (!motors->armed()) {
@@ -98,7 +132,14 @@ void ModeSport::run()
 
     // Only call controller each 8 timestep to have 50Hz
     if (counter>7){
-        attitude_control->deleaves_controller_latHold(lateral_target, pitch_input, yaw_input, thrust_input, lateralSequenceArmed, motors->armed());
+        if(lateralSequenceArmed)
+        {
+            attitude_control->deleaves_controller_latHold(lateral_target, pitch_input, yaw_input, thrust_input, lateralSequenceArmed, motors->armed());
+        }
+        else
+        {
+            attitude_control->deleaves_controller_forHold(lateral_input, forward_target, yaw_input, thrust_input, forwardSequenceArmed, motors->armed());
+        }
         counter=0;
     }
     counter++;

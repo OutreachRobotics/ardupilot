@@ -471,7 +471,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
 
     // Convert force command to motor command (0 to 1)
     yaw_input=constrain_float(yaw_input,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    forward_command=constrain_float(forward_command,-MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
+    forward_command=constrain_float(forward_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
     forward_command=sequenceArmed?forward_command:0.0f;
 
     _motors.set_lateral(lateral);
@@ -531,14 +531,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     yaw_input=constrain_float(yaw_input,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
     lateral_command=constrain_float(lateral_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
     lateral_command=sequenceArmed?lateral_command:0.0f;
-    forward_command=constrain_float(forward_command,-MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    forward_command=sequenceArmed?forward_command:0.0f;
 
     _motors.set_lateral(lateral_command);
-    _motors.set_forward(forward_command);
+    _motors.set_forward(forward);
     _motors.set_yaw(yaw_input);
     _motors.set_throttle(throttle);
-
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_angHold_PD(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)
@@ -599,9 +596,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_angHold_PD(float lateral, flo
     yaw_input=constrain_float(yaw_input,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
     lateral_command=constrain_float(lateral_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
     lateral_command=sequenceArmed?lateral_command:0.0f;
+    forward_command=constrain_float(forward_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
+    forward_command=sequenceArmed?forward_command:0.0f;
 
     _motors.set_lateral(lateral_command);
-    _motors.set_forward(forward);
+    _motors.set_forward(forward_command);
     _motors.set_yaw(yaw_input);
     _motors.set_throttle(throttle);
 
