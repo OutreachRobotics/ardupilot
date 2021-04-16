@@ -39,11 +39,12 @@
 #endif
 
 #define YAW_SENSITIVITY                     0.031f // reach pi/2 in 1 second at 50 hz-> (pi/2)*(1/50)=0.0031
-#define MAX_ACTUATOR_THRUST                 8.0f
+#define MAX_ACTUATOR_THRUST                 7.0f
 
 #define PITCH_SENSITIVITY                   0.008f // reach 0.4 in 1 second full speed at 50 Hz --> 0.4*(1/50) = 0.008;
 #define L1 4.3  // Length of the first pendulum
 #define L2 1    // Length of the second pendulum
+#define M_PLATFORM 4.8
 
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
 public:
@@ -76,7 +77,9 @@ public:
     float get_throttle_mix(void) const override { return _throttle_rpy_mix; }
     void deleaves_controller_acro(float lateral, float forward, float yaw, float throttle);
     void deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed);
-    void deleaves_controller_angHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
+    void deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
+    void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
+    void deleaves_controller_angHold_PD(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
 
 
     // are we producing min throttle?
@@ -111,4 +114,5 @@ protected:
 
     float target_yaw, yaw_angle_error, yaw_angle_error_last, yaw_angle_error_dt, yaw_input;
     float target_forward, forward_error, forward_error_last, forward_error_dt, forward_command;
+    float target_lateral, lateral_error, lateral_error_last, lateral_error_dt, lateral_command;
 };

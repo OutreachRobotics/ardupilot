@@ -1206,7 +1206,9 @@ protected:
 
     const char *name() const override { return "SPORT"; }
     const char *name4() const override { return "SPRT"; }
-
+    int counter;
+    bool lateralSequenceArmed;
+    uint32_t lateralSequenceStart;
 private:
 
 };

@@ -2,6 +2,11 @@
 
 #if MODE_SPORT_ENABLED == ENABLED
 
+#define MAX_INPUT 100.0f
+#define MID_INPUT 50.0f
+#define DEADBAND 0.01f //0 to 1
+
+
 /*
  * Init and run calls for sport flight mode
  */
@@ -9,16 +14,9 @@
 // sport_init - initialise sport controller
 bool ModeSport::init(bool ignore_checks)
 {
-    // initialize vertical speed and acceleration
-    pos_control->set_max_speed_z(-get_pilot_speed_dn(), g.pilot_speed_up);
-    pos_control->set_max_accel_z(g.pilot_accel_z);
-
-    // initialise position and desired velocity
-    if (!pos_control->is_active_z()) {
-        pos_control->set_alt_target_to_current_alt();
-        pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
-    }
-
+    counter = 0;
+    lateralSequenceArmed = 0;
+    lateralSequenceStart = AP_HAL::micros();
     return true;
 }
 
@@ -26,108 +24,86 @@ bool ModeSport::init(bool ignore_checks)
 // should be called at 100hz or more
 void ModeSport::run()
 {
-    float takeoff_climb_rate = 0.0f;
+    float lateral_input, pitch_input, yaw_input, thrust_input;
+    float lateral_target = 0.0f;
 
-    // initialize vertical speed and acceleration
-    pos_control->set_max_speed_z(-get_pilot_speed_dn(), g.pilot_speed_up);
-    pos_control->set_max_accel_z(g.pilot_accel_z);
+    // We use a NED frame as per the UAV standard
+    // Roll, pitch, yaw channel are between -1 and 1
+    // lateral = 1 -> move to the right
+    // Pitch = 1 -> pitch backward
+    // Yaw = 1 -> turn clockwise
+    // Thrust is between 0 and 1
 
-    // apply SIMPLE mode transform
-    update_simple_mode();
+    lateral_input = (float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
+    pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
+    yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
+    thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
 
-    // get pilot's desired roll and pitch rates
+    //Add a deadband to inputs
+    lateral_input = abs(lateral_input)<DEADBAND ? 0.0f : lateral_input;
+    pitch_input = abs(pitch_input)<DEADBAND ? 0.0f : pitch_input;
+    yaw_input = abs(yaw_input)<DEADBAND ? 0.0f : yaw_input;
 
-    // calculate rate requests
-    float target_roll_rate = channel_roll->get_control_in() * g.acro_rp_p;
-    float target_pitch_rate = channel_pitch->get_control_in() * g.acro_rp_p;
-
-    // get attitude targets
-    const Vector3f att_target = attitude_control->get_att_target_euler_cd();
-
-    // Calculate trainer mode earth frame rate command for roll
-    int32_t roll_angle = wrap_180_cd(att_target.x);
-    target_roll_rate -= constrain_int32(roll_angle, -ACRO_LEVEL_MAX_ANGLE, ACRO_LEVEL_MAX_ANGLE) * g.acro_balance_roll;
-
-    // Calculate trainer mode earth frame rate command for pitch
-    int32_t pitch_angle = wrap_180_cd(att_target.y);
-    target_pitch_rate -= constrain_int32(pitch_angle, -ACRO_LEVEL_MAX_ANGLE, ACRO_LEVEL_MAX_ANGLE) * g.acro_balance_pitch;
-
-    const float angle_max = copter.aparm.angle_max;
-    if (roll_angle > angle_max){
-        target_roll_rate +=  AC_AttitudeControl::sqrt_controller(angle_max - roll_angle, g.acro_rp_p * 4.5, attitude_control->get_accel_roll_max(), G_Dt);
-    }else if (roll_angle < -angle_max) {
-        target_roll_rate +=  AC_AttitudeControl::sqrt_controller(-angle_max - roll_angle, g.acro_rp_p * 4.5, attitude_control->get_accel_roll_max(), G_Dt);
+    if(lateralSequenceArmed && lateral_input<-0.8)
+    {
+        lateral_target = 0.0f;
+        lateralSequenceArmed = false;
+        lateralSequenceStart = AP_HAL::millis();
     }
-
-    if (pitch_angle > angle_max){
-        target_pitch_rate +=  AC_AttitudeControl::sqrt_controller(angle_max - pitch_angle, g.acro_rp_p * 4.5, attitude_control->get_accel_pitch_max(), G_Dt);
-    }else if (pitch_angle < -angle_max) {
-        target_pitch_rate +=  AC_AttitudeControl::sqrt_controller(-angle_max - pitch_angle, g.acro_rp_p * 4.5, attitude_control->get_accel_pitch_max(), G_Dt);
+    else if(!lateralSequenceArmed && lateral_input>0.8)
+    {
+        lateral_target = 0.0f;
+        lateralSequenceArmed = true;
+        lateralSequenceStart = AP_HAL::millis();
     }
-
-    // get pilot's desired yaw rate
-    float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
-
-    // get pilot desired climb rate
-    float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
-    target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
-
-    // Sport State Machine Determination
-    AltHoldModeState sport_state = get_alt_hold_state(target_climb_rate);
-
-    // State Machine
-    switch (sport_state) {
-
-    case AltHold_MotorStopped:
-        attitude_control->reset_rate_controller_I_terms();
-        attitude_control->set_yaw_target_to_current_heading();
-        pos_control->relax_alt_hold_controllers(0.0f);   // forces throttle output to go to zero
-        break;
-
-    case AltHold_Takeoff:
-        // initiate take-off
-        if (!takeoff.running()) {
-            takeoff.start(constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f));
+    else if(lateralSequenceArmed)
+    {
+        uint32_t now = AP_HAL::millis();
+        if(now-lateralSequenceStart<5000)
+        {
+            lateral_target = 0.0f;
         }
-
-        // get take-off adjusted pilot and takeoff climb rates
-        takeoff.get_climb_rates(target_climb_rate, takeoff_climb_rate);
-
-        // get avoidance adjusted climb rate
-        target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
-
-        // call position controller
-        pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
-        pos_control->add_takeoff_climb_rate(takeoff_climb_rate, G_Dt);
-        break;
-
-    case AltHold_Landed_Ground_Idle:
-        attitude_control->set_yaw_target_to_current_heading();
-        FALLTHROUGH;
-
-    case AltHold_Landed_Pre_Takeoff:
-        attitude_control->reset_rate_controller_I_terms_smoothly();
-        pos_control->relax_alt_hold_controllers(0.0f);   // forces throttle output to go to zero
-        break;
-
-    case AltHold_Flying:
-        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
-
-        // adjust climb rate using rangefinder
-        target_climb_rate = copter.surface_tracking.adjust_climb_rate(target_climb_rate);
-
-        // get avoidance adjusted climb rate
-        target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
-
-        pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
-        break;
+        // else if(now-lateralSequenceStart<15000)
+        // {
+        //     lateral_target = (L1+L2)*sinf(0.2f);
+        // }
+        // else if(now-lateralSequenceStart<25000)
+        // {
+        //     lateral_target = (L1+L2)*sinf(-0.2f);
+        // }
+        // else if(now-lateralSequenceStart<35000)
+        // {
+        //     lateral_target = (L1+L2)*sinf(-0.25f);
+        // }
+        else
+        {
+            lateral_target = -(L1+L2)*sinf(0.2f);
+        }       
+    }
+    else
+    {
+        lateral_target = 0.0f;
+        lateralSequenceArmed = false;
+        lateralSequenceStart = AP_HAL::millis();
     }
 
-    // call attitude controller
-    attitude_control->input_euler_rate_roll_pitch_yaw(target_roll_rate, target_pitch_rate, target_yaw_rate);
+    if (!motors->armed()) {
+        // Motors should be Stopped
+        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
+    }
+    
+    else {
+        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
+    }
 
-    // call z-axis position controller
-    pos_control->update_z_controller();
+    // Only call controller each 8 timestep to have 50Hz
+    if (counter>7){
+        attitude_control->deleaves_controller_latHold(lateral_target, pitch_input, yaw_input, thrust_input, lateralSequenceArmed, motors->armed());
+        counter=0;
+    }
+    counter++;
+
+
 }
 
 #endif

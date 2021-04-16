@@ -66,11 +66,11 @@ void ModeAltHold::run()
         }
         else if(now-forwardSequenceStart<25000)
         {
-            forward_target = (L1+L2)*sinf(0.35f);
+            forward_target = (L1+L2)*sinf(0.25f);
         }
         else if(now-forwardSequenceStart<35000)
         {
-            forward_target = (L1+L2)*sinf(0.37f);
+            forward_target = (L1+L2)*sinf(0.3f);
         }
         else
         {
@@ -95,7 +95,7 @@ void ModeAltHold::run()
 
     // Only call controller each 8 timestep to have 50Hz
     if (counter>7){
-        attitude_control->deleaves_controller_angHold(lateral_input, forward_target, yaw_input, thrust_input, forwardSequenceArmed, motors->armed());
+        attitude_control->deleaves_controller_forHold(lateral_input, forward_target, yaw_input, thrust_input, forwardSequenceArmed, motors->armed());
         counter=0;
     }
     counter++;
