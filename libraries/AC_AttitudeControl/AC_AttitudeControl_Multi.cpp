@@ -464,9 +464,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
 
     float forwardGainP = _pid_rate_pitch.kP();
     float forwardGainD = _pid_rate_pitch.kD();
-    forward_error= target_forward-(L1+L2)*sinf(ahrs_pitch);
+    forward_error= target_forward-ahrs_pitch;
     forward_error_dt=(forward_error-forward_error_last)*50; //50 Hz
-    forward_command= forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*target_forward/(L1+L2);
+    forward_command= forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
     forward_error_last=forward_error; //assign new error to last
 
     // Convert force command to motor command (0 to 1)
@@ -522,9 +522,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
 
     float lateralGainP = _pid_rate_roll.kP();
     float lateralGainD = _pid_rate_roll.kD();
-    lateral_error= target_lateral-(-(L1+L2)*sinf(ahrs_roll));
+    lateral_error= target_lateral-ahrs_roll;
     lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
-    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*target_lateral/(L1+L2);
+    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
     lateral_error_last=lateral_error; //assign new error to last
 
     // Convert force command to motor command (0 to 1)
@@ -538,7 +538,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     _motors.set_throttle(throttle);
 }
 
-void AC_AttitudeControl_Multi::deleaves_controller_angHold_PD(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)
+void AC_AttitudeControl_Multi::deleaves_controller_angHold_PD(float lateral, float forward, float yaw, float throttle, bool armed)
 {
     // Control runs at 50Hz
 
@@ -551,6 +551,10 @@ void AC_AttitudeControl_Multi::deleaves_controller_angHold_PD(float lateral, flo
 
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
     target_yaw = !armed ? ahrs_yaw : target_yaw + yaw*YAW_SENSITIVITY;
+    target_forward = !armed ? 0.0f : target_forward + forward*PITCH_SENSITIVITY;
+    target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
+    target_lateral = !armed ? 0.0f : target_lateral + lateral*ROLL_SENSITIVITY;
+    target_lateral = constrain_value(target_lateral, MIN_ROLL, MAX_ROLL);
 
     // Yaw PD control here
     float yawGainP = _pid_rate_yaw.kP();
@@ -575,29 +579,25 @@ void AC_AttitudeControl_Multi::deleaves_controller_angHold_PD(float lateral, flo
     yaw_angle_error_last=yaw_angle_error; //assign new error to last
 
     // Roll PD control here
-    target_lateral = lateral;
     float lateralGainP = _pid_rate_roll.kP();
     float lateralGainD = _pid_rate_roll.kD();
-    lateral_error= target_lateral-(-(L1+L2)*sinf(ahrs_roll));
+    lateral_error= target_lateral-ahrs_roll;
     lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
-    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*target_lateral/(L1+L2);
+    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
     lateral_error_last=lateral_error; //assign new error to last
 
     // Pitch PD control here
-    target_forward = forward;
     float forwardGainP = _pid_rate_pitch.kP();
     float forwardGainD = _pid_rate_pitch.kD();
-    forward_error= target_forward-(L1+L2)*sinf(ahrs_pitch);
+    forward_error= target_forward-ahrs_pitch;
     forward_error_dt=(forward_error-forward_error_last)*50; //50 Hz
-    forward_command= forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*target_forward/(L1+L2);
+    forward_command= forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(ahrs_pitch);
     forward_error_last=forward_error; //assign new error to last
 
     // Convert force command to motor command (0 to 1)
     yaw_input=constrain_float(yaw_input,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
     lateral_command=constrain_float(lateral_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    lateral_command=sequenceArmed?lateral_command:0.0f;
     forward_command=constrain_float(forward_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    forward_command=sequenceArmed?forward_command:0.0f;
 
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward_command);

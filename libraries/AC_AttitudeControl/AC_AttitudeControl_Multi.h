@@ -41,10 +41,14 @@
 #define YAW_SENSITIVITY                     0.031f // reach pi/2 in 1 second at 50 hz-> (pi/2)*(1/50)=0.0031
 #define MAX_ACTUATOR_THRUST                 7.0f
 
-#define PITCH_SENSITIVITY                   0.008f // reach 0.4 in 1 second full speed at 50 Hz --> 0.4*(1/50) = 0.008;
-#define L1 4.3  // Length of the first pendulum
-#define L2 1    // Length of the second pendulum
-#define M_PLATFORM 4.8
+#define PITCH_SENSITIVITY                   0.007f // reach 0.35 in 1 second full speed at 50 Hz --> 0.35*(1/50) = 0.008;
+#define ROLL_SENSITIVITY                    0.007f // reach 0.35 in 1 second full speed at 50 Hz --> 0.35*(1/50) = 0.008;
+#define M_PLATFORM                          4.8f
+#define MAX_PITCH                           0.35f
+#define MAX_ROLL                            0.35f
+#define MIN_PITCH                           0.35f
+#define MIN_ROLL                            0.35f
+
 
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
 public:
@@ -79,7 +83,7 @@ public:
     void deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
-    void deleaves_controller_angHold_PD(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
+    void deleaves_controller_angHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
 
 
     // are we producing min throttle?

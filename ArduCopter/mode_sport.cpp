@@ -93,7 +93,7 @@ void ModeSport::run()
         }
         else
         {
-            lateral_target = -(L1+L2)*sinf(0.2f);
+            lateral_target = 0.2f;
             forward_target = 0.0f;
         }       
     }
@@ -108,7 +108,7 @@ void ModeSport::run()
         else
         {
             lateral_target = 0.0f;
-            forward_target = (L1+L2)*sinf(0.2f);
+            forward_target = 0.2f;
         }
     }
     else
