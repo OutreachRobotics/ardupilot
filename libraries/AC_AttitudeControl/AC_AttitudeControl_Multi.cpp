@@ -251,6 +251,18 @@ AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_
     yaw_angle_error_last=0;
     yaw_angle_error_dt=0;
     yaw_input=0;
+    target_forward = 0;
+    forward_error = 0;
+    forward_error_last = 0;
+    forward_error_dt = 0;
+    forward_command = 0;
+    target_lateral = 0;
+    lateral_error = 0;
+    lateral_error_last = 0;
+    lateral_error_dt = 0;
+    lateral_command = 0;
+    forward_angular_target = false;
+    lateral_angular_target = false;
 }
 
 // Update Alt_Hold angle maximum
@@ -538,7 +550,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     _motors.set_throttle(throttle);
 }
 
-void AC_AttitudeControl_Multi::deleaves_controller_angHold_PD(float lateral, float forward, float yaw, float throttle, bool armed)
+void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed)
 {
     // Control runs at 50Hz
 
@@ -550,10 +562,51 @@ void AC_AttitudeControl_Multi::deleaves_controller_angHold_PD(float lateral, flo
     attitude_vehicle_quat.to_euler(ahrs_roll, ahrs_pitch, ahrs_yaw);
 
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
-    target_yaw = !armed ? ahrs_yaw : target_yaw + yaw*YAW_SENSITIVITY;
-    target_forward = !armed ? 0.0f : target_forward + forward*PITCH_SENSITIVITY;
+    if(!armed)
+    {
+        target_yaw = ahrs_yaw;
+        target_forward = 0.0f;
+        target_lateral = 0.0f;
+        forward_angular_target = true;
+        lateral_angular_target = true;
+    }
+    else
+    {
+        // Yaw control, simple deadband check
+        if(abs(yaw) > DEADBAND)
+        {
+            target_yaw += yaw*YAW_SENSITIVITY;
+        }
+        else
+        {
+            target_yaw = ahrs_yaw;
+        }
+
+        // Forward control, velocity on move, angular on hold
+        if(abs(forward) > DEADBAND)
+        {
+            forward_angular_target = false;
+            target_forward += forward*PITCH_SENSITIVITY;
+        }
+        else if(!forward_angular_target)
+        {
+            target_forward = ahrs_pitch;
+            forward_angular_target = true;
+        }
+        
+        // Lateral control, based on the same principle as forward control
+        if(abs(lateral) > DEADBAND)
+        {
+            lateral_angular_target = false;
+            target_lateral += lateral*ROLL_SENSITIVITY;
+        }
+        else if(!lateral_angular_target)
+        {
+            target_lateral = ahrs_roll;
+            lateral_angular_target = true;
+        }
+    }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
-    target_lateral = !armed ? 0.0f : target_lateral + lateral*ROLL_SENSITIVITY;
     target_lateral = constrain_value(target_lateral, MIN_ROLL, MAX_ROLL);
 
     // Yaw PD control here

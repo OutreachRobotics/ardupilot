@@ -41,13 +41,14 @@
 #define YAW_SENSITIVITY                     0.031f // reach pi/2 in 1 second at 50 hz-> (pi/2)*(1/50)=0.0031
 #define MAX_ACTUATOR_THRUST                 7.0f
 
-#define PITCH_SENSITIVITY                   0.007f // reach 0.35 in 1 second full speed at 50 Hz --> 0.35*(1/50) = 0.008;
-#define ROLL_SENSITIVITY                    0.007f // reach 0.35 in 1 second full speed at 50 Hz --> 0.35*(1/50) = 0.008;
-#define M_PLATFORM                          4.8f
+#define PITCH_SENSITIVITY                   0.007f // reach 0.35 in 1 second full speed at 50 Hz --> 0.35*(1/50) = 0.007;
+#define ROLL_SENSITIVITY                    0.007f // reach 0.35 in 1 second full speed at 50 Hz --> 0.35*(1/50) = 0.007;
+#define M_PLATFORM                          3.5f
 #define MAX_PITCH                           0.35f
 #define MAX_ROLL                            0.35f
-#define MIN_PITCH                           0.35f
-#define MIN_ROLL                            0.35f
+#define MIN_PITCH                           -0.35f
+#define MIN_ROLL                            -0.35f
+#define DEADBAND                            0.01f
 
 
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
@@ -83,8 +84,7 @@ public:
     void deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
-    void deleaves_controller_angHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
-
+    void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
 
     // are we producing min throttle?
     bool is_throttle_mix_min() const override { return (_throttle_rpy_mix < 1.25f * _thr_mix_min); }
@@ -119,4 +119,5 @@ protected:
     float target_yaw, yaw_angle_error, yaw_angle_error_last, yaw_angle_error_dt, yaw_input;
     float target_forward, forward_error, forward_error_last, forward_error_dt, forward_command;
     float target_lateral, lateral_error, lateral_error_last, lateral_error_dt, lateral_command;
+    bool forward_angular_target, lateral_angular_target;
 };

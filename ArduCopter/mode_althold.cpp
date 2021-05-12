@@ -2,8 +2,6 @@
 
 #define MAX_INPUT 100.0f
 #define MID_INPUT 50.0f
-#define DEADBAND 0.01f //0 to 1
-
 
 /*
  * Init and run calls for althold, flight mode
@@ -36,11 +34,6 @@ void ModeAltHold::run()
     yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
     thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
 
-    //Add a deadband to inputs
-    lateral_input = abs(lateral_input)<DEADBAND ? 0.0f : lateral_input;
-    pitch_input = abs(pitch_input)<DEADBAND ? 0.0f : pitch_input;
-    yaw_input = abs(yaw_input)<DEADBAND ? 0.0f : yaw_input;
-
     if (!motors->armed()) {
         // Motors should be Stopped
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
@@ -52,7 +45,7 @@ void ModeAltHold::run()
 
     // Only call controller each 8 timestep to have 50Hzs
     if (counter>7){
-        attitude_control->deleaves_controller_angHold_PD(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
+        attitude_control->deleaves_controller_angVelHold_PD(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
         counter=0;
     }
     counter++;
