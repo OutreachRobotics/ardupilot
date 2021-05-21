@@ -81,6 +81,12 @@ uint8_t GCS_MAVLINK::mavlink_active = 0;
 uint8_t GCS_MAVLINK::chan_is_streaming = 0;
 uint32_t GCS_MAVLINK::reserve_param_space_start_ms;
 
+static uint8_t cuttingPercentage;
+static uint8_t armStatus;
+static uint8_t batteryVoltage;
+static uint8_t batterySOC;
+static uint8_t deleavesMessage;
+
 // private channels are ones used for point-to-point protocols, and
 // don't get broadcasts or fwded packets
 uint8_t GCS_MAVLINK::mavlink_private = 0;
@@ -91,6 +97,7 @@ GCS_MAVLINK::GCS_MAVLINK(GCS_MAVLINK_Parameters &parameters,
                          AP_HAL::UARTDriver &uart)
 {
     _port = &uart;
+    _deleaves_port = hal.serial(UART_DELEAVES);
 
     streamRates = parameters.streamRates;
 }
@@ -173,6 +180,8 @@ bool GCS_MAVLINK::init(uint8_t instance)
         // after experiments with MAVLink2
         status->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
     }
+
+    _deleaves_port->begin(57600,10,10);
 
     return true;
 }
@@ -1368,6 +1377,82 @@ void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
 void
 GCS_MAVLINK::update_receive(uint32_t max_time_us)
 {
+    const uint16_t nbytesDeLeaves = _deleaves_port->available();
+
+    for (uint16_t i=0; i<nbytesDeLeaves; i++)
+    {
+        const uint8_t c = (uint8_t)_deleaves_port->read();
+        switch (c)
+        {
+        case CuttingPercentage:
+            if(nbytesDeLeaves-i>1)
+            {
+                cuttingPercentage = (uint8_t)_deleaves_port->read();
+                i++;
+            }
+            break;
+        case ArmStatus:
+            if(nbytesDeLeaves-i>1)
+            {
+                armStatus = (uint8_t)_deleaves_port->read();
+                i++;
+            }
+            break;
+        case BatteryVoltage:
+            if(nbytesDeLeaves-i>1)
+            {
+                batteryVoltage = (uint8_t)_deleaves_port->read();
+                i++;
+            }
+            break;
+        case BatterySOC:
+            if(nbytesDeLeaves-i>1)
+            {
+                batterySOC = (uint8_t)_deleaves_port->read();
+                i++;
+            }
+            break;
+        case TextMessage:
+            if(nbytesDeLeaves-i>1)
+            {
+                deleavesMessage = (uint8_t)_deleaves_port->read();
+                switch (deleavesMessage)
+                {
+                case SamplingCompleted:
+                    gcs().send_text(MAV_SEVERITY_INFO, "#Sampling process completed");
+                    break;
+                case CalibrationStarted:
+                    gcs().send_text(MAV_SEVERITY_INFO, "#Calibration started");
+                    break;
+                case LowBattery:
+                    gcs().send_text(MAV_SEVERITY_INFO, "#Low battery");
+                    break;
+                case SawNotConnected:
+                    gcs().send_text(MAV_SEVERITY_ALERT, "Saw not connected");
+                    break;
+                case SawJammed:
+                    gcs().send_text(MAV_SEVERITY_ALERT, "Saw jammed during the cutting sequence");
+                    break;
+                case SawHighCurrent:
+                    gcs().send_text(MAV_SEVERITY_ALERT, "Saw high current protection triggered");
+                    break;
+                case SamplingStucked:
+                    gcs().send_text(MAV_SEVERITY_ALERT, "Unable to complete the sampling sequence");
+                    break;
+                case NoCalibration:
+                    gcs().send_text(MAV_SEVERITY_ALERT, "The cutting sequence needs to be stopped for calibration");
+                    break;
+                default:
+                    break;
+                }
+                i++;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
     // do absolutely nothing if we are locked
     if (locked()) {
         return;
@@ -4328,41 +4413,44 @@ void GCS_MAVLINK::send_sys_status()
     // send extended status only once vehicle has been initialised
     // to avoid unnecessary errors being reported to user
     if (!gcs().vehicle_initialised()) {
+        hal.serial(0)->printf("Vehicle not initialized\r\n");
         return;
     }
 
     const AP_BattMonitor &battery = AP::battery();
     float battery_current;
-    int8_t battery_remaining;
+    // int8_t battery_remaining;
 
     if (battery.healthy() && battery.current_amps(battery_current)) {
-        battery_remaining = battery.capacity_remaining_pct();
+        // battery_remaining = battery.capacity_remaining_pct();
         battery_current = constrain_float(battery_current * 100,-INT16_MAX,INT16_MAX);
     } else {
         battery_current = -1;
-        battery_remaining = -1;
+        // battery_remaining = -1;
     }
 
-    uint32_t control_sensors_present;
-    uint32_t control_sensors_enabled;
-    uint32_t control_sensors_health;
+    // uint32_t control_sensors_present;
+    // uint32_t control_sensors_enabled;
+    uint32_t control_sensors_health = 0;
 
-    gcs().get_sensor_status_flags(control_sensors_present, control_sensors_enabled, control_sensors_health);
+    // gcs().get_sensor_status_flags(control_sensors_present, control_sensors_enabled, control_sensors_health);
 
     const uint32_t errors = AP::internalerror().errors();
     const uint16_t errors1 = errors & 0xffff;
     const uint16_t errors2 = (errors>>16) & 0xffff;
     const uint16_t errors4 = AP::internalerror().count() & 0xffff;
 
+
+
     mavlink_msg_sys_status_send(
         chan,
-        control_sensors_present,
-        control_sensors_enabled,
+        cuttingPercentage,
+        armStatus,
         control_sensors_health,
         static_cast<uint16_t>(AP::scheduler().load_average() * 1000),
-        battery.voltage() * 1000,  // mV
+        static_cast<uint16_t>(batteryVoltage) * 100,  // mV
         battery_current,        // in 10mA units
-        battery_remaining,      // in %
+        batterySOC,      // in %
         0,  // comm drops %,
         0,  // comm drops in pkts,
         errors1,
@@ -4488,7 +4576,6 @@ void GCS_MAVLINK::send_generator_status() const
 bool GCS_MAVLINK::try_send_message(const enum ap_message id)
 {
     bool ret = true;
-
     switch(id) {
 
     case MSG_ATTITUDE:

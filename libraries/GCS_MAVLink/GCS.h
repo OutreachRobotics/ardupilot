@@ -26,6 +26,28 @@
 #include "ap_message.h"
 
 #define GCS_DEBUG_SEND_MESSAGE_TIMINGS 0
+#define UART_DELEAVES 4
+
+enum messageID
+{
+    CuttingPercentage,
+    ArmStatus,
+    BatteryVoltage,
+    BatterySOC,
+    TextMessage
+};
+
+enum textMessageID
+{
+    SamplingCompleted,
+    CalibrationStarted,
+    LowBattery,
+    SawNotConnected,
+    SawJammed,
+    SawHighCurrent,
+    SamplingStucked,    
+    NoCalibration    
+};
 
 #ifndef HAL_NO_GCS
 
@@ -543,6 +565,7 @@ private:
 
     /// The stream we are communicating over
     AP_HAL::UARTDriver *_port;
+    AP_HAL::UARTDriver *_deleaves_port;
 
     /// Perform queued sending operations
     ///
