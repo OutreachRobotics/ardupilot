@@ -84,7 +84,7 @@ public:
     void deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
-    void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
+    void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed, bool taxi_mode);
 
     // are we producing min throttle?
     bool is_throttle_mix_min() const override { return (_throttle_rpy_mix < 1.25f * _thr_mix_min); }

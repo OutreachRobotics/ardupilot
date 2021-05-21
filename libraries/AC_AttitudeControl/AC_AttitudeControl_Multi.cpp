@@ -550,7 +550,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     _motors.set_throttle(throttle);
 }
 
-void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed)
+void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed, bool taxi_mode)
 {
     // Control runs at 50Hz
 
@@ -583,7 +583,12 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         }
 
         // Forward control, velocity on move, angular on hold
-        if(abs(forward) > DEADBAND)
+        if(taxi_mode)
+        {
+            forward_angular_target = true;
+            target_forward = 0.0f;
+        }
+        else if(abs(forward) > DEADBAND)
         {
             forward_angular_target = false;
             target_forward += forward*PITCH_SENSITIVITY;
@@ -595,7 +600,12 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         }
         
         // Lateral control, based on the same principle as forward control
-        if(abs(lateral) > DEADBAND)
+        if(taxi_mode)
+        {
+            lateral_angular_target = true;
+            target_lateral = 0.0f;
+        }
+        else if(abs(lateral) > DEADBAND)
         {
             lateral_angular_target = false;
             target_lateral += lateral*ROLL_SENSITIVITY;
