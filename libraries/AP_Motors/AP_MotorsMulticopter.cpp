@@ -236,7 +236,8 @@ void AP_MotorsMulticopter::output()
     // 3 => front right (creates a force toward the left of the platform)
     // 4 => back left (creates a force toward the right of the platform)
     // 5 => back right (creates a force toward the left of the platform)
-    // 6 => backward thruster
+    // 6 => left backward thruster
+    // 7 => right backward thruster
     // _throttle_in has no effect on the control
     // _lateral_in is for lateral force
     // _forward_in is for forward force
