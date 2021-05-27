@@ -729,7 +729,6 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward_command);
     _motors.set_yaw(yaw_input);
-
 }
 
 void AC_AttitudeControl_Multi::thrust2pwm()
