@@ -425,8 +425,8 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
         yaw_input= GainP*yaw_angle_error+GainD*yaw_angle_error_dt;
         yaw_angle_error_last=yaw_angle_error; //assign new error to last
 
-        // Convert force command to motor command (0 to 1)
-        yaw_input=constrain_float(yaw_input,-MAX_ACTUATOR_THRUST,MAX_ACTUATOR_THRUST)/MAX_ACTUATOR_THRUST;
+        // Convert force command to motor command (-1 to 1)
+        thrust2pwm();
 
         _motors.set_lateral(lateral);
         _motors.set_forward(forward);
@@ -482,8 +482,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
     forward_error_last=forward_error; //assign new error to last
 
     // Convert force command to motor command (0 to 1)
-    yaw_input=constrain_float(yaw_input,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    forward_command=constrain_float(forward_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
+    thrust2pwm();
     forward_command=sequenceArmed?forward_command:0.0f;
 
     _motors.set_lateral(lateral);
@@ -540,8 +539,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     lateral_error_last=lateral_error; //assign new error to last
 
     // Convert force command to motor command (0 to 1)
-    yaw_input=constrain_float(yaw_input,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    lateral_command=constrain_float(lateral_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
+    thrust2pwm();
     lateral_command=sequenceArmed?lateral_command:0.0f;
 
     _motors.set_lateral(lateral_command);
@@ -654,9 +652,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     forward_error_last=forward_error; //assign new error to last
 
     // Convert force command to motor command (0 to 1)
-    yaw_input=constrain_float(yaw_input,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    lateral_command=constrain_float(lateral_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    forward_command=constrain_float(forward_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
+    thrust2pwm();
 
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward_command);
@@ -728,12 +724,18 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     forward_error_last=forward_error; //assign new error to last
 
     // Convert force command to motor command (-1 to 1)
-    yaw_input=constrain_float(yaw_input,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    lateral_command=constrain_float(lateral_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
-    forward_command=constrain_float(forward_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
+    thrust2pwm();
 
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward_command);
     _motors.set_yaw(yaw_input);
+
+}
+
+void AC_AttitudeControl_Multi::thrust2pwm()
+{
+    yaw_input=constrain_float(yaw_input,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
+    lateral_command=constrain_float(lateral_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
+    forward_command=constrain_float(forward_command,-2*MAX_ACTUATOR_THRUST,2*MAX_ACTUATOR_THRUST)/(2*MAX_ACTUATOR_THRUST);
 
 }

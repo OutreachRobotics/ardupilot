@@ -80,12 +80,14 @@ public:
     void set_throttle_mix_max(float ratio) override;
     void set_throttle_mix_value(float value) override { _throttle_rpy_mix_desired = _throttle_rpy_mix = value; }
     float get_throttle_mix(void) const override { return _throttle_rpy_mix; }
+
     void deleaves_controller_acro(float lateral, float forward, float yaw, float throttle);
     void deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed, bool reset_command);
     void deleaves_controller_taxi(float yaw, bool armed);
+    void thrust2pwm();
 
     // are we producing min throttle?
     bool is_throttle_mix_min() const override { return (_throttle_rpy_mix < 1.25f * _thr_mix_min); }
