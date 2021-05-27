@@ -921,7 +921,7 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
                 if (!shot_mode) {
 #if MODE_BRAKE_ENABLED == ENABLED
                     if (copter.set_mode(Mode::Number::BRAKE, ModeReason::GCS_COMMAND)) {
-                        copter.mode_brake.timeout_to_loiter_ms(2500);
+                        // copter.mode_brake.timeout_to_loiter_ms(2500);
                     } else {
                         copter.set_mode(Mode::Number::ALT_HOLD, ModeReason::GCS_COMMAND);
                     }

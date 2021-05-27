@@ -578,24 +578,18 @@ public:
     bool init(bool ignore_checks) override;
     void run() override;
 
-    bool requires_GPS() const override { return true; }
-    bool has_manual_throttle() const override { return false; }
-    bool allows_arming(bool from_gcs) const override { return false; };
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return true; }
+    bool allows_arming(bool from_gcs) const override { return true; };
     bool is_autopilot() const override { return false; }
-
-    void timeout_to_loiter_ms(uint32_t timeout_ms);
 
 protected:
 
     const char *name() const override { return "BRAKE"; }
     const char *name4() const override { return "BRAK"; }
-
+    int counter;
 private:
 
-    void init_target();
-
-    uint32_t _timeout_start;
-    uint32_t _timeout_ms;
 
 };
 

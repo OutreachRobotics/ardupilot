@@ -2,7 +2,7 @@
 
 #define MAX_INPUT 100.0f
 #define MID_INPUT 50.0f
-#define TAXI_REF_VALUE 1500
+#define RESET_REF_VALUE 1500
 
 /*
  * Init and run calls for althold, flight mode
@@ -12,8 +12,6 @@
 bool ModeAltHold::init(bool ignore_checks)
 {
     counter = 0;
-    sequenceArmed = 0;
-    sequenceStart = AP_HAL::micros();
     return true;
 }
 
@@ -22,7 +20,7 @@ bool ModeAltHold::init(bool ignore_checks)
 void ModeAltHold::run()
 {
     float lateral_input, pitch_input, yaw_input, thrust_input;
-    bool taxi_mode;
+    bool reset_command;
 
     // We use a NED frame as per the UAV standard
     // Roll, pitch, yaw channel are between -1 and 1
@@ -31,7 +29,7 @@ void ModeAltHold::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
 
-    taxi_mode = hal.rcin->read(CH_6) > TAXI_REF_VALUE;
+    reset_command = hal.rcin->read(CH_6) > RESET_REF_VALUE;
 
     lateral_input = -(float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
     pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
@@ -49,7 +47,7 @@ void ModeAltHold::run()
 
     // Only call controller each 8 timestep to have 50Hzs
     if (counter>7){
-        attitude_control->deleaves_controller_angVelHold_PD(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed(), taxi_mode);
+        attitude_control->deleaves_controller_angVelHold_PD(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed(), reset_command);
         counter=0;
     }
     counter++;
