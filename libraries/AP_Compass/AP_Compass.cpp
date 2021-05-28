@@ -312,7 +312,7 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Description: Enable or disable the secondary compass for determining heading.
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
-    AP_GROUPINFO("USE2",    18, Compass, _use_for_yaw._priv_instance[1], 1),
+    AP_GROUPINFO("USE2",    18, Compass, _use_for_yaw._priv_instance[1], 0),
 
     // @Param: ORIENT2
     // @DisplayName: Compass2 orientation
@@ -335,7 +335,7 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Description: Enable or disable the tertiary compass for determining heading.
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
-    AP_GROUPINFO("USE3",    21, Compass, _use_for_yaw._priv_instance[2], 1),
+    AP_GROUPINFO("USE3",    21, Compass, _use_for_yaw._priv_instance[2], 0),
 
     // @Param: ORIENT3
     // @DisplayName: Compass3 orientation
@@ -542,7 +542,7 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Description: Setting this to Enabled(1) will enable the compass. Setting this to Disabled(0) will disable the compass. Note that this is separate from COMPASS_USE. This will enable the low level senor, and will enable logging of magnetometer data. To use the compass for navigation you must also set COMPASS_USE to 1.
     // @User: Standard
     // @Values: 0:Disabled,1:Enabled
-    AP_GROUPINFO("ENABLE", 39, Compass, _enabled, 1),
+    AP_GROUPINFO("ENABLE", 39, Compass, _enabled, 0),
 
     // @Param: SCALE
     // @DisplayName: Compass1 scale factor
