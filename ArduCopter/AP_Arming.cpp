@@ -632,7 +632,7 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
         check_failed(true, "AHRS not healthy");
         return false;
     }
-
+#define ALLOW_ARM_NO_COMPASS
 #ifndef ALLOW_ARM_NO_COMPASS
     // if external source of heading is available, we can skip compass health check
     if (!ahrs.is_ext_nav_used_for_yaw()) {
