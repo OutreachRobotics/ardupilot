@@ -242,28 +242,18 @@ void AP_MotorsMulticopter::output()
     // _lateral_in is for lateral force
     // _forward_in is for forward force
 
-    float _roll_adjustment = 0.6f;
-    
-    if(_lateral_in + _yaw_in > 1.0f)
-    {
-        _lateral_in = _lateral_in/(_lateral_in + _yaw_in);
-        _yaw_in = _yaw_in/(_lateral_in + _yaw_in);
-    }
-
-    if(_lateral_in + _yaw_in < -1.0f)
-    {
-        _lateral_in = _lateral_in/abs(_lateral_in + _yaw_in);
-        _yaw_in = _yaw_in/abs(_lateral_in + _yaw_in);
-    }
-
-    _actuator[0] = constrain_float(_forward_in, 0, 1);
-    _actuator[1] = constrain_float(_forward_in, 0, 1);   
-    _actuator[2] = constrain_float(_lateral_in + _yaw_in, 0, 1);
-    _actuator[3] = constrain_float(-(_lateral_in + _yaw_in), 0, 1);
-    _actuator[4] = constrain_float(_roll_adjustment * _lateral_in - _yaw_in, 0, 1);
-    _actuator[5] = constrain_float(-_roll_adjustment * _lateral_in + _yaw_in, 0, 1);
-    _actuator[6] = constrain_float(-_forward_in, 0, 1);   
-    _actuator[7] = constrain_float(-_forward_in, 0, 1);   
+    float forward_in = _forward_in/2.0f;
+    float lateral_in = _lateral_in/1.29f;
+    float yaw_in = _yaw_in/2.0f;
+  
+    _actuator[0] = forward_in;
+    _actuator[1] = forward_in;  
+    _actuator[2] = lateral_in + yaw_in;
+    _actuator[3] = -(lateral_in + yaw_in);
+    _actuator[4] = ROLL_ADJUSTMENT * lateral_in - yaw_in;
+    _actuator[5] = -ROLL_ADJUSTMENT * lateral_in + yaw_in;
+    _actuator[6] = -forward_in;   
+    _actuator[7] = -forward_in;   
 
 
     for (int i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
@@ -423,7 +413,8 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
     if (!armed()) {
         pwm_output = 1000;
     } else {
-        pwm_output = get_pwm_output_min() + (get_pwm_output_max() - get_pwm_output_min()) * actuator;
+        pwm_output = sq(actuator)*T2PWM_COEF1 + actuator*T2PWM_COEF2 + T2PWM_COEF3;
+        pwm_output = constrain_float(pwm_output,1150,1800);
     }
 
     return pwm_output;
