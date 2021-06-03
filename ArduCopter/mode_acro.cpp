@@ -24,6 +24,11 @@ void ModeAcro::run()
     yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
     thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
 
+    //Add a deadband to inputs
+    lateral_input = abs(lateral_input)<DEADBAND ? 0.0f : lateral_input;
+    pitch_input = abs(pitch_input)<DEADBAND ? 0.0f : pitch_input;
+    yaw_input = abs(yaw_input)<DEADBAND ? 0.0f : yaw_input;
+
     if (!motors->armed()) {
         // Motors should be Stopped
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
