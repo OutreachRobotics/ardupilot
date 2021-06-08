@@ -38,17 +38,19 @@
  # define AC_ATC_MULTI_RATE_YAW_FILT_HZ     2.5f
 #endif
 
-#define YAW_SENSITIVITY                     0.031f // reach pi/2 in 1 second at 50 hz-> (pi/2)*(1/50)=0.0031
-#define MAX_ACTUATOR_THRUST                 7.0f
+#define YAW_SENSITIVITY                     0.0157f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
+#define PMAX_ACTUATOR_THRUST                13.0f
+#define RMAX_ACTUATOR_THRUST                (13.0f*(ROLL_ADJUSTMENT+1.0f)/2.0f)
 
 #define PITCH_SENSITIVITY                   0.007f // reach 0.35 in 1 second full speed at 50 Hz --> 0.35*(1/50) = 0.007;
 #define ROLL_SENSITIVITY                    0.007f // reach 0.35 in 1 second full speed at 50 Hz --> 0.35*(1/50) = 0.007;
-#define M_PLATFORM                          3.5f
-#define MAX_PITCH                           0.35f
-#define MAX_ROLL                            0.35f
-#define MIN_PITCH                           -0.35f
-#define MIN_ROLL                            -0.35f
-#define DEADBAND                            0.01f
+#define M_PLATFORM                          3.24f
+#define MAX_PITCH                           0.305f // 17.5° - 10 N to keep that angle
+#define MAX_ROLL                            (MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
+#define MIN_PITCH                           (-MAX_PITCH)
+#define MIN_ROLL                            (-MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
+#define DEADBAND                            0.02f
+
 
 
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
@@ -87,7 +89,7 @@ public:
     void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed, bool reset_command);
     void deleaves_controller_taxi(float yaw, bool armed);
-    void thrust2pwm();
+    void constrainCommand();
 
     // are we producing min throttle?
     bool is_throttle_mix_min() const override { return (_throttle_rpy_mix < 1.25f * _thr_mix_min); }
@@ -122,5 +124,4 @@ protected:
     float target_yaw, yaw_angle_error, yaw_angle_error_last, yaw_angle_error_dt, yaw_input;
     float target_forward, forward_error, forward_error_last, forward_error_dt, forward_command;
     float target_lateral, lateral_error, lateral_error_last, lateral_error_dt, lateral_command;
-    bool forward_angular_target, lateral_angular_target;
 };

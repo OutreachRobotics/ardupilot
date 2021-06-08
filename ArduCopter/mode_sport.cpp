@@ -4,7 +4,6 @@
 
 #define MAX_INPUT 100.0f
 #define MID_INPUT 50.0f
-#define DEADBAND 0.01f //0 to 1
 
 
 /*

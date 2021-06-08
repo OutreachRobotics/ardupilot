@@ -243,7 +243,7 @@ void AP_MotorsMulticopter::output()
     // _forward_in is for forward force
 
     float forward_in = _forward_in/2.0f;
-    float lateral_in = _lateral_in/1.29f;
+    float lateral_in = _lateral_in/(1.0f+ROLL_ADJUSTMENT);
     float yaw_in = _yaw_in/2.0f;
   
     _actuator[0] = forward_in;
