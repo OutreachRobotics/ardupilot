@@ -51,5 +51,4 @@ void ModeAltHold::run()
         counter=0;
     }
     counter++;
-
 }

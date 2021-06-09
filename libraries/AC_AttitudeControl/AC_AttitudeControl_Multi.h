@@ -48,7 +48,7 @@
 #define MAX_PITCH                           0.305f // 17.5° - 10 N to keep that angle
 #define MAX_ROLL                            (MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
 #define MIN_PITCH                           (-MAX_PITCH)
-#define MIN_ROLL                            (-MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
+#define MIN_ROLL                            (-MAX_ROLL)
 #define DEADBAND                            0.02f
 
 

@@ -245,16 +245,23 @@ void AP_MotorsMulticopter::output()
     float forward_in = _forward_in/2.0f;
     float lateral_in = _lateral_in/(1.0f+ROLL_ADJUSTMENT);
     float yaw_in = _yaw_in/2.0f;
-  
-    _actuator[0] = forward_in;
-    _actuator[1] = forward_in;  
-    _actuator[2] = lateral_in + yaw_in;
-    _actuator[3] = -(lateral_in + yaw_in);
-    _actuator[4] = ROLL_ADJUSTMENT * lateral_in - yaw_in;
-    _actuator[5] = -ROLL_ADJUSTMENT * lateral_in + yaw_in;
-    _actuator[6] = -forward_in;   
-    _actuator[7] = -forward_in;   
 
+    float front, back, left, right, yawCtrClk, yawClk;
+    front = forward_in>0.0f?forward_in:0.0f;
+    back = forward_in<0.0f?-forward_in:0.0f;
+    right = lateral_in>0.0f?lateral_in:0.0f;
+    left = lateral_in<0.0f?-lateral_in:0.0f;
+    yawClk = yaw_in>0.0f?yaw_in:0.0f;
+    yawCtrClk = yaw_in<0.0f?-yaw_in:0.0f;
+  
+    _actuator[0] = front;
+    _actuator[1] = front;  
+    _actuator[2] = right + yawClk;
+    _actuator[3] = left + yawCtrClk;
+    _actuator[4] = ROLL_ADJUSTMENT * right + yawCtrClk;
+    _actuator[5] = ROLL_ADJUSTMENT * left + yawClk;
+    _actuator[6] = back;   
+    _actuator[7] = back;   
 
     for (int i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         rc_write(i, output_to_pwm(_actuator[i]));

@@ -550,8 +550,6 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
 {
     // Control runs at 50Hz
 
-    // Vector3f ang_vel = _ahrs.get_gyro_latest();
-
     Quaternion attitude_vehicle_quat;
     _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
     float ahrs_roll, ahrs_pitch, ahrs_yaw;
@@ -591,12 +589,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         {
             target_lateral += lateral*ROLL_SENSITIVITY;
         }
-
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
     target_lateral = constrain_value(target_lateral, MIN_ROLL, MAX_ROLL);
 
-    // Yaw PD control here
+    // Yaw PD control
     float yawGainP = _pid_rate_yaw.kP();
     float yawGainD = _pid_rate_yaw.kD();
     yaw_angle_error= target_yaw-ahrs_yaw;
@@ -618,7 +615,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     yaw_input= yawGainP*yaw_angle_error+yawGainD*yaw_angle_error_dt;
     yaw_angle_error_last=yaw_angle_error; //assign new error to last
 
-    // Roll PD control here
+    // Roll PD control
     float lateralGainP = _pid_rate_roll.kP();
     float lateralGainD = _pid_rate_roll.kD();
     lateral_error= ahrs_roll-target_lateral;
@@ -626,7 +623,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt - M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
     lateral_error_last=lateral_error; //assign new error to last
 
-    // Pitch PD control here
+    // Pitch PD control
     float forwardGainP = _pid_rate_pitch.kP();
     float forwardGainD = _pid_rate_pitch.kD();
     forward_error= target_forward-ahrs_pitch;
@@ -634,7 +631,6 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     forward_command = forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
     forward_error_last=forward_error; //assign new error to last
 
-    // Convert force command to motor command (0 to 1)
     constrainCommand();
 
     _motors.set_lateral(lateral_command);
