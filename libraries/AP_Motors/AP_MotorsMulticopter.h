@@ -28,7 +28,7 @@
 #define T2PWM_COEF2                     103.52f
 #define T2PWM_COEF3                     1177.4f
 #define MAX_ACTUATOR_THRUST             6.5f
-#define ROLL_ADJUSTMENT                 0.325f
+#define ROLL_ADJUSTMENT                 0.37f
 
 // spool definition
 #define AP_MOTORS_SPOOL_UP_TIME_DEFAULT 0.5f    // time (in seconds) for throttle to increase from zero to min throttle, and min throttle to full throttle.
