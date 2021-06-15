@@ -124,4 +124,5 @@ protected:
     float target_yaw, yaw_angle_error, yaw_angle_error_last, yaw_angle_error_dt, yaw_input;
     float target_forward, forward_error, forward_error_last, forward_error_dt, forward_command;
     float target_lateral, lateral_error, lateral_error_last, lateral_error_dt, lateral_command;
+    float filtered_lateral_error, last_filtered_lateral_error;
 };
