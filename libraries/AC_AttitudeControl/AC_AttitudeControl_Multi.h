@@ -125,4 +125,6 @@ protected:
     float target_forward, forward_error, forward_error_last, forward_error_dt, forward_command;
     float target_lateral, lateral_error, lateral_error_last, lateral_error_dt, lateral_command;
     float filtered_lateral_error, last_filtered_lateral_error;
+    float filtered_angVel, last_filtered_angVel;
+    Vector3f last_angVel;
 };

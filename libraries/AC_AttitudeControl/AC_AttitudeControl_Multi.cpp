@@ -550,29 +550,71 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     target_lateral = lateral;
 
     // Roll PD control
-    // float lateralGainP = _pid_rate_roll.kP();
-    // float lateralGainD = _pid_rate_roll.kD();
-    // lateral_error= ahrs_roll-target_lateral;
-    // lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
-    // lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt - M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
-    // lateral_error_last=lateral_error; //assign new error to last
+    float lateralGainP = _pid_rate_roll.kP();
+    float lateralGainD = _pid_rate_roll.kD();
+    lateral_error= target_lateral-ahrs_roll;
+    lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
+    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
+    lateral_error_last=lateral_error; //assign new error to last
 
     // Filtered roll PD control
     // float lateralGainP = _pid_rate_roll.kP();
     // float lateralGainD = _pid_rate_roll.kD();
-    // lateral_error= ahrs_roll-target_lateral;
-    // filtered_lateral_error = 0.5792*lateral_error + 0.5792*lateral_error_last - 0.15838*last_filtered_lateral_error;
+    // float b1 = 0.5792f;
+    // float b0 = 0.5792f;
+    // float a0 = 0.1584f;
+    // lateral_error= target_lateral-ahrs_roll;
+    // filtered_lateral_error = b1*lateral_error + b0*lateral_error_last - a0*last_filtered_lateral_error;
     // lateral_error_dt=(filtered_lateral_error-last_filtered_lateral_error)*50; //50 Hz
-    // lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt - M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
+    // lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
     // lateral_error_last=lateral_error; //assign new error to last
     // last_filtered_lateral_error = filtered_lateral_error;
 
     // Tachymeter feedback
-    Vector3f ang_vel = _ahrs.get_gyro_latest();
-    float lateralGainP = _pid_rate_roll.kP();
-    float lateralGainD = _pid_rate_roll.kD();
-    lateral_error = ahrs_roll-target_lateral;
-    lateral_command = lateralGainP*(lateral_error + lateralGainD/lateralGainP*ang_vel.x) - M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
+    // Vector3f ang_vel = _ahrs.get_gyro_latest();
+    // float lateralGainP = _pid_rate_roll.kP();
+    // float lateralGainD = _pid_rate_roll.kD();
+    // lateral_error = target_lateral-ahrs_roll;
+    // lateral_command = lateralGainP*(lateral_error - lateralGainD/lateralGainP*ang_vel.x) + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
+
+    // LQT control
+    // Vector3f ang_vel = _ahrs.get_gyro_latest();
+    // float k1 = 87.5302f;
+    // float k2 = -199.5141f;
+    // lateral_error = target_lateral-ahrs_roll;
+    // lateral_command = -k1*ang_vel.x - k2*lateral_error + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
+
+    // Filtered LQT control
+    // float k1 = 30.7898f;
+    // float k2 = -64.6907f;
+    // float b1 = 0.5792f;
+    // float b0 = 0.5792f;
+    // float a0 = 0.1584f;
+    // Vector3f ang_vel = _ahrs.get_gyro_latest();
+    // lateral_error= target_lateral-ahrs_roll;
+    // filtered_lateral_error = b1*lateral_error + b0*lateral_error_last - a0*last_filtered_lateral_error;
+    // filtered_angVel = b1*ang_vel.x + b0*last_angVel.x - a0*last_filtered_angVel;
+    // lateral_command = -k1*filtered_angVel - k2*filtered_lateral_error + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
+    // lateral_error_last=lateral_error; //assign new error to last
+    // last_filtered_lateral_error = filtered_lateral_error;
+    // last_angVel = ang_vel;
+    // last_filtered_angVel = filtered_angVel;
+
+    // Filtered Tachymeter feedback
+    // float b1 = 0.5792f;
+    // float b0 = 0.5792f;
+    // float a0 = 0.1584f;
+    // float lateralGainP = _pid_rate_roll.kP();
+    // float lateralGainD = _pid_rate_roll.kD();
+    // lateral_error = target_lateral-ahrs_roll;
+    // Vector3f ang_vel = _ahrs.get_gyro_latest();
+    // filtered_lateral_error = b1*lateral_error + b0*lateral_error_last - a0*last_filtered_lateral_error;
+    // filtered_angVel = b1*ang_vel.x + b0*last_angVel.x - a0*last_filtered_angVel;
+    // lateral_command = lateralGainP*(filtered_lateral_error - lateralGainD/lateralGainP*filtered_angVel) + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
+    // lateral_error_last=lateral_error; //assign new error to last
+    // last_filtered_lateral_error = filtered_lateral_error;
+    // last_angVel = ang_vel;
+    // last_filtered_angVel = filtered_angVel;
 
     // Convert force command to motor command (0 to 1)
     constrainCommand();
@@ -669,9 +711,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     // Roll PD control
     float lateralGainP = _pid_rate_roll.kP();
     float lateralGainD = _pid_rate_roll.kD();
-    lateral_error= ahrs_roll-target_lateral;
+    lateral_error= target_lateral-ahrs_roll;
     lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
-    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt - M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
+    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
     lateral_error_last=lateral_error; //assign new error to last
 
     // Pitch PD control
@@ -753,7 +795,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     // Roll PD control here
     float lateralGainP = _pid_rate_roll.kP();
     float lateralGainD = _pid_rate_roll.kD();
-    lateral_error= ang_vel.x - target_lateral;
+    lateral_error=  target_lateral - ang_vel.x;
     lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
     lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt;
     lateral_error_last=lateral_error; //assign new error to last

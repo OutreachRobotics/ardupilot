@@ -85,7 +85,7 @@ void ModeSport::run()
     else if(lateralSequenceArmed)
     {
         uint32_t now = AP_HAL::millis();
-        if(now-lateralSequenceStart<5000)
+        if(now-lateralSequenceStart<10000)
         {
             lateral_target = 0.0f;
             forward_target = 0.0f;
@@ -99,7 +99,7 @@ void ModeSport::run()
     else if(forwardSequenceArmed)
     {
         uint32_t now = AP_HAL::millis();
-        if(now-forwardSequenceStart<5000)
+        if(now-forwardSequenceStart<10000)
         {
             lateral_target = 0.0f;
             forward_target = 0.0f;

@@ -249,8 +249,8 @@ void AP_MotorsMulticopter::output()
     float front, back, left, right, yawCtrClk, yawClk;
     front = forward_in>0.0f?forward_in:0.0f;
     back = forward_in<0.0f?-forward_in:0.0f;
-    right = lateral_in>0.0f?lateral_in:0.0f;
-    left = lateral_in<0.0f?-lateral_in:0.0f;
+    left = lateral_in>0.0f?lateral_in:0.0f;
+    right = lateral_in<0.0f?-lateral_in:0.0f;
     yawClk = yaw_in>0.0f?yaw_in:0.0f;
     yawCtrClk = yaw_in<0.0f?-yaw_in:0.0f;
   
