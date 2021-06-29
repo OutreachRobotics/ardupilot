@@ -222,7 +222,7 @@ void Copter::fast_loop()
     ins.update();
 
     // run low level rate controllers that only require IMU data
-    attitude_control->rate_controller_run();
+    attitude_control->downSamplingDataFilter();
 
     // send outputs to the motors library immediately
     motors_output();
@@ -376,6 +376,8 @@ void Copter::fourhundred_hz_logging()
     if (should_log(MASK_LOG_ATTITUDE_FAST) && !copter.flightmode->logs_attitude()) {
         Log_Write_Attitude();
     }
+    // Log_Write_Attitude();
+
     
 }
 

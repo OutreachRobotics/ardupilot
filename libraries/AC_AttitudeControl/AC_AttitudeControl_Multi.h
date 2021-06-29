@@ -51,7 +51,37 @@
 #define MIN_ROLL                            (-MAX_ROLL)
 #define DEADBAND                            0.02f
 
+// Low pass filter coefficient fc = 15 Hz, Fs = 50 Hz
+// #define B1                                  0.5792
+// #define B0                                  0.5792
+// #define A0                                  0.1584
 
+// Low pass filter coefficient fc = 10 Hz, Fs = 400 Hz
+// #define B1                                  0.0730
+// #define B0                                  0.0730
+// #define A0                                  -0.8541
+
+// Low pass filter coefficient fc = 15 Hz, Fs = 400 Hz
+// #define B1                                  0.1058
+// #define B0                                  0.1058
+// #define A0                                  -0.7883
+
+// Low pass filter coefficient fc = 20 Hz, Fs = 400 Hz
+#define B1                                  0.1367
+#define B0                                  0.1367
+#define A0                                  -0.7265
+
+// Low pass filter coefficient fc = 25 Hz, Fs = 400 Hz
+// #define B1                                  0.1659
+// #define B0                                  0.1659
+// #define A0                                  -0.6682
+
+enum Control_Type
+{
+  pd_control,
+  tach_control,
+  LQR_control
+};
 
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
 public:
@@ -96,6 +126,7 @@ public:
 
     // run lowest level body-frame rate controller and send outputs to the motors
     void rate_controller_run() override;
+    void downSamplingDataFilter();
 
     // sanity check parameters.  should be called once before take-off
     void parameter_sanity_check() override;
@@ -121,10 +152,13 @@ protected:
     AP_Float              _thr_mix_min;     // throttle vs attitude control prioritisation used when landing (higher values mean we prioritise attitude control over throttle)
     AP_Float              _thr_mix_max;     // throttle vs attitude control prioritisation used during active flight (higher values mean we prioritise attitude control over throttle)
 
+    Vector3f ahrs_ang, last_ahrs_ang, filtered_ahrs_ang, last_filtered_ahrs_ang;
+    Vector3f ang_vel, last_ang_vel, filtered_ang_vel, last_filtered_ang_vel;
+
     float target_yaw, yaw_angle_error, yaw_angle_error_last, yaw_angle_error_dt, yaw_input;
     float target_forward, forward_error, forward_error_last, forward_error_dt, forward_command;
     float target_lateral, lateral_error, lateral_error_last, lateral_error_dt, lateral_command;
-    float filtered_lateral_error, last_filtered_lateral_error;
-    float filtered_angVel, last_filtered_angVel;
-    Vector3f last_angVel;
+
+    Control_Type control_type;
+    bool using_filtered_data;
 };

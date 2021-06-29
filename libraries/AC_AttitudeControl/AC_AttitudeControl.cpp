@@ -686,11 +686,11 @@ void AC_AttitudeControl::input_shaping_rate_predictor(const Vector2f &error_angl
         target_ang_vel.y = _p_angle_pitch.get_p(wrap_PI(error_angle.y));
     }
     // Limit the angular velocity correction
-    Vector3f ang_vel(target_ang_vel.x, target_ang_vel.y, 0.0f);
-    ang_vel_limit(ang_vel, radians(_ang_vel_roll_max), radians(_ang_vel_pitch_max), 0.0f);
+    Vector3f ang_vel_local(target_ang_vel.x, target_ang_vel.y, 0.0f);
+    ang_vel_limit(ang_vel_local, radians(_ang_vel_roll_max), radians(_ang_vel_pitch_max), 0.0f);
 
-    target_ang_vel.x = ang_vel.x;
-    target_ang_vel.y = ang_vel.y;
+    target_ang_vel.x = ang_vel_local.x;
+    target_ang_vel.y = ang_vel_local.y;
 }
 
 // limits angular velocity
