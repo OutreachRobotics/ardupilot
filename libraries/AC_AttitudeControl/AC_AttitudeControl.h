@@ -233,9 +233,9 @@ public:
     float max_angle_step_bf_yaw() { return max_rate_step_bf_yaw() / _p_angle_yaw.kP(); }
 
     // Return angular velocity in radians used in the angular velocity controller
-    Vector3f rate_bf_targets() const { return _rate_target_ang_vel + _rate_sysid_ang_vel; }
-    Vector3f get_filtered_ang_vel() const { return filtered_ang_vel; }
-    Vector3f get_filtered_ang() const { return filtered_ahrs_ang; }
+    Vector3f rate_bf_targets() const { return _rate_target_ang_vel; }
+    Vector3f get_ds_filtered_ang() const { return _attitude_target_ang_vel; }
+    Vector3f get_filtered_ang() const { return _rate_sysid_ang_vel; }
 
     // Enable or disable body-frame feed forward
     void bf_feedforward(bool enable_or_disable) { _rate_bf_ff_enabled = enable_or_disable; }
@@ -457,8 +457,9 @@ protected:
     const AP_Vehicle::MultiCopter &_aparm;
     AP_Motors&          _motors;
 
-    Vector3f ahrs_ang, last_ahrs_ang, filtered_ahrs_ang, last_filtered_ahrs_ang;
-    Vector3f ang_vel, last_ang_vel, filtered_ang_vel, last_filtered_ang_vel;
+    Vector3f ahrs_ang, last_ahrs_ang, ds_filtered_ang, last_ds_filtered_ang, ctrl_ang;
+    Vector3f ang_vel, last_ang_vel, ds_filtered_ang_vel, last_ds_filtered_ang_vel, ctrl_ang_vel;
+
 
 protected:
     /*
