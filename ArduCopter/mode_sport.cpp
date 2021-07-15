@@ -103,7 +103,7 @@ void ModeSport::run()
         forwardSequenceStart = AP_HAL::millis();
         approachSequenceStart = AP_HAL::millis();
     }
-    else if(!lateralSequenceArmed && !forwardSequenceArmed && approachSequenceArmed && thrust_input>0.8)
+    else if(!lateralSequenceArmed && !forwardSequenceArmed && !approachSequenceArmed && thrust_input>0.8)
     {
         lateral_target = 0.0f;
         forward_target = 0.0f;
@@ -152,7 +152,7 @@ void ModeSport::run()
         }
         else
         {
-            float mamba_length = attitude_control->get_mamba_length();
+            float mamba_length = constrain_float(attitude_control->get_mamba_length(), 5.0f, 50.0f);            
             lateral_target = constrain_float(asinf(1.0f/mamba_length),MIN_ROLL,MAX_ROLL);
             forward_target = constrain_float(asinf(3.0f/mamba_length),MIN_PITCH,MAX_PITCH);            
         }
@@ -188,7 +188,7 @@ void ModeSport::run()
         {
             attitude_control->deleaves_controller_forHold(lateral_input, forward_target, yaw_input, thrust_input, forwardSequenceArmed, motors->armed());
         }
-        else if(approachSequenceArmed)
+        else
         {
             attitude_control->deleaves_controller_approachHold(lateral_target, forward_target, yaw_input, thrust_input, approachSequenceArmed, motors->armed());           
         }

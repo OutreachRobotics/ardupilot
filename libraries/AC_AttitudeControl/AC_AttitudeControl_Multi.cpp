@@ -497,11 +497,10 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
 void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)
 {
     // Control runs at 50Hz
+    lowPassDataFilter();
 
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
     target_yaw = !armed ? ctrl_ang.z : target_yaw + yaw*YAW_SENSITIVITY;
-
-    lowPassDataFilter();
 
     // Yaw PD control here
     float yawGainP = _pid_rate_yaw.kP();
@@ -529,27 +528,12 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
     target_forward = forward;
 
     float forwardGainP = _pid_rate_pitch.kP();
-    float forwardGainD = _pid_rate_pitch.kD();
-    float k1 = 65.4117f;
-    float k2 = -18.9115f;
-    
-    switch (control_type)
-    {
-        case pd_control:
-            forward_error= target_forward-ctrl_ang.y;
-            forward_error_dt=(forward_error-forward_error_last)*50; //50 Hz
-            forward_command= forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
-            forward_error_last=forward_error; //assign new error to last
-            break;
-        case tach_control:
-            forward_error = target_forward-ctrl_ang.y;
-            forward_command = forwardGainP*(forward_error - forwardGainD/forwardGainP*ds_filtered_ang_vel.y) + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);       
-            break;
-        case LQR_control:
-            forward_error = target_forward-ctrl_ang.y;
-            forward_command = -k1*ds_filtered_ang_vel.y - k2*forward_error + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
-            break;
-    }
+    float forwardGainD = _pid_rate_pitch.kD();    
+    forward_error= target_forward-ctrl_ang.y;
+    forward_error_dt=(forward_error-forward_error_last)*50; //50 Hz
+    forward_command= forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
+    forward_error_last=forward_error; //assign new error to last
+            
     
     // Convert force command to motor command (0 to 1)
     constrainCommand();
