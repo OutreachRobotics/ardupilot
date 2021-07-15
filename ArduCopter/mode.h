@@ -1205,6 +1205,8 @@ protected:
     uint32_t lateralSequenceStart;
     bool forwardSequenceArmed;
     uint32_t forwardSequenceStart;
+    bool approachSequenceArmed;
+    uint32_t approachSequenceStart;
 private:
 
 };

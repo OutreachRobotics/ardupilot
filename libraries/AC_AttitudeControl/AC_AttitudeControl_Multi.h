@@ -117,6 +117,7 @@ public:
     void deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
+    void deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed, bool reset_command);
     void deleaves_controller_taxi(float yaw, bool armed);
     void constrainCommand();
@@ -131,6 +132,7 @@ public:
 
     // sanity check parameters.  should be called once before take-off
     void parameter_sanity_check() override;
+    float get_mamba_length();
 
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];

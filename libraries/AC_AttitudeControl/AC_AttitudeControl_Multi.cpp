@@ -536,7 +536,6 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
     switch (control_type)
     {
         case pd_control:
-
             forward_error= target_forward-ctrl_ang.y;
             forward_error_dt=(forward_error-forward_error_last)*50; //50 Hz
             forward_command= forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
@@ -652,6 +651,77 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     _attitude_target_ang_vel = ds_filtered_ang;
 }
 
+void AC_AttitudeControl_Multi::deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)
+{
+    // Control runs at 50Hz
+    lowPassDataFilter();
+
+    //Initialize target angle to the value of angle when not armed or update it with joystick when armed
+    target_yaw = !armed ? ctrl_ang.z : target_yaw + yaw*YAW_SENSITIVITY;
+
+    // Yaw PD control here
+    float yawGainP = _pid_rate_yaw.kP();
+    float yawGainD = _pid_rate_yaw.kD();
+    yaw_angle_error= target_yaw-ctrl_ang.z;
+
+    //Correction for target angle more than half-turn away
+    if (yaw_angle_error>M_PI){
+        target_yaw=target_yaw-2*M_PI;
+        yaw_angle_error= target_yaw-ctrl_ang.z ;
+        yaw_angle_error_last=yaw_angle_error_last-2*M_PI;
+    }
+
+    if (yaw_angle_error<-M_PI){
+        target_yaw=target_yaw+2*M_PI;
+        yaw_angle_error= target_yaw-ctrl_ang.z;
+        yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
+    }
+
+    yaw_angle_error_dt=(yaw_angle_error-yaw_angle_error_last)*50; //50 Hz
+    yaw_input= yawGainP*yaw_angle_error+yawGainD*yaw_angle_error_dt;
+    yaw_angle_error_last=yaw_angle_error; //assign new error to last
+
+    target_lateral = lateral;
+    target_forward = forward;
+    
+    float lateralGainP = _pid_rate_roll.kP();
+    float lateralGainD = _pid_rate_roll.kD();
+    lateral_error= target_lateral-ctrl_ang.x;
+    lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
+    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
+    lateral_error_last=lateral_error; //assign new error to last
+
+
+    float forwardGainP = _pid_rate_pitch.kP();
+    float forwardGainD = _pid_rate_pitch.kD();
+    forward_error= target_forward-ctrl_ang.y;
+    forward_error_dt=(forward_error-forward_error_last)*50; //50 Hz
+    forward_command= forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
+    forward_error_last=forward_error; //assign new error to last
+
+    // Convert force command to motor command (0 to 1)
+    constrainCommand();
+    lateral_command=sequenceArmed?lateral_command:0.0f;
+    forward_command=sequenceArmed?forward_command:0.0f;
+
+    // For logging purpose
+    _attitude_target_euler_angle.x = target_lateral;
+    _attitude_target_euler_angle.y = target_forward;
+    _attitude_target_euler_angle.z = target_yaw;
+
+    _motors.set_lateral(lateral_command);
+    _motors.set_forward(forward_command);
+    _motors.set_yaw(yaw_input);
+    _motors.set_throttle(throttle);
+
+    // For logging purpose
+    _rate_target_ang_vel.x = lateral_command;
+    _rate_target_ang_vel.y = forward_command;
+    _rate_target_ang_vel.z = yaw_input;
+    _rate_sysid_ang_vel = ctrl_ang;
+    _attitude_target_ang_vel = ds_filtered_ang;
+}
+
 void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed, bool reset_command)
 {
     // Control runs at 50Hz
@@ -757,35 +827,40 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
 void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
 {
     // Control runs at 50Hz
-
-    target_forward = 0.0f;
-    target_lateral = 0.0f;
+    // Low pass filter to reduce vibration in data
+    lowPassDataFilter();
 
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
+    target_forward = 0.0f;
+    target_lateral = 0.0f;    
     if(!armed)
     {
-        target_yaw = ahrs_ang.z;
+        target_yaw = ctrl_ang.z;
     }
-    else if(abs(yaw) > DEADBAND)
+    else
     {
-        target_yaw += yaw*YAW_SENSITIVITY;
-    }
+        // Yaw control, simple deadband check
+        if(abs(yaw) > DEADBAND)
+        {
+            target_yaw += yaw*YAW_SENSITIVITY;
+        }
+    }    
 
-    // Yaw PD control here
+    // Yaw PD control
     float yawGainP = _pid_rate_yaw.kP();
     float yawGainD = _pid_rate_yaw.kD();
-    yaw_angle_error= target_yaw-ahrs_ang.z;
+    yaw_angle_error= target_yaw-ctrl_ang.z;
 
     //Correction for target angle more than half-turn away
     if (yaw_angle_error>M_PI){
         target_yaw=target_yaw-2*M_PI;
-        yaw_angle_error= target_yaw-ahrs_ang.z ;
+        yaw_angle_error= target_yaw-ctrl_ang.z ;
         yaw_angle_error_last=yaw_angle_error_last-2*M_PI;
     }
 
     if (yaw_angle_error<-M_PI){
         target_yaw=target_yaw+2*M_PI;
-        yaw_angle_error= target_yaw-ahrs_ang.z;
+        yaw_angle_error= target_yaw-ctrl_ang.z;
         yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
     }
 
@@ -793,28 +868,40 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     yaw_input= yawGainP*yaw_angle_error+yawGainD*yaw_angle_error_dt;
     yaw_angle_error_last=yaw_angle_error; //assign new error to last
 
-    // Roll PD control here
-    float lateralGainP = _pid_rate_roll.kP();
-    float lateralGainD = _pid_rate_roll.kD();
-    lateral_error=  target_lateral - ds_filtered_ang_vel.x;
+    // Roll PD control
+    float lateralGainP = 40.0f;
+    float lateralGainD = 30.0f;
+    lateral_error= target_lateral-ctrl_ang.x;
     lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
-    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt;
+    lateral_command= lateralGainP*lateral_error+lateralGainD*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
     lateral_error_last=lateral_error; //assign new error to last
 
-    // Pitch PD control here
-    float forwardGainP = _pid_rate_pitch.kP();
-    float forwardGainD = _pid_rate_pitch.kD();
-    forward_error= target_forward-ds_filtered_ang_vel.y;
+    // Pitch PD control
+    float forwardGainP = 15.0f;
+    float forwardGainD = 25.0f;
+    forward_error= target_forward-ctrl_ang.y;
     forward_error_dt=(forward_error-forward_error_last)*50; //50 Hz
-    forward_command= forwardGainP*forward_error+forwardGainD*forward_error_dt;
+    forward_command = forwardGainP*forward_error+forwardGainD*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
     forward_error_last=forward_error; //assign new error to last
 
-    // Convert force command to motor command (-1 to 1)
     constrainCommand();
+
+    // For logging purpose
+    _attitude_target_euler_angle.x = target_lateral;
+    _attitude_target_euler_angle.y = target_forward;
+    _attitude_target_euler_angle.z = target_yaw;
 
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward_command);
-    _motors.set_yaw(target_yaw);
+    _motors.set_yaw(yaw_input);
+    _motors.set_throttle(0.0f);
+
+    // For logging purpose
+    _rate_target_ang_vel.x = lateral_command;
+    _rate_target_ang_vel.y = forward_command;
+    _rate_target_ang_vel.z = yaw_input;
+    _rate_sysid_ang_vel = ctrl_ang;
+    _attitude_target_ang_vel = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::constrainCommand()
@@ -822,4 +909,9 @@ void AC_AttitudeControl_Multi::constrainCommand()
     yaw_input=constrain_float(yaw_input,-PMAX_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
     lateral_command=constrain_float(lateral_command,-RMAX_ACTUATOR_THRUST,RMAX_ACTUATOR_THRUST);
     forward_command=constrain_float(forward_command,-PMAX_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
+}
+
+float AC_AttitudeControl_Multi::get_mamba_length()
+{
+    return _pid_rate_pitch.kI();
 }
