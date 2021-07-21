@@ -74,6 +74,11 @@
 #define B0_DS                                  0.1659
 #define A0_DS                                 -0.6682
 
+// Low pass filter coefficient fc = 1 Hz, Fs = 50 Hz
+#define B1_SP                                  0.0592
+#define B0_SP                                  0.0592
+#define A0_SP                                 -0.8816
+
 enum Control_Type
 {
   pd_control,
@@ -127,10 +132,13 @@ public:
     void rate_controller_run() override;
     void downSamplingDataFilter();
     void lowPassDataFilter();
+    void lowPassSetPointFilter();
 
     // sanity check parameters.  should be called once before take-off
     void parameter_sanity_check() override;
     float get_mamba_length();
+    float get_sensitivity_coeff();
+
 
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -159,6 +167,8 @@ protected:
     float target_yaw, yaw_angle_error, yaw_angle_error_last, yaw_angle_error_dt, yaw_input;
     float target_forward, forward_error, forward_error_last, forward_error_dt, forward_command;
     float target_lateral, lateral_error, lateral_error_last, lateral_error_dt, lateral_command;
+    float last_target_lateral, last_target_forward;
+    float filtered_target_lateral, filtered_target_forward;
     float roll_kp, roll_kd, pitch_kp, pitch_kd, yaw_kp, yaw_kd;
     float pitch_sensitivity, roll_sensitivity;
 };
