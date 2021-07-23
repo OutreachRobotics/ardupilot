@@ -38,7 +38,7 @@
  # define AC_ATC_MULTI_RATE_YAW_FILT_HZ     2.5f
 #endif
 
-#define YAW_SENSITIVITY                     0.0157f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
+#define YAW_SENSITIVITY                     0.01f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
 #define PMAX_ACTUATOR_THRUST                13.0f
 #define RMAX_ACTUATOR_THRUST                (13.0f*(ROLL_ADJUSTMENT+1.0f)/2.0f)
 
@@ -121,7 +121,7 @@ public:
     void deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
-    void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed, bool reset_command);
+    void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_taxi(float yaw, bool armed);
     void constrainCommand();
 

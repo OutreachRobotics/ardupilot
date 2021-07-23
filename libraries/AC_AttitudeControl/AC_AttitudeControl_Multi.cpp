@@ -393,17 +393,26 @@ void AC_AttitudeControl_Multi::downSamplingDataFilter()
     }
     else if(get_mamba_length()<12.0f)
     {
-        roll_kp = 47.0f;
-        roll_kd = 72.0f;
-        pitch_kp = 89.0;
-        pitch_kd = 89.0f;
+        roll_kp = 43.0f;
+        roll_kd = 70.0f;
+        pitch_kp = 85.0;
+        pitch_kd = 85.0f;
         roll_sensitivity = 0.0038f;
         pitch_sensitivity = 0.0038f;
     }
+    else if(get_mamba_length()<17.0f)
+    {
+        roll_kp = 48.0f;
+        roll_kd = 89.0f;
+        pitch_kp = 139.0;
+        pitch_kd = 139.0f;
+        roll_sensitivity = 0.0025f;
+        pitch_sensitivity = 0.0025f;
+    }    
     else
     {
-        roll_kp = 80.0f;
-        roll_kd = 122.0f;
+        roll_kp = 73.0f;
+        roll_kd = 119.0f;
         pitch_kp = 166.0;
         pitch_kd = 166.0f;
         roll_sensitivity = 0.00188f;
@@ -698,7 +707,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_approachHold(float lateral, f
     _attitude_target_ang_vel = ds_filtered_ang;
 }
 
-void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed, bool reset_command)
+void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed)
 {
     // Control runs at 50Hz
     // Low pass filter to reduce vibration in data
@@ -720,21 +729,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         }
 
         // Forward control, velocity on move, angular on hold
-        if(reset_command)
-        {
-            target_forward = 0.0f;
-        }
-        else if(abs(forward) > DEADBAND)
+        if(abs(forward) > DEADBAND)
         {
             target_forward += forward*pitch_sensitivity*get_sensitivity_coeff();
         }
         
         // Lateral control, based on the same principle as forward control
-        if(reset_command)
-        {
-            target_lateral = 0.0f;
-        }
-        else if(abs(lateral) > DEADBAND)
+        if(abs(lateral) > DEADBAND)
         {
             target_lateral += lateral*roll_sensitivity*get_sensitivity_coeff();
         }
@@ -804,6 +805,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
 
     target_forward = 0.0f;
     target_lateral = 0.0f;
+    lowPassSetPointFilter();
 
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
     if(!armed)
@@ -836,19 +838,19 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     yaw_input= yaw_kp*yaw_angle_error+yaw_kd*yaw_angle_error_dt;
     yaw_angle_error_last=yaw_angle_error; //assign new error to last
 
-    float roll_kp_taxi = 28.0f;
-    float roll_kd_taxi = 46.0f;
-    float pitch_kp_taxi = 50.0f;
-    float pitch_kd_taxi = 50.0f;
+    float roll_kp_taxi = 3.0f;
+    float roll_kd_taxi = 40.0f;
+    float pitch_kp_taxi = 3.0f;
+    float pitch_kd_taxi = 40.0f;
 
     // Roll PD control
-    lateral_error= target_lateral-ctrl_ang.x;
+    lateral_error= filtered_target_lateral-ctrl_ang.x;
     lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
     lateral_command= roll_kp_taxi*lateral_error+roll_kd_taxi*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
     lateral_error_last=lateral_error; //assign new error to last
 
     // Pitch PD control
-    forward_error= target_forward-ctrl_ang.y;
+    forward_error= filtered_target_forward-ctrl_ang.y;
     forward_error_dt=(forward_error-forward_error_last)*50; //50 Hz
     forward_command = pitch_kp_taxi*forward_error+pitch_kd_taxi*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
     forward_error_last=forward_error; //assign new error to last
@@ -856,8 +858,8 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     constrainCommand();
 
     // For logging purpose
-    _attitude_target_euler_angle.x = target_lateral;
-    _attitude_target_euler_angle.y = target_forward;
+    _attitude_target_euler_angle.x = filtered_target_lateral;
+    _attitude_target_euler_angle.y = filtered_target_forward;
     _attitude_target_euler_angle.z = target_yaw;
 
     _motors.set_lateral(lateral_command);
