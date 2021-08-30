@@ -382,7 +382,7 @@ void AC_AttitudeControl_Multi::downSamplingDataFilter()
     yaw_kp = 20.0f;
     yaw_kd = 12.0f;
 
-    if(get_mamba_length()<6.0f)
+    if(get_mamba_length()<8.0f)
     {
         roll_kp = 28.0f;
         roll_kd = 46.0f;

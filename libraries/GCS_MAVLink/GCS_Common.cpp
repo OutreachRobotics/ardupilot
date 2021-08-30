@@ -86,6 +86,7 @@ static uint8_t armStatus;
 static uint8_t batteryVoltage;
 static uint8_t batterySOC;
 static uint8_t deleavesMessage;
+static uint8_t taxiMode;
 
 // private channels are ones used for point-to-point protocols, and
 // don't get broadcasts or fwded packets
@@ -1377,6 +1378,7 @@ void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
 void
 GCS_MAVLINK::update_receive(uint32_t max_time_us)
 {
+    taxiMode = hal.rcin->read(CH_6) > 1500;
     const uint16_t nbytesDeLeaves = _deleaves_port->available();
 
     for (uint16_t i=0; i<nbytesDeLeaves; i++)
@@ -4431,7 +4433,7 @@ void GCS_MAVLINK::send_sys_status()
 
     // uint32_t control_sensors_present;
     // uint32_t control_sensors_enabled;
-    uint32_t control_sensors_health = 0;
+    // uint32_t control_sensors_health = 0;
 
     // gcs().get_sensor_status_flags(control_sensors_present, control_sensors_enabled, control_sensors_health);
 
@@ -4446,7 +4448,7 @@ void GCS_MAVLINK::send_sys_status()
         chan,
         cuttingPercentage,
         armStatus,
-        control_sensors_health,
+        taxiMode,
         static_cast<uint16_t>(AP::scheduler().load_average() * 1000),
         static_cast<uint16_t>(batteryVoltage) * 100,  // mV
         battery_current,        // in 10mA units
