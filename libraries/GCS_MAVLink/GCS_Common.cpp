@@ -81,12 +81,12 @@ uint8_t GCS_MAVLINK::mavlink_active = 0;
 uint8_t GCS_MAVLINK::chan_is_streaming = 0;
 uint32_t GCS_MAVLINK::reserve_param_space_start_ms;
 
-static uint8_t cuttingPercentage;
-static uint8_t armStatus;
-static uint8_t batteryVoltage;
-static uint8_t batterySOC;
-static uint8_t deleavesMessage;
-static uint8_t taxiMode;
+uint8_t cuttingPercentage = 0;
+uint8_t armStatus;
+uint8_t batteryVoltage;
+uint8_t batterySOC;
+uint8_t deleavesMessage;
+uint8_t taxiMode;
 
 // private channels are ones used for point-to-point protocols, and
 // don't get broadcasts or fwded packets
@@ -1389,7 +1389,8 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
         case CuttingPercentage:
             if(nbytesDeLeaves-i>1)
             {
-                cuttingPercentage = (uint8_t)_deleaves_port->read();
+                uint8_t tempValue = (uint8_t)_deleaves_port->read();
+                cuttingPercentage = tempValue == 2 ? cuttingPercentage : tempValue;
                 i++;
             }
             break;
