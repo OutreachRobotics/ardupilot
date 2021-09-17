@@ -82,11 +82,12 @@ uint8_t GCS_MAVLINK::chan_is_streaming = 0;
 uint32_t GCS_MAVLINK::reserve_param_space_start_ms;
 
 uint8_t cuttingPercentage = 0;
-uint8_t armStatus;
-uint8_t batteryVoltage;
-uint8_t batterySOC;
+uint8_t armStatus  = 0;
+uint8_t batteryVoltage = 0;
+uint8_t batterySOC = 0;
 uint8_t deleavesMessage;
 uint8_t taxiMode;
+uint32_t last_arm_time = 0;
 
 // private channels are ones used for point-to-point protocols, and
 // don't get broadcasts or fwded packets
@@ -1397,7 +1398,13 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
         case ArmStatus:
             if(nbytesDeLeaves-i>1)
             {
-                armStatus = (uint8_t)_deleaves_port->read();
+                uint8_t tempValue = (uint8_t)_deleaves_port->read();
+                if(tempValue!=armStatus && tempValue && AP_HAL::millis()-last_arm_time>5000)
+                {
+                    last_arm_time = AP_HAL::millis();
+                    gcs().send_text(MAV_SEVERITY_INFO, "#Sampling started");
+                }
+                armStatus = tempValue;
                 i++;
             }
             break;
@@ -1422,7 +1429,7 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
                 switch (deleavesMessage)
                 {
                 case SamplingCompleted:
-                    gcs().send_text(MAV_SEVERITY_INFO, "#Sampling process completed");
+                    gcs().send_text(MAV_SEVERITY_INFO, "#Sampling completed");
                     break;
                 case CalibrationStarted:
                     gcs().send_text(MAV_SEVERITY_INFO, "#Calibration started");
