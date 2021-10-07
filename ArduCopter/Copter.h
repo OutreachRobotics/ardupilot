@@ -66,6 +66,7 @@
 #include <AP_Parachute/AP_Parachute.h>
 #include <AC_Sprayer/AC_Sprayer.h>
 #include <AP_ADSB/AP_ADSB.h>
+#include <DEL_EKF/del_ekf.h>
 
 // Configuration
 #include "defines.h"
