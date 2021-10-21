@@ -273,6 +273,8 @@ AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_
     last_target_lateral = 0.0f;
     filtered_target_forward = 0.0f;
     filtered_target_lateral = 0.0f;
+
+    delEKF = DelEKF();
 }
 
 // Update Alt_Hold angle maximum
@@ -784,11 +786,21 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     _attitude_target_euler_angle.y = filtered_target_forward;
     _attitude_target_euler_angle.z = target_yaw;
 
-    _motors.set_lateral(lateral_command);
-    _motors.set_forward(forward_command);
-    _motors.set_yaw(yaw_input);
-    _motors.set_throttle(throttle);
-
+    if(!armed)
+    {
+        _motors.set_lateral(lateral_command);
+        _motors.set_forward(forward_command);
+        _motors.set_yaw(yaw_input);
+        _motors.set_throttle(throttle);
+    }
+    else
+    {
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(0.0f);
+        _motors.set_yaw(0.0f);
+        _motors.set_throttle(0.0f);        
+    }
+    
     // For logging purpose
     _rate_target_ang_vel.x = lateral_command;
     _rate_target_ang_vel.y = forward_command;
@@ -862,10 +874,20 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     _attitude_target_euler_angle.y = filtered_target_forward;
     _attitude_target_euler_angle.z = target_yaw;
 
-    _motors.set_lateral(lateral_command);
-    _motors.set_forward(forward_command);
-    _motors.set_yaw(yaw_input);
-    _motors.set_throttle(0.0f);
+    if(!armed)
+    {
+        _motors.set_lateral(lateral_command);
+        _motors.set_forward(forward_command);
+        _motors.set_yaw(yaw_input);
+        _motors.set_throttle(0.0f);
+    }
+    else
+    {
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(0.0f);
+        _motors.set_yaw(0.0f);
+        _motors.set_throttle(0.0f);        
+    }
 
     // For logging purpose
     _rate_target_ang_vel.x = lateral_command;
@@ -891,3 +913,15 @@ float AC_AttitudeControl_Multi::get_sensitivity_coeff()
 {
     return constrain_float(_pid_rate_roll.kI(),0.25f,4.0f);
 }
+
+void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure)
+{
+    delEKF.linearDynamicsEstimation(F_in, measure);
+    mamba_orientation = delEKF.getPlatformOrientation();
+}
+
+Vector3f AC_AttitudeControl_Multi::getDelEKFOrientation()
+{
+    return delEKF.getPlatformOrientation();
+}
+

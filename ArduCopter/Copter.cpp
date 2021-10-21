@@ -220,10 +220,18 @@ void Copter::fast_loop()
 {
     // update INS immediately to get current gyro data populated
     ins.update();
+    
+    // ins.get_gyro() return a vector3f containing the latest gyro measure
+    // motors->get_lateral(); return lateral thrust
+    // motors->get_forward(); return forward thrust
+    // motors->get_yaw();     return yaw moment
+    Vector3f gyro = ahrs.get_gyro();
+    attitude_control->updateDelEKF(Vector3f(motors->get_lateral(),
+        motors->get_forward(), motors->get_yaw()), gyro);
 
     // run low level rate controllers that only require IMU data
     attitude_control->downSamplingDataFilter();
-
+    
     // send outputs to the motors library immediately
     motors_output();
 
@@ -461,6 +469,7 @@ void Copter::twentyfive_hz_logging()
     }
 #endif
     Log_Write_Attitude();
+    Log_Write_MAMBA();
 }
 
 // three_hz_loop - 3.3hz loop

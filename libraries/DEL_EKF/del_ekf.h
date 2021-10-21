@@ -25,7 +25,7 @@
 #define PHI3DT_P    0
 #define PHI3_P      1
 
-#define TS          (1/50.0f)
+#define TS          (1/400.0f)
 
 
 /***************************************************************************
@@ -43,13 +43,13 @@ public:
     DelEKF();
     Mat gyro2statesDt(Mat gyro_in);
     Mat commandLPF(Mat F_in);
-    void linearDynamicsEstimation(Mat F_in, Mat measure);
+    void linearDynamicsEstimation(Vector3f F_in, Vector3f measure);
     void propagateStates(Mat F_in);
     void propagateCovariance();
     void stateCovarianceUpdate(Mat measure);
     void wrapPropStates();
     void wrapStates();
-    Mat getCVmatrix();
+    Vector3f getPlatformOrientation();
 
 private:
     Mat x_roll;

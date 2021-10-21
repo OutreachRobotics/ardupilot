@@ -20,16 +20,16 @@ DelEKF::DelEKF()
 {
 	/////////// Modify according to the parameters ///////////////////////////
 
-	double froll [] = {0.972638,-2.700667,0.026834,2.648144,
-     0.019817,0.972638,0.000180,0.026834,
-     0.050260,4.959924,0.949736,-4.960817,
-     0.000337,0.050260,0.019663,0.949736};
-	double fpitch [] = {0.993613,-0.636911,0.005857,0.584016,
-     0.019957,0.993613,0.000039,0.005857,
-     0.010970,1.093850,0.989029,-1.094044,
-     0.000073,0.010970,0.019927,0.989029};
+	double froll [] = {0.999567,-0.346344,0.000425,0.339718,
+     0.002500,0.999567,0.000000,0.000425,
+     0.000796,0.636286,0.999204,-0.636288,
+     0.000001,0.000796,0.002499,0.999204};
+	double fpitch [] = {0.999900,-0.080046,0.000092,0.073421,
+     0.002500,0.999900,0.000000,0.000092,
+     0.000172,0.137515,0.999828,-0.137516,
+     0.000000,0.000172,0.002500,0.999828};
 	double fyaw [] = {1.000000,0.000000,
-     0.020000,1.000000};
+     0.002500,1.000000};
 	
 	double broll [] = {0.030082,0.000000,0.098936,0.000000};
 	double bpitch [] = {0.024986,0.000000,0.108481,0.000000};
@@ -138,12 +138,16 @@ Mat DelEKF::commandLPF(Mat F_in)
 }
 
 
-void DelEKF::linearDynamicsEstimation(Mat F_in, Mat measure)
+void DelEKF::linearDynamicsEstimation(Vector3f F_in, Vector3f measure)
 {
-	propagateStates(F_in);
+	double F_in_array[] = {F_in.x, F_in.y, F_in.z};
+	Mat F_in_mat = Mat(3,1,F_in_array);
+	double measure_array[] = {measure.x, measure.y, measure.z};
+	Mat measure_mat = Mat(3,1,measure_array); 
+	propagateStates(F_in_mat);
 	wrapPropStates();
 	propagateCovariance();
-	stateCovarianceUpdate(measure);
+	stateCovarianceUpdate(measure_mat);
 	wrapStates();
 }
 
@@ -209,4 +213,9 @@ void DelEKF::wrapStates()
 	x_pitch[PHI2_P] -= x_pitch[PHI2_P]>M_PI ? 2.0*M_PI : 0.0;
 	x_yaw[PHI3_P] += x_yaw[PHI3_P]<M_PI ? 2.0*M_PI : 0.0;
 	x_yaw[PHI3_P] -= x_yaw[PHI3_P]>M_PI ? 2.0*M_PI : 0.0;
+}
+
+Vector3f DelEKF::getPlatformOrientation()
+{
+	return Vector3f(x_roll[PHI1_P], x_pitch[PHI2_P], x_yaw[PHI3_P]);
 }

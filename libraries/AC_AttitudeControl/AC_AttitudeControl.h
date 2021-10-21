@@ -236,6 +236,7 @@ public:
     Vector3f rate_bf_targets() const { return _rate_target_ang_vel; }
     Vector3f get_ds_filtered_ang() const { return _attitude_target_ang_vel; }
     Vector3f get_filtered_ang() const { return _rate_sysid_ang_vel; }
+    Vector3f get_delEKF_orientation() const { return mamba_orientation; }
 
     // Enable or disable body-frame feed forward
     void bf_feedforward(bool enable_or_disable) { _rate_bf_ff_enabled = enable_or_disable; }
@@ -459,7 +460,7 @@ protected:
 
     Vector3f ahrs_ang, last_ahrs_ang, ds_filtered_ang, last_ds_filtered_ang, ctrl_ang;
     Vector3f ang_vel, last_ang_vel, ds_filtered_ang_vel, last_ds_filtered_ang_vel, ctrl_ang_vel;
-
+    Vector3f mamba_orientation;
 
 protected:
     /*
