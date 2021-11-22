@@ -365,9 +365,12 @@ void AC_AttitudeControl_Multi::rate_controller_run()
 void AC_AttitudeControl_Multi::downSamplingDataFilter()
 {
     // Low pass filter on orientation
-    Quaternion attitude_vehicle_quat;
-    _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
-    attitude_vehicle_quat.to_euler(ahrs_ang.x, ahrs_ang.y, ahrs_ang.z);
+    // Quaternion attitude_vehicle_quat;
+    // _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
+    // attitude_vehicle_quat.to_euler(ahrs_ang.x, ahrs_ang.y, ahrs_ang.z);
+
+    ahrs_ang = delEKF.getPlatformOrientation();
+
     ds_filtered_ang.x = B1_DS*ahrs_ang.x + B0_DS*last_ahrs_ang.x - A0_DS*ds_filtered_ang.x;
     ds_filtered_ang.y = B1_DS*ahrs_ang.y + B0_DS*last_ahrs_ang.y - A0_DS*ds_filtered_ang.y;
     ds_filtered_ang.z = B1_DS*ahrs_ang.z + B0_DS*last_ahrs_ang.z - A0_DS*ds_filtered_ang.z;
@@ -388,7 +391,7 @@ void AC_AttitudeControl_Multi::downSamplingDataFilter()
     {
         roll_kp = 28.0f;
         roll_kd = 46.0f;
-        pitch_kp = 50.0;
+        pitch_kp = 50.0f;
         pitch_kd = 50.0f;
         roll_sensitivity = 0.007f;
         pitch_sensitivity = 0.007f;
@@ -786,7 +789,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     _attitude_target_euler_angle.y = filtered_target_forward;
     _attitude_target_euler_angle.z = target_yaw;
 
-    if(!armed)
+    if(armed)
     {
         _motors.set_lateral(lateral_command);
         _motors.set_forward(forward_command);
@@ -874,7 +877,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     _attitude_target_euler_angle.y = filtered_target_forward;
     _attitude_target_euler_angle.z = target_yaw;
 
-    if(!armed)
+    if(armed)
     {
         _motors.set_lateral(lateral_command);
         _motors.set_forward(forward_command);

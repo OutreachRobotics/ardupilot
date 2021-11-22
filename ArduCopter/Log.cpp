@@ -82,16 +82,35 @@ void Copter::Log_Write_Attitude()
 struct PACKED log_MAMBA {
     LOG_PACKET_HEADER;
     uint64_t time_us;
-    uint16_t yaw_value;
+    float f_x;
+    float f_y;
+    float f_z;
+    float gyro_x;
+    float gyro_y;
+    float gyro_z;
+    float phi1P;
+    float phi2P;
+    float phi3P;
 };
 
 // Write a MAMBA packet
 void Copter::Log_Write_MAMBA()
 {
+    const Vector3f &gyro = ahrs.get_gyro();
+    const Vector3f &delekf_euler = attitude_control->get_delEKF_orientation();
+
     struct log_MAMBA pkt = {
         LOG_PACKET_HEADER_INIT(LOG_MAMBA_MSG),
-        time_us  : AP_HAL::micros64(),
-        yaw_value  : (uint16_t)wrap_360_cd(ahrs.yaw_sensor),  //output 360deg*100
+        time_us     : AP_HAL::micros64(),
+        f_x         : motors->get_lateral(),
+        f_y         : motors->get_forward(),      
+        f_z         : motors->get_yaw(),
+        gyro_x      : gyro.x,
+        gyro_y      : gyro.y,
+        gyro_z      : gyro.z,
+        phi1P       : delekf_euler.x,
+        phi2P       : delekf_euler.y,
+        phi3P       : delekf_euler.z
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 };
@@ -490,7 +509,7 @@ const struct LogStructure Copter::log_structure[] = {
 // @Field: yaw_value: Yaw angle in degree
 
     {LOG_MAMBA_MSG, sizeof(log_MAMBA),
-      "MAMB", "QH",  "TimeUS,yaw_value", "sd", "FB" },  // Message Name, Format, Variables names, Units, Multiplier
+      "MAMB", "Qfffffffff",  "TimeUS,fx,fy,fz,gx,gy,gz,phi1,phi2,phi3", "sNNNEEErrr", "F---------" },  // Message Name, Format, Variables names, Units, Multiplier
 
 // @LoggerMessage: CTUN
 // @Description: Control Tuning information
