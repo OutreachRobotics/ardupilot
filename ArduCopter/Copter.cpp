@@ -384,8 +384,8 @@ void Copter::fourhundred_hz_logging()
     if (should_log(MASK_LOG_ATTITUDE_FAST) && !copter.flightmode->logs_attitude()) {
         Log_Write_Attitude();
     }
-    // Log_Write_Attitude();
-
+    Log_Write_Attitude();
+    Log_Write_MAMBA();
     
 }
 
@@ -468,8 +468,8 @@ void Copter::twentyfive_hz_logging()
         g2.arot.Log_Write_Autorotation();
     }
 #endif
-    Log_Write_Attitude();
-    Log_Write_MAMBA();
+    // Log_Write_Attitude();
+    // Log_Write_MAMBA();
 }
 
 // three_hz_loop - 3.3hz loop
