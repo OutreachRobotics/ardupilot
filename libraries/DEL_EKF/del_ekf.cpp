@@ -87,9 +87,9 @@ DelEKF::DelEKF()
 	Qe_pitch = Mat(4,4,i4);
 	Qe_yaw = Mat(2,2,i2);
 	
-	Re_roll = 1;
-	Re_pitch = 1;
-	Re_yaw = 1;
+	Re_roll = 100;
+	Re_pitch = 100;
+	Re_yaw = 100;
 	
 	C_roll = Mat(1,4,croll);
 	C_pitch = Mat(1,4,cpitch);
@@ -143,10 +143,14 @@ void DelEKF::linearDynamicsEstimation(Vector3f F_in, Vector3f measure)
 	Mat F_in_mat = Mat(3,1,F_in_array);
 	double measure_array[] = {measure.x, measure.y, measure.z};
 	Mat measure_mat = Mat(3,1,measure_array); 
-	propagateStates(F_in_mat);
+
+	Mat F_in_filt = commandLPF(F_in_mat);
+	Mat measure_mat_corrected = gyro2statesDt(measure_mat);
+
+	propagateStates(F_in_filt);
 	wrapPropStates();
 	propagateCovariance();
-	stateCovarianceUpdate(measure_mat);
+	stateCovarianceUpdate(measure_mat_corrected);
 	wrapStates();
 }
 
