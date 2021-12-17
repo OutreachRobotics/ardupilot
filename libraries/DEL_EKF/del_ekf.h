@@ -50,6 +50,9 @@ public:
     void wrapPropStates();
     void wrapStates();
     Vector3f getPlatformOrientation();
+    Mat getEKFStates();
+    Mat getLQRgain();
+    Mat createCommandMat(Vector3f orientation);
 
 private:
     Mat x_roll;
@@ -97,7 +100,8 @@ private:
     Mat H_roll;
     Mat H_pitch;
     Mat H_yaw;
-    
+
+    Mat k_lqr;    
 };
 
 #endif

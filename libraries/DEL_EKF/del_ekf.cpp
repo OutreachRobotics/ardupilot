@@ -59,6 +59,10 @@ DelEKF::DelEKF()
 	double cpitch [] = {0,0,1,0};
 	double cyaw [] = {1,0};
 
+	double k_lqr_array[] = {-0.000000,-0.000000,-0.000000,-0.000000,44.544696,72.391895,42.780996,127.289042,0.000000,0.000000,
+							-49.570108,-118.312855,-37.228796,-83.940084,-0.000000,-0.000000,0.000000,0.000000,0.000000,0.000000,
+							0.000000,0.000000,0.000000,-0.000000,0.000000,0.000000,0.000000,0.000000,26.278072,127.922897};
+
 
 	x_roll = Mat(4,1);
 	x_pitch = Mat(4,1);
@@ -108,6 +112,8 @@ DelEKF::DelEKF()
 	H_roll = ((F_roll+I4x4)*B_roll)*(TS/2);
 	H_pitch = ((F_pitch+I4x4)*B_pitch)*(TS/2);
 	H_yaw = ((F_yaw+I2x2)*B_yaw)*(TS/2);
+
+	k_lqr = Mat(3,10,k_lqr_array);
 }
 
 Mat DelEKF::gyro2statesDt(Mat gyro_in)
@@ -214,6 +220,7 @@ void DelEKF::wrapStates()
 	x_pitch[PHI2_C] -= x_pitch[PHI2_C]>M_PI ? 2.0*M_PI : 0.0;
 	x_pitch[PHI2_P] += x_pitch[PHI2_P]<M_PI ? 2.0*M_PI : 0.0;
 	x_pitch[PHI2_P] -= x_pitch[PHI2_P]>M_PI ? 2.0*M_PI : 0.0;
+
 	x_yaw[PHI3_P] += x_yaw[PHI3_P]<M_PI ? 2.0*M_PI : 0.0;
 	x_yaw[PHI3_P] -= x_yaw[PHI3_P]>M_PI ? 2.0*M_PI : 0.0;
 }
@@ -221,4 +228,25 @@ void DelEKF::wrapStates()
 Vector3f DelEKF::getPlatformOrientation()
 {
 	return Vector3f(x_roll[PHI1_P], x_pitch[PHI2_P], x_yaw[PHI3_P]);
+}
+
+Mat DelEKF::getEKFStates()
+{
+	double states[] = {x_roll[PHI1DT_C], x_roll[PHI1_C], x_roll[PHI1DT_P], x_roll[PHI1_P], 
+						x_pitch[PHI2DT_C], x_pitch[PHI2_C], x_pitch[PHI2DT_P], x_pitch[PHI2_P], 
+						x_yaw[PHI3DT_P], x_yaw[PHI3_P]};
+	return Mat(10,1,states);
+}
+
+Mat DelEKF::getLQRgain()
+{
+	return k_lqr;
+}
+
+Mat DelEKF::createCommandMat(Vector3f orientation)
+{
+	double command[] = {0.0000, orientation.x, 0.0000, orientation.x, 
+						0.0000, orientation.y, 0.0000, orientation.y,
+						0.0000, orientation.z};
+	return Mat(10,1,command);
 }

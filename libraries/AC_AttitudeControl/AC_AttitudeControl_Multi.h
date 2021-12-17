@@ -124,6 +124,7 @@ public:
     void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
+    void deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_taxi(float yaw, bool armed);
     void constrainCommand();
 

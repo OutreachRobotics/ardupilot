@@ -470,6 +470,7 @@ void Copter::twentyfive_hz_logging()
 #endif
     Log_Write_Attitude();
     Log_Write_MAMBA();
+    logger.Write_RCIN();
 }
 
 // three_hz_loop - 3.3hz loop
