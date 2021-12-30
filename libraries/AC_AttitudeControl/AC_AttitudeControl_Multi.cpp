@@ -365,11 +365,17 @@ void AC_AttitudeControl_Multi::rate_controller_run()
 void AC_AttitudeControl_Multi::downSamplingDataFilter()
 {
     // Low pass filter on orientation
-    // Quaternion attitude_vehicle_quat;
-    // _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
-    // attitude_vehicle_quat.to_euler(ahrs_ang.x, ahrs_ang.y, ahrs_ang.z);
+    if(hal.rcin->read(CH_6) <1500)
+    {
+        Quaternion attitude_vehicle_quat;
+        _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
+        attitude_vehicle_quat.to_euler(ahrs_ang.x, ahrs_ang.y, ahrs_ang.z);
+    }
+    else
+    {
+        ahrs_ang = delEKF.getPlatformOrientation();
+    }
 
-    ahrs_ang = delEKF.getPlatformOrientation();
 
     ds_filtered_ang.x = B1_DS*ahrs_ang.x + B0_DS*last_ahrs_ang.x - A0_DS*ds_filtered_ang.x;
     ds_filtered_ang.y = B1_DS*ahrs_ang.y + B0_DS*last_ahrs_ang.y - A0_DS*ds_filtered_ang.y;
