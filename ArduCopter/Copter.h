@@ -764,6 +764,7 @@ private:
 
     // Log.cpp
     void Log_Write_MAMBA();
+    void Log_Write_SAMPLE();
     void Log_Write_Control_Tuning();
     void Log_Write_Performance();
     void Log_Write_Attitude();

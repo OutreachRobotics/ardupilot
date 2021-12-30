@@ -1430,6 +1430,7 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
                 {
                 case SamplingCompleted:
                     gcs().send_text(MAV_SEVERITY_INFO, "#Sampling completed");
+                    gcs().set_log_sample_data();
                     break;
                 case CalibrationStarted:
                     gcs().send_text(MAV_SEVERITY_INFO, "#Calibration started");
@@ -2573,6 +2574,18 @@ uint8_t GCS::get_channel_from_port_number(uint8_t port_num)
     }
 
     return UINT8_MAX;
+}
+
+bool GCS::get_log_sample_data()
+{
+    bool ret = log_sample_data;
+    log_sample_data = false;
+    return ret;
+}
+
+void GCS::set_log_sample_data()
+{
+    log_sample_data = true;
 }
 
 MAV_RESULT GCS_MAVLINK::handle_command_request_message(const mavlink_command_long_t &packet)

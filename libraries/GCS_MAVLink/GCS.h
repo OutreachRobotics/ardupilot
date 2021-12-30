@@ -975,6 +975,9 @@ public:
 
     uint8_t get_channel_from_port_number(uint8_t port_num);
 
+    bool get_log_sample_data();
+    void set_log_sample_data();
+
 protected:
 
     virtual uint8_t sysid_this_mav() const = 0;
@@ -991,6 +994,8 @@ protected:
     uint8_t _num_gcs;
     GCS_MAVLINK *_chan[MAVLINK_COMM_NUM_BUFFERS];
 
+    // true if a sampling sequence is completed
+    bool log_sample_data;
 private:
 
     static GCS *_singleton;

@@ -96,6 +96,41 @@ void Copter::Log_Write_MAMBA()
     logger.WriteBlock(&pkt, sizeof(pkt));
 };
 
+struct PACKED log_SAMPLE {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    int32_t lon;
+    int32_t lat;
+    int32_t alt;
+    uint8_t status;
+    uint8_t sat_count;
+    float x;
+    float y;
+    float z;
+
+};
+
+// Write a MAMBA packet
+void Copter::Log_Write_SAMPLE()
+{
+    Vector3f local_position;
+    ahrs.get_relative_position_NED_origin(local_position);
+
+    struct log_SAMPLE pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_SAMPLE_MSG),
+        time_us  : AP_HAL::micros64(),
+        lon : gps.location().lng,
+        lat : gps.location().lat,
+        alt : gps.location().alt,
+        status : gps.status(),
+        sat_count : gps.num_sats(),
+        x : local_position.x,
+        y : local_position.y,
+        z : local_position.z
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+};
+
 // Write an EKF and POS packet
 void Copter::Log_Write_EKF_POS()
 {
@@ -491,6 +526,21 @@ const struct LogStructure Copter::log_structure[] = {
 
     {LOG_MAMBA_MSG, sizeof(log_MAMBA),
       "MAMB", "QH",  "TimeUS,yaw_value", "sd", "FB" },  // Message Name, Format, Variables names, Units, Multiplier
+
+// @LoggerMessage: SAMP
+// @Description: SAMPLE Interesting log info
+// @URL: 
+// @Field: TimeUS: Time since system startup
+// @Field: lon: Longitude
+// @Field: lat: Latitude
+// @Field: alt: Altitude
+// @Field: agl: Meters above ground level
+// @Field: sat_count: Number of GPS satellites
+// @Field: x: x distance from home
+// @Field: y: y distance from home
+
+    {LOG_SAMPLE_MSG, sizeof(log_SAMPLE),
+      "SAMP", "QiiiBBfff",  "TimeUS,lon,lat,alt,stat,sat,x,y,z", "sddm-Smmm", "F--------" },  // Message Name, Format, Variables names, Units, Multiplier
 
 // @LoggerMessage: CTUN
 // @Description: Control Tuning information

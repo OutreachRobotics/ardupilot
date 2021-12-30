@@ -385,7 +385,10 @@ void Copter::fourhundred_hz_logging()
 // should be run at 10hz
 void Copter::ten_hz_logging_loop()
 {
-
+    if(gcs().get_log_sample_data())
+    {
+        Log_Write_SAMPLE();
+    }
     if (should_log(MASK_LOG_MOTBATT)) {
         Log_Write_MotBatt();
     }
