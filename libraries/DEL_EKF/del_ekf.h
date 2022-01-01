@@ -53,6 +53,7 @@ public:
     Mat getEKFStates();
     Mat getLQRgain();
     Mat createCommandMat(Vector3f orientation);
+    void update_R_coeff(float r_value);
 
 private:
     Mat x_roll;

@@ -11,6 +11,7 @@
 #include <AP_Motors/AP_Motors.h>
 #include <AC_PID/AC_PID.h>
 #include <AC_PID/AC_P.h>
+#include <DEL_EKF/del_ekf.h>
 
 #define AC_ATTITUDE_CONTROL_ANGLE_P                     4.5f             // default angle P gain for roll, pitch and yaw
 
@@ -237,6 +238,7 @@ public:
     Vector3f get_ds_filtered_ang() const { return _attitude_target_ang_vel; }
     Vector3f get_filtered_ang() const { return _rate_sysid_ang_vel; }
     Vector3f get_delEKF_orientation() const { return mamba_orientation; }
+    Mat get_delEKF_states() const { return mamba_states; }
 
     // Enable or disable body-frame feed forward
     void bf_feedforward(bool enable_or_disable) { _rate_bf_ff_enabled = enable_or_disable; }
@@ -461,6 +463,7 @@ protected:
     Vector3f ahrs_ang, last_ahrs_ang, ds_filtered_ang, last_ds_filtered_ang, ctrl_ang;
     Vector3f ang_vel, last_ang_vel, ds_filtered_ang_vel, last_ds_filtered_ang_vel, ctrl_ang_vel;
     Vector3f mamba_orientation;
+    Mat mamba_states;
 
 protected:
     /*
