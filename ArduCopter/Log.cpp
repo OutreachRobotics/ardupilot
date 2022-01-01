@@ -85,9 +85,6 @@ struct PACKED log_MAMBA {
     float f_x;
     float f_y;
     float f_z;
-    float gyro_x;
-    float gyro_y;
-    float gyro_z;
     float phi1dt_c;
     float phi1_c;
     float phi1dt_p;
@@ -103,7 +100,6 @@ struct PACKED log_MAMBA {
 // Write a MAMBA packet
 void Copter::Log_Write_MAMBA()
 {
-    const Vector3f &gyro = ahrs.get_gyro();
     Mat delekf_states = attitude_control->get_delEKF_states();
 
     struct log_MAMBA pkt = {
@@ -112,9 +108,6 @@ void Copter::Log_Write_MAMBA()
         f_x             : motors->get_lateral(),
         f_y             : motors->get_forward(),      
         f_z             : motors->get_yaw(),
-        gyro_x          : gyro.x,
-        gyro_y          : gyro.y,
-        gyro_z          : gyro.z,
         phi1dt_c        : (float)delekf_states[0],
         phi1_c          : (float)delekf_states[1],
         phi1dt_p        : (float)delekf_states[2],
@@ -523,7 +516,7 @@ const struct LogStructure Copter::log_structure[] = {
 // @Field: yaw_value: Yaw angle in degree
 
     {LOG_MAMBA_MSG, sizeof(log_MAMBA),
-      "MAMB", "Qfffffffffffffff",  "TimeUS,fx,fy,fz,gx,gy,gz,phi1dt_c,phi1_c,phi1dt_p,phi1_p,phi2dt_c,phi2_c,phi2dt_p,phi2_p,phi3dt_p,phi3_p", "sNNNEEEErErErErEr", "F----------------" },  // Message Name, Format, Variables names, Units, Multiplier
+      "MAMB", "Qfffffffffffff",  "TimeUS,fx,fy,fz,x0,x1,x2,x3,x4,x5,x6,x7,x8,x9", "sNNNErErErErEr", "F-------------" },  // Message Name, Format, Variables names, Units, Multiplier
 
 // @LoggerMessage: CTUN
 // @Description: Control Tuning information
