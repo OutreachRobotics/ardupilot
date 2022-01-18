@@ -87,6 +87,10 @@ uint8_t batteryVoltage = 0;
 uint8_t batterySOC = 0;
 uint8_t deleavesMessage;
 uint8_t taxiMode;
+uint8_t wrist1 = 0;
+uint8_t wrist2 = 0;
+uint8_t grasp = 0;
+uint8_t saw = 0;
 uint32_t last_arm_time = 0;
 
 // private channels are ones used for point-to-point protocols, and
@@ -1459,6 +1463,34 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
                 i++;
             }
             break;
+        case Wrist1Pos:
+            if(nbytesDeLeaves-i>1)
+            {
+                wrist1 = (uint8_t)_deleaves_port->read();
+                i++;
+            }
+            break;
+        case Wrist2Pos:
+            if(nbytesDeLeaves-i>1)
+            {
+                wrist2 = (uint8_t)_deleaves_port->read();
+                i++;
+            }
+            break;
+        case GraspPos:
+            if(nbytesDeLeaves-i>1)
+            {
+                grasp = (uint8_t)_deleaves_port->read();
+                i++;
+            }
+            break;
+        case SawPWM:
+            if(nbytesDeLeaves-i>1)
+            {
+                saw = (uint8_t)_deleaves_port->read();
+                i++;
+            }
+            break;
         default:
             break;
         }
@@ -2581,6 +2613,46 @@ bool GCS::get_log_sample_data()
     bool ret = log_sample_data;
     log_sample_data = false;
     return ret;
+}
+
+uint8_t GCS::getArmStatus()
+{
+    return armStatus;
+}
+
+uint8_t GCS::getCuttingPercentage()
+{
+    return cuttingPercentage;
+}
+
+uint8_t GCS::getBatteryVoltage()
+{
+    return batteryVoltage;
+}
+
+uint8_t GCS::getBatterySOC()
+{
+    return BatterySOC;
+}
+
+uint8_t GCS::getWrist1()
+{
+    return wrist1;
+}
+
+uint8_t GCS::getWrist2()
+{
+    return wrist2;
+}
+
+uint16_t GCS::getGraspPWM()
+{
+    return grasp;
+}
+
+uint16_t GCS::getSawPWM()
+{
+    return saw;
 }
 
 void GCS::set_log_sample_data()

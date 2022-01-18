@@ -82,16 +82,32 @@ void Copter::Log_Write_Attitude()
 struct PACKED log_MAMBA {
     LOG_PACKET_HEADER;
     uint64_t time_us;
-    uint16_t yaw_value;
+    uint8_t cutting_percentage;
+    uint8_t arm_status;
+    float battery_voltage;
+    uint8_t battery_soc;
+    uint8_t wrist1;
+    uint8_t wrist2;
+    uint16_t grasp;
+    uint16_t saw;
 };
 
 // Write a MAMBA packet
 void Copter::Log_Write_MAMBA()
 {
+    uint16_t graspPWM = (gcs().getGraspPWM()+100)*10;
+    uint16_t sawPWM = (gcs().getSawPWM()+100)*10;
     struct log_MAMBA pkt = {
         LOG_PACKET_HEADER_INIT(LOG_MAMBA_MSG),
         time_us  : AP_HAL::micros64(),
-        yaw_value  : (uint16_t)wrap_360_cd(ahrs.yaw_sensor),  //output 360deg*100
+        cutting_percentage  : gcs().getCuttingPercentage(),
+        arm_status : gcs().getArmStatus(),
+        battery_voltage : (float)gcs().getBatteryVoltage()/10.0f,
+        battery_soc : gcs().getBatterySOC(),
+        wrist1 : gcs().getWrist1(),
+        wrist2 : gcs().getWrist2(),
+        grasp : graspPWM,
+        saw : sawPWM
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 };
@@ -110,7 +126,7 @@ struct PACKED log_SAMPLE {
 
 };
 
-// Write a MAMBA packet
+// Write a SAMPLE packet
 void Copter::Log_Write_SAMPLE()
 {
     Vector3f local_position;
@@ -525,7 +541,7 @@ const struct LogStructure Copter::log_structure[] = {
 // @Field: yaw_value: Yaw angle in degree
 
     {LOG_MAMBA_MSG, sizeof(log_MAMBA),
-      "MAMB", "QH",  "TimeUS,yaw_value", "sd", "FB" },  // Message Name, Format, Variables names, Units, Multiplier
+      "MAMB", "QBBfBBBHH",  "TimeUS,cut,arm,batt,SOC,wri_1,wri_2,grasp,saw", "s%-v%%%uu", "F------11" },  // Message Name, Format, Variables names, Units, Multiplier
 
 // @LoggerMessage: SAMP
 // @Description: SAMPLE Interesting log info

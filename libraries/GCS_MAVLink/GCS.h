@@ -34,7 +34,11 @@ enum messageID
     ArmStatus,
     BatteryVoltage,
     BatterySOC,
-    TextMessage
+    TextMessage,
+    Wrist1Pos,
+    Wrist2Pos,
+    GraspPos,
+    SawPWM
 };
 
 enum textMessageID
@@ -977,6 +981,15 @@ public:
 
     bool get_log_sample_data();
     void set_log_sample_data();
+    uint8_t getCuttingPercentage();
+    uint8_t getArmStatus();
+    uint8_t getBatteryVoltage();
+    uint8_t getBatterySOC();
+    uint8_t getWrist1();
+    uint8_t getWrist2();
+    uint16_t getGraspPWM();
+    uint16_t getSawPWM();
+    
 
 protected:
 

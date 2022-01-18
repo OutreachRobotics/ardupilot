@@ -389,6 +389,9 @@ void Copter::ten_hz_logging_loop()
     {
         Log_Write_SAMPLE();
     }
+    Log_Write_MAMBA();
+    logger.Write_RCIN();
+    
     if (should_log(MASK_LOG_MOTBATT)) {
         Log_Write_MotBatt();
     }
