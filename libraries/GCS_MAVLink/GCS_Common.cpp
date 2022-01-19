@@ -2632,7 +2632,7 @@ uint8_t GCS::getBatteryVoltage()
 
 uint8_t GCS::getBatterySOC()
 {
-    return BatterySOC;
+    return batterySOC;
 }
 
 uint8_t GCS::getWrist1()
