@@ -1386,6 +1386,12 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
     taxiMode = hal.rcin->read(CH_6) > 1500;
     const uint16_t nbytesDeLeaves = _deleaves_port->available();
 
+    AP_Logger *logger = AP_Logger::get_singleton();
+    if(!logger->CardInserted())
+    {
+        gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
+    }
+
     for (uint16_t i=0; i<nbytesDeLeaves; i++)
     {
         const uint8_t c = (uint8_t)_deleaves_port->read();
