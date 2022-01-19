@@ -137,7 +137,7 @@ void Copter::Log_Write_SAMPLE()
         time_us  : AP_HAL::micros64(),
         lon : gps.location().lng,
         lat : gps.location().lat,
-        alt : gps.location().alt,
+        alt : gps.location().alt/100,
         status : gps.status(),
         sat_count : gps.num_sats(),
         x : local_position.x,

@@ -391,6 +391,7 @@ void Copter::ten_hz_logging_loop()
     }
     Log_Write_MAMBA();
     logger.Write_RCIN();
+    logger.Write_GPS(gps.primary_sensor());
     
     if (should_log(MASK_LOG_MOTBATT)) {
         Log_Write_MotBatt();
