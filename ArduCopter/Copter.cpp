@@ -376,9 +376,7 @@ void Copter::fourhundred_hz_logging()
     if (should_log(MASK_LOG_ATTITUDE_FAST) && !copter.flightmode->logs_attitude()) {
         Log_Write_Attitude();
     }
-    // Log_Write_Attitude();
-
-    
+    // Log_Write_Attitude();    
 }
 
 // ten_hz_logging_loop
@@ -392,6 +390,8 @@ void Copter::ten_hz_logging_loop()
     Log_Write_MAMBA();
     logger.Write_RCIN();
     logger.Write_GPS(gps.primary_sensor());
+    windSensor.update();
+    // Log_Write_WIND();
     
     if (should_log(MASK_LOG_MOTBATT)) {
         Log_Write_MotBatt();
