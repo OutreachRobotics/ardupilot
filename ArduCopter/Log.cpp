@@ -159,18 +159,17 @@ struct PACKED log_WIND {
 
 // Write a SAMPLE packet
 void Copter::Log_Write_WIND()
-{
-    
-    // struct log_WIND pkt = {
-    //     LOG_PACKET_HEADER_INIT(LOG_WIND_MSG),
-    //     time_us  : AP_HAL::micros64(),
-    //     w_speed : windSensor.get_wind_speed(),
-    //     w_volt : windSensor.get_wind_voltage(), 
-    //     temp : windSensor.get_temp(),
-    //     t_voltage : windSensor.get_temp_voltage(),
-    //     v_off : windSensor.get_voltage_offset()
-    // };
-    // logger.WriteBlock(&pkt, sizeof(pkt));
+{  
+    struct log_WIND pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_WIND_MSG),
+        time_us  : AP_HAL::micros64(),
+        w_speed : windSensor.get_wind_speed(),
+        w_volt : windSensor.get_wind_voltage(), 
+        temp : windSensor.get_temp(),
+        t_voltage : windSensor.get_temp_voltage(),
+        v_off : windSensor.get_voltage_offset()
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
 };
 
 // Write an EKF and POS packet
@@ -594,8 +593,8 @@ const struct LogStructure Copter::log_structure[] = {
 // @Field: t_volt : temperature voltage
 // @Field: v_off: voltage offser
 
-    {LOG_SAMPLE_MSG, sizeof(log_WIND),
-      "SAMP", "Qfffff",  "TimeUS,w_speed,w_volt,temp,t_volt,v_off", "s-----", "F-----" },  // Message Name, Format, Variables names, Units, Multiplier
+    {LOG_WIND_MSG, sizeof(log_WIND),
+      "WIND", "Qfffff",  "TimeUS,w_speed,w_volt,temp,t_volt,v_off", "s-----", "F-----" },  // Message Name, Format, Variables names, Units, Multiplier
 
 // @LoggerMessage: CTUN
 // @Description: Control Tuning information

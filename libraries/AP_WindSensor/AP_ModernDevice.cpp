@@ -32,7 +32,8 @@ void AP_ModernDevice::init()
 
     _speed_analog_source = hal.analogin->channel(WINDSPEED_SPEED_PIN);
     // _temp_analog_source = hal.analogin->channel(ANALOG_INPUT_NONE);
-    _calibration = 2;
+    _calibration_time = AP_HAL::millis();
+    _calibration = 0;
     _speed_sensor_voltage_offset = WINDSPEED_DEFAULT_VOLT_OFFSET;
     _speed_filt_hz = -1.0f;
 
@@ -49,15 +50,15 @@ void AP_ModernDevice::update()
     {
         init();
     }
-    // calibrate if booted and disarmed
-    if (!hal.util->get_soft_armed()) {
-        if (_calibration == 2) {
-            calibrate();
-        } 
-    } else if (_calibration != 0) {
-        gcs().send_text(MAV_SEVERITY_INFO, "WindVane: disarm for cal");
-        _calibration = 0;
+    if (AP_HAL::millis() - _calibration_time < 15000) {
+        calibrate();
+    } 
+    else if((AP_HAL::millis() - _calibration_time > 15000) && !_calibration)
+    {
+        gcs().send_text(MAV_SEVERITY_INFO, "WindVane: rev P. zero wind voltage offset set to %.3f",double(_speed_sensor_voltage_offset));
+        _calibration = 1;
     }
+
 
     // read wind speed
     update_speed();
@@ -88,14 +89,14 @@ void AP_ModernDevice::update_speed()
     }
 
     // simplified equation from data sheet, converted from mph to m/s
-    _speed_true = (24.254896f * powf((analog_voltage / powf(temp_ambient, 0.115157f)), 3.009364f));
+    // _speed_true = (24.254896f * powf((analog_voltage / powf(temp_ambient, 0.115157f)), 3.009364f));
+    _speed_true = 0.1504759105*expf(2.10908635 * analog_voltage);
 }
 
 void AP_ModernDevice::calibrate()
 {
-    gcs().send_text(MAV_SEVERITY_INFO, "WindVane: rev P. zero wind voltage offset set to %.1f",double(_wind_voltage));
-    _speed_sensor_voltage_offset = _wind_voltage;
-    _calibration = 0;
+    _speed_analog_source->set_pin(_speed_sensor_speed_pin);
+    _speed_sensor_voltage_offset = _speed_analog_source->voltage_average();
 }
 
 // send mavlink wind message
@@ -104,7 +105,7 @@ void AP_ModernDevice::send_wind(mavlink_channel_t chan)
     // send wind
     mavlink_msg_wind_send(
         chan,
-        _temp,
+        _speed_sensor_voltage_offset,
         _speed_true,
         _wind_voltage);
 }

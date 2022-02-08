@@ -47,6 +47,7 @@ public:
 
 private:
     // parameters
+    uint64_t _calibration_time;
     int8_t _calibration;                           // enter calibration
     int8_t _speed_sensor_speed_pin;                // speed sensor analog pin for reading speed
     int8_t _speed_sensor_temp_pin;                // speed sensor analog pin for reading temp, -1 if disable
