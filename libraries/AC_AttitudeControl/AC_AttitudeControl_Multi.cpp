@@ -889,5 +889,5 @@ float AC_AttitudeControl_Multi::get_mamba_length()
 
 float AC_AttitudeControl_Multi::get_sensitivity_coeff()
 {
-    return constrain_float(_pid_rate_roll.kI(),0.25f,4.0f);
+    return constrain_float(_pid_rate_roll.kI(),0.1f,4.0f);
 }
