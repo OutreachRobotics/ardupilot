@@ -224,6 +224,8 @@ AP_MotorsMulticopter::AP_MotorsMulticopter(uint16_t loop_rate, uint16_t speed_hz
     // default throttle range
     _throttle_radio_min = 1100;
     _throttle_radio_max = 1900;
+
+    cameraStarted = false;
 };
 
 // output - sends commands to the motors
@@ -242,31 +244,33 @@ void AP_MotorsMulticopter::output()
     // _lateral_in is for lateral force
     // _forward_in is for forward force
 
-    float forward_in = _forward_in/2.0f;
-    float lateral_in = _lateral_in/(1.0f+ROLL_ADJUSTMENT);
-    float yaw_in = _yaw_in/2.0f;
+    float forward = _forward_in/2.0f;
+    float lateral = _lateral_in/2.0f;
+    float yaw_force = _yaw_in/4.0f;
 
     float front, back, left, right, yawCtrClk, yawClk;
-    front = forward_in>0.0f?forward_in:0.0f;
-    back = forward_in<0.0f?-forward_in:0.0f;
-    left = lateral_in>0.0f?lateral_in:0.0f;
-    right = lateral_in<0.0f?-lateral_in:0.0f;
-    yawClk = yaw_in>0.0f?yaw_in:0.0f;
-    yawCtrClk = yaw_in<0.0f?-yaw_in:0.0f;
+    front = forward>0.0f?forward:0.0f;
+    back = forward<0.0f?-forward:0.0f;
+    left = lateral>0.0f?lateral:0.0f;
+    right = lateral<0.0f?-lateral:0.0f;
+    yawClk = yaw_force>0.0f?yaw_force:0.0f;
+    yawCtrClk = yaw_force<0.0f?-yaw_force:0.0f;
   
-    _actuator[0] = front;
-    _actuator[1] = front;  
-    _actuator[2] = right + yawClk;
-    _actuator[3] = left + yawCtrClk;
-    _actuator[4] = ROLL_ADJUSTMENT * right + yawCtrClk;
-    _actuator[5] = ROLL_ADJUSTMENT * left + yawClk;
-    _actuator[6] = back;   
-    _actuator[7] = back;   
+    _actuator[0] = right + constrain_float(yaw_force,0.0f-right,MAX_THRUST-right) + (yawClk>left ? yawClk-left : 0.0f);
+    _actuator[1] = left + constrain_float(-yaw_force,0.0f-left,MAX_THRUST-left) + (yawCtrClk>right ? yawCtrClk-right : 0.0f);
+    
+    _actuator[2] = back + constrain_float(yaw_force,0.0f-back,MAX_THRUST-back) + (yawClk>front ? yawClk-front : 0.0f);
+    _actuator[3] = front + constrain_float(-yaw_force,0.0f-front,MAX_THRUST-front) + (yawCtrClk>back ? yawCtrClk-back : 0.0f);
 
-    for (int i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
+    _actuator[4] = left + constrain_float(yaw_force,0.0f-left,MAX_THRUST-left) + (yawClk>right ? yawClk-right : 0.0f);
+    _actuator[5] = right + constrain_float(-yaw_force,0.0f-right,MAX_THRUST-right) + (yawCtrClk>left ? yawCtrClk-left : 0.0f);
+
+    _actuator[6] = front + constrain_float(yaw_force,0.0f-front,MAX_THRUST-front) + (yawClk>back ? yawClk-back : 0.0f);
+    _actuator[7] = back + constrain_float(-yaw_force,0.0f-back,MAX_THRUST-back) + (yawCtrClk>front ? yawCtrClk-front : 0.0f);
+
+    for (int i = 0; i < 8; i++) {
         rc_write(i, output_to_pwm(_actuator[i]));
     }
-
 };
 
 // output booster throttle, if any
@@ -420,8 +424,8 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
     if (!armed()) {
         pwm_output = 1000;
     } else {
-        pwm_output = sq(actuator)*T2PWM_COEF1 + actuator*T2PWM_COEF2 + T2PWM_COEF3;
-        pwm_output = constrain_float(pwm_output,1150,1800);
+        pwm_output = sq(actuator)*actuator*T2PWM_COEF1 + sq(actuator)*T2PWM_COEF2 + T2PWM_COEF3*actuator + T2PWM_COEF4;
+        pwm_output = constrain_float(pwm_output,LOW_PWM_LIMIT,HIGH_PWM_LIMIT);
     }
 
     return pwm_output;

@@ -18,9 +18,20 @@ void GCS::get_sensor_status_flags(uint32_t &present,
 {
     update_sensor_status_flags();
 
-    present = control_sensors_present;
+    // present = control_sensors_present;
+    present = camera_angle;
     enabled = control_sensors_enabled;
-    health = control_sensors_health;
+    health = distance_value;
+}
+
+void GCS::set_camera_angle(uint32_t new_angle)
+{
+    camera_angle = new_angle;
+}
+
+void GCS::set_distance(uint32_t new_distance)
+{
+    distance_value = new_distance;
 }
 
 MissionItemProtocol_Waypoints *GCS::_missionitemprotocol_waypoints;

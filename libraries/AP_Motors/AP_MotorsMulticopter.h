@@ -24,11 +24,15 @@
 #define AP_MOTORS_BATT_VOLT_FILT_HZ     0.5f    // battery voltage filtered at 0.5hz
 #define AP_MOTORS_SLEW_TIME_DEFAULT     0.0f    // slew rate limit for thrust output
 #define AP_MOTORS_SAFE_TIME_DEFAULT     1.0f    // Time for the esc when transitioning between zero pwm to minimum
-#define T2PWM_COEF1                     -2.2435f
-#define T2PWM_COEF2                     103.52f
-#define T2PWM_COEF3                     1177.4f
-#define MAX_ACTUATOR_THRUST             6.5f
-#define ROLL_ADJUSTMENT                 0.37f
+
+#define T2PWM_COEF1                     27.00f
+#define T2PWM_COEF2                     -154.34f
+#define T2PWM_COEF3                     520.56f
+#define T2PWM_COEF4                     1037.04f
+#define LOW_PWM_LIMIT                   1050.0f
+#define HIGH_PWM_LIMIT                  2000.0f
+#define ACTUATOR_LEVER                  0.1125f
+#define MAX_THRUST                      3.2f
 
 // spool definition
 #define AP_MOTORS_SPOOL_UP_TIME_DEFAULT 0.5f    // time (in seconds) for throttle to increase from zero to min throttle, and min throttle to full throttle.
@@ -209,4 +213,6 @@ protected:
 
     // array of motor output values
     float _actuator[AP_MOTORS_MAX_NUM_MOTORS];
+
+    bool cameraStarted;
 };

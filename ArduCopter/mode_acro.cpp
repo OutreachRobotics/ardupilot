@@ -19,7 +19,7 @@ void ModeAcro::run()
     // Pitch = 1 -> pitch backward
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
-    lateral_input = (float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT;
+    lateral_input = -(float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT;
     pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
     yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
     thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
@@ -29,6 +29,10 @@ void ModeAcro::run()
     pitch_input = abs(pitch_input)<DEADBAND ? 0.0f : pitch_input;
     yaw_input = abs(yaw_input)<DEADBAND ? 0.0f : yaw_input;
 
+    float forward = (pitch_input * sqrtf(2)/2 - lateral_input * sqrtf(2)/2) / (sqrtf(2));
+    float lateral = (pitch_input * sqrtf(2)/2 + lateral_input * sqrtf(2)/2) / (sqrtf(2));
+    float yaw_moment = yaw_input;
+
     if (!motors->armed()) {
         // Motors should be Stopped
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
@@ -37,7 +41,7 @@ void ModeAcro::run()
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
     }
 
-    attitude_control->deleaves_controller_acro(lateral_input, pitch_input, yaw_input, thrust_input);
+    attitude_control->deleaves_controller_acro(lateral, forward, yaw_moment, thrust_input);
 }
 
 void ModeAcro::exit()

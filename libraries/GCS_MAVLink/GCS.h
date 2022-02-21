@@ -26,28 +26,6 @@
 #include "ap_message.h"
 
 #define GCS_DEBUG_SEND_MESSAGE_TIMINGS 0
-#define UART_DELEAVES 4
-
-enum messageID
-{
-    CuttingPercentage,
-    ArmStatus,
-    BatteryVoltage,
-    BatterySOC,
-    TextMessage
-};
-
-enum textMessageID
-{
-    SamplingCompleted,
-    CalibrationStarted,
-    LowBattery,
-    SawNotConnected,
-    SawJammed,
-    SawHighCurrent,
-    SamplingStucked,    
-    NoCalibration    
-};
 
 #ifndef HAL_NO_GCS
 
@@ -901,6 +879,10 @@ public:
     virtual uint32_t custom_mode() const = 0;
     virtual MAV_TYPE frame_type() const = 0;
     virtual const char* frame_string() const { return nullptr; }
+    void        set_camera_angle(uint32_t new_angle);
+    void        set_distance(uint32_t new_distance);
+    uint32_t    camera_angle;
+    uint32_t    distance_value;
 
     void send_to_active_channels(uint32_t msgid, const char *pkt);
 
@@ -975,6 +957,10 @@ public:
 
     uint8_t get_channel_from_port_number(uint8_t port_num);
 
+    bool get_log_sample_data();
+    void set_log_sample_data();
+    
+
 protected:
 
     virtual uint8_t sysid_this_mav() const = 0;
@@ -991,6 +977,8 @@ protected:
     uint8_t _num_gcs;
     GCS_MAVLINK *_chan[MAVLINK_COMM_NUM_BUFFERS];
 
+    // true if a sampling sequence is completed
+    bool log_sample_data;
 private:
 
     static GCS *_singleton;

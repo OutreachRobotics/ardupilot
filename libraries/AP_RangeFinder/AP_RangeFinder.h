@@ -190,6 +190,7 @@ public:
     }
 
     static RangeFinder *get_singleton(void) { return _singleton; }
+    RangeFinder_State state[RANGEFINDER_MAX_INSTANCES];
 
 protected:
     AP_RangeFinder_Params params[RANGEFINDER_MAX_INSTANCES];
@@ -197,7 +198,6 @@ protected:
 private:
     static RangeFinder *_singleton;
 
-    RangeFinder_State state[RANGEFINDER_MAX_INSTANCES];
     AP_RangeFinder_Backend *drivers[RANGEFINDER_MAX_INSTANCES];
     uint8_t num_instances;
     bool init_done;

@@ -37,6 +37,11 @@ void ModeStabilize::run()
     pitch_input = abs(pitch_input)<DEADBAND ? 0.0f : pitch_input;
     yaw_input = abs(yaw_input)<DEADBAND ? 0.0f : yaw_input;
 
+    float forward = (pitch_input * sqrtf(2)/2 - lateral_input * sqrtf(2)/2) / (sqrtf(2));
+    float lateral = (pitch_input * sqrtf(2)/2 + lateral_input * sqrtf(2)/2) / (sqrtf(2));
+    float yaw_moment = yaw_input;
+
+
     if (!motors->armed()) {
         // Motors should be Stopped
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
@@ -48,7 +53,7 @@ void ModeStabilize::run()
 
     // Only call controller each 8 timestep to have 50Hz
     if (counter>7){
-        attitude_control->deleaves_controller_stabilize(lateral_input, pitch_input, yaw_input, thrust_input,motors->armed());
+        attitude_control->deleaves_controller_stabilize(lateral, forward, yaw_moment, thrust_input,motors->armed());
         counter=0;
     }
     counter++;

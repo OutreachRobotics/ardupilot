@@ -390,45 +390,12 @@ void AC_AttitudeControl_Multi::downSamplingDataFilter()
     last_ahrs_ang = ahrs_ang;
     last_ang_vel = ang_vel;
 
-    yaw_kp = 20.0f;
-    yaw_kd = 12.0f;
-
-    if(get_mamba_length()<8.0f)
-    {
-        roll_kp = 28.0f;
-        roll_kd = 46.0f;
-        pitch_kp = 50.0f;
-        pitch_kd = 50.0f;
-        roll_sensitivity = 0.007f;
-        pitch_sensitivity = 0.007f;
-    }
-    else if(get_mamba_length()<12.0f)
-    {
-        roll_kp = 43.0f;
-        roll_kd = 70.0f;
-        pitch_kp = 85.0;
-        pitch_kd = 85.0f;
-        roll_sensitivity = 0.0038f;
-        pitch_sensitivity = 0.0038f;
-    }
-    else if(get_mamba_length()<17.0f)
-    {
-        roll_kp = 48.0f;
-        roll_kd = 89.0f;
-        pitch_kp = 139.0;
-        pitch_kd = 139.0f;
-        roll_sensitivity = 0.0025f;
-        pitch_sensitivity = 0.0025f;
-    }    
-    else
-    {
-        roll_kp = 73.0f;
-        roll_kd = 119.0f;
-        pitch_kp = 166.0;
-        pitch_kd = 166.0f;
-        roll_sensitivity = 0.00188f;
-        pitch_sensitivity = 0.00188f;
-    }
+    yaw_kp = _pid_rate_yaw.kP();
+    yaw_kd = _pid_rate_yaw.kD();
+    roll_kp = _pid_rate_roll.kP();
+    roll_kd = _pid_rate_roll.kD();
+    pitch_kp = _pid_rate_pitch.kP();
+    pitch_kd = _pid_rate_pitch.kD();
 }
 
 void AC_AttitudeControl_Multi::lowPassDataFilter()
@@ -480,13 +447,11 @@ void AC_AttitudeControl_Multi::parameter_sanity_check()
 
 void AC_AttitudeControl_Multi::deleaves_controller_acro(float lateral, float forward, float yaw, float throttle)
 {
-    _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
-    _motors.set_forward(forward*PMAX_ACTUATOR_THRUST);
-    _motors.set_yaw(yaw*PMAX_ACTUATOR_THRUST);
+    _motors.set_lateral(lateral*MAX_ACTUATOR_THRUST);
+    _motors.set_forward(forward*MAX_ACTUATOR_THRUST);
+    _motors.set_yaw(yaw*MAX_ACTUATOR_MOMENT);
     _motors.set_throttle(throttle);
 }
-
-
 
 void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed)
 {
@@ -523,14 +488,14 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
 
     constrainCommand();
 
-    _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
-    _motors.set_forward(forward*PMAX_ACTUATOR_THRUST);
+    _motors.set_lateral(lateral*MAX_ACTUATOR_THRUST);
+    _motors.set_forward(forward*MAX_ACTUATOR_THRUST);
     _motors.set_yaw(yaw_input);
     _motors.set_throttle(throttle);
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral*RMAX_ACTUATOR_THRUST;
-    _rate_target_ang_vel.y = forward*PMAX_ACTUATOR_THRUST;
+    _rate_target_ang_vel.x = lateral*MAX_ACTUATOR_THRUST;
+    _rate_target_ang_vel.y = forward*MAX_ACTUATOR_THRUST;
     _rate_target_ang_vel.z = yaw_input;
     _rate_sysid_ang_vel = ctrl_ang;
     _attitude_target_ang_vel = ds_filtered_ang;
@@ -582,13 +547,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
     _attitude_target_euler_angle.y = target_forward;
     _attitude_target_euler_angle.z = target_yaw;
 
-    _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
+    _motors.set_lateral(lateral*MAX_ACTUATOR_THRUST);
     _motors.set_forward(forward_command);
     _motors.set_yaw(yaw_input);
     _motors.set_throttle(throttle);
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral*RMAX_ACTUATOR_THRUST;
+    _rate_target_ang_vel.x = lateral*MAX_ACTUATOR_THRUST;
     _rate_target_ang_vel.y = forward_command;
     _rate_target_ang_vel.z = yaw_input;
     _rate_sysid_ang_vel = ctrl_ang;
@@ -641,13 +606,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     _attitude_target_euler_angle.z = target_yaw;
 
     _motors.set_lateral(lateral_command);
-    _motors.set_forward(forward*PMAX_ACTUATOR_THRUST);
+    _motors.set_forward(forward*MAX_ACTUATOR_THRUST);
     _motors.set_yaw(yaw_input);
     _motors.set_throttle(throttle);
 
     // For logging purpose
     _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward*PMAX_ACTUATOR_THRUST;
+    _rate_target_ang_vel.y = forward*MAX_ACTUATOR_THRUST;
     _rate_target_ang_vel.z = yaw_input;
     _rate_sysid_ang_vel = ctrl_ang;
     _attitude_target_ang_vel = ds_filtered_ang;
@@ -742,17 +707,23 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         // Forward control, velocity on move, angular on hold
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*pitch_sensitivity*get_sensitivity_coeff();
+            target_forward = forward*MAX_PITCH;
+        }
+        else
+        {
+            target_forward = 0;
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*roll_sensitivity*get_sensitivity_coeff();
+            target_lateral = lateral*MAX_ROLL;
+        }
+        else
+        {
+            target_forward = 0;
         }
     }    
-    target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
-    target_lateral = constrain_value(target_lateral, MIN_ROLL, MAX_ROLL);
 
     lowPassSetPointFilter();
 
@@ -993,16 +964,16 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     _rate_target_ang_vel.z = yaw_input;
     _rate_sysid_ang_vel = ctrl_ang;
     _attitude_target_ang_vel = ds_filtered_ang;
-}
+} 
 
 void AC_AttitudeControl_Multi::constrainCommand()
 {
-    yaw_input=constrain_float(yaw_input,-PMAX_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
-    lateral_command=constrain_float(lateral_command,-RMAX_ACTUATOR_THRUST,RMAX_ACTUATOR_THRUST);
-    forward_command=constrain_float(forward_command,-PMAX_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
+    yaw_input=constrain_float(yaw_input,-MAX_ACTUATOR_MOMENT,MAX_ACTUATOR_MOMENT);
+    lateral_command=constrain_float(lateral_command,-MAX_ACTUATOR_THRUST,MAX_ACTUATOR_THRUST);
+    forward_command=constrain_float(forward_command,-MAX_ACTUATOR_THRUST,MAX_ACTUATOR_THRUST);
 }
 
-float AC_AttitudeControl_Multi::get_mamba_length()
+float AC_AttitudeControl_Multi::get_rope_length()
 {
     return constrain_float(_pid_rate_pitch.kI(),5.5f,20.0f);
 }

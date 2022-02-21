@@ -67,6 +67,7 @@
 #include <AC_Sprayer/AC_Sprayer.h>
 #include <AP_ADSB/AP_ADSB.h>
 #include <DEL_EKF/del_ekf.h>
+#include <AP_Sony/AP_Sony.h>
 
 // Configuration
 #include "defines.h"
@@ -468,6 +469,8 @@ private:
     AC_WPNav *wp_nav;
     AC_Loiter *loiter_nav;
 
+    AP_Sony sony_cam;
+
 #if MODE_CIRCLE_ENABLED == ENABLED
     AC_Circle *circle_nav;
 #endif
@@ -765,6 +768,7 @@ private:
 
     // Log.cpp
     void Log_Write_MAMBA();
+    void Log_Write_SAMPLE();
     void Log_Write_Control_Tuning();
     void Log_Write_Performance();
     void Log_Write_Attitude();

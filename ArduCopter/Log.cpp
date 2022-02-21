@@ -79,6 +79,8 @@ void Copter::Log_Write_Attitude()
     }
 }
 
+
+
 struct PACKED log_MAMBA {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -121,6 +123,7 @@ void Copter::Log_Write_MAMBA()
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 };
+
 
 // Write an EKF and POS packet
 void Copter::Log_Write_EKF_POS()

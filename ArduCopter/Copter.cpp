@@ -393,7 +393,9 @@ void Copter::fourhundred_hz_logging()
 // should be run at 10hz
 void Copter::ten_hz_logging_loop()
 {
-
+    logger.Write_RCIN();
+    logger.Write_GPS(gps.primary_sensor());
+    
     if (should_log(MASK_LOG_MOTBATT)) {
         Log_Write_MotBatt();
     }
@@ -469,8 +471,9 @@ void Copter::twentyfive_hz_logging()
     }
 #endif
     Log_Write_Attitude();
-    Log_Write_MAMBA();
-    logger.Write_RCIN();
+    sony_cam.manage();
+    gcs().set_camera_angle(sony_cam.get_camera_angle());
+    gcs().set_distance(rangefinder.state->distance_cm);
 }
 
 // three_hz_loop - 3.3hz loop

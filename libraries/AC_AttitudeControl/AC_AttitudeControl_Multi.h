@@ -41,12 +41,12 @@
 #endif
 
 #define YAW_SENSITIVITY                     0.01f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
-#define PMAX_ACTUATOR_THRUST                13.0f
-#define RMAX_ACTUATOR_THRUST                (13.0f*(ROLL_ADJUSTMENT+1.0f)/2.0f)
+#define MAX_ACTUATOR_THRUST                 (2.0*3.2f)
+#define MAX_ACTUATOR_MOMENT                 (4.0f*3.2f*0.1125f)
 
-#define M_PLATFORM                          3.24f
-#define MAX_PITCH                           0.305f // 17.5° - 10 N to keep that angle
-#define MAX_ROLL                            (MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
+#define M_PLATFORM                          2.0f
+#define MAX_PITCH                           0.25f // 17.5° - 10 N to keep that angle
+#define MAX_ROLL                            0.25f
 #define MIN_PITCH                           (-MAX_PITCH)
 #define MIN_ROLL                            (-MAX_ROLL)
 #define DEADBAND                            0.02f
@@ -139,7 +139,7 @@ public:
 
     // sanity check parameters.  should be called once before take-off
     void parameter_sanity_check() override;
-    float get_mamba_length();
+    float get_rope_length();
     float get_sensitivity_coeff();
 
     void updateDelEKF(Vector3f F_in, Vector3f measure);

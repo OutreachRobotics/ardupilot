@@ -236,7 +236,7 @@ void AP_Vehicle::scheduler_delay_callback()
     logger.EnableWrites(false);
 
     const uint32_t tnow = AP_HAL::millis();
-    if (tnow - last_1hz > 1000) {
+    if (tnow - last_1hz > 50) {
         last_1hz = tnow;
         gcs().send_message(MSG_HEARTBEAT);
         gcs().send_message(MSG_SYS_STATUS);

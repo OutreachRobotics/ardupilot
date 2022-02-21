@@ -152,7 +152,7 @@ void ModeSport::run()
         }
         else
         {
-            float mamba_length = constrain_float(attitude_control->get_mamba_length(), 5.0f, 50.0f);            
+            float mamba_length = constrain_float(attitude_control->get_rope_length(), 5.0f, 50.0f);            
             lateral_target = constrain_float(asinf(1.0f/mamba_length),MIN_ROLL,MAX_ROLL);
             forward_target = constrain_float(asinf(3.0f/mamba_length),MIN_PITCH,MAX_PITCH);            
         }
