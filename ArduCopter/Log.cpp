@@ -79,7 +79,7 @@ void Copter::Log_Write_Attitude()
     }
 }
 
-struct PACKED log_MAMBA {
+struct PACKED log_SAMBA {
     LOG_PACKET_HEADER;
     uint64_t time_us;
     uint8_t cutting_percentage;
@@ -92,13 +92,13 @@ struct PACKED log_MAMBA {
     uint16_t saw;
 };
 
-// Write a MAMBA packet
-void Copter::Log_Write_MAMBA()
+// Write a SAMBA packet
+void Copter::Log_Write_SAMBA()
 {
     uint16_t graspPWM = (gcs().getGraspPWM()+100)*10;
     uint16_t sawPWM = (gcs().getSawPWM()+100)*10;
-    struct log_MAMBA pkt = {
-        LOG_PACKET_HEADER_INIT(LOG_MAMBA_MSG),
+    struct log_SAMBA pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_SAMBA_MSG),
         time_us  : AP_HAL::micros64(),
         cutting_percentage  : gcs().getCuttingPercentage(),
         arm_status : gcs().getArmStatus(),
@@ -143,6 +143,43 @@ void Copter::Log_Write_SAMPLE()
         x : local_position.x,
         y : local_position.y,
         z : local_position.z
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+};
+
+struct PACKED log_SAMBA_EKF {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float phi1c_dt;
+    float phi1c;
+    float phi1p_dt;
+    float phi1p;
+    float phi2c_dt;
+    float phi2c;
+    float phi2p_dt;
+    float phi2p;
+    float phi3p_dt;
+    float phi3p;
+};
+
+// Write a SAMPLE packet
+void Copter::Log_Write_SAMBA_EKF()
+{
+    Mat states = attitude_control->getDelEKFStates();
+
+    struct log_SAMBA_EKF pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_SAMPLE_MSG),
+        time_us  : AP_HAL::micros64(),
+        phi1c_dt    : (float)states[0],
+        phi1c       : (float)states[1],
+        phi1p_dt    : (float)states[2],
+        phi1p       : (float)states[3],
+        phi2c_dt    : (float)states[4],
+        phi2c       : (float)states[5],  
+        phi2p_dt    : (float)states[6],
+        phi2p       : (float)states[7],
+        phi3p_dt    : (float)states[8],
+        phi3p       : (float)states[9]
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 };
@@ -565,8 +602,8 @@ const struct LogStructure Copter::log_structure[] = {
 // @Field: TimeUS: Time since system startup
 // @Field: yaw_value: Yaw angle in degree
 
-    {LOG_MAMBA_MSG, sizeof(log_MAMBA),
-      "MAMB", "QBBfBBBHH",  "TimeUS,cut,arm,batt,SOC,wri_1,wri_2,grasp,saw", "s%-v%%%uu", "F------11" },  // Message Name, Format, Variables names, Units, Multiplier
+    {LOG_SAMBA_MSG, sizeof(log_SAMBA),
+      "SAMB", "QBBfBBBHH",  "TimeUS,cut,arm,batt,SOC,wri_1,wri_2,grasp,saw", "s%-v%%%uu", "F------11" },  // Message Name, Format, Variables names, Units, Multiplier
 
 // @LoggerMessage: SAMP
 // @Description: SAMPLE Interesting log info
@@ -582,6 +619,16 @@ const struct LogStructure Copter::log_structure[] = {
 
     {LOG_SAMPLE_MSG, sizeof(log_SAMPLE),
       "SAMP", "QiiiBBfff",  "TimeUS,lon,lat,alt,stat,sat,x,y,z", "sddm-Smmm", "F--------" },  // Message Name, Format, Variables names, Units, Multiplier
+
+// @LoggerMessage: SEKF
+// @Description: SAMBA EKF Interesting log info
+// @URL: 
+// @Field: TimeUS: Time since system startup
+// @Field: states from the EKF
+
+    {LOG_SAMBA_EKF_MSG, sizeof(log_SAMBA_EKF),
+      "SEKF", "Qffffffffff",  "TimeUS,p1cd,p1c,p1pd,p1p,p2cd,p2c,p2pd,p2p,p3pd,p3p", "srrrrrrrrrr", "F----------" },  // Message Name, Format, Variables names, Units, Multiplier
+
 
 // @LoggerMessage: WIND
 // @Description: WIND Interesting log info

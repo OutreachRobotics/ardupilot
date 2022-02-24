@@ -144,6 +144,7 @@ public:
 
     void updateDelEKF(Vector3f F_in, Vector3f measure);
     Vector3f getDelEKFOrientation();
+    Mat getDelEKFStates();
 
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];

@@ -767,8 +767,9 @@ private:
     void standby_update();
 
     // Log.cpp
-    void Log_Write_MAMBA();
+    void Log_Write_SAMBA();
     void Log_Write_SAMPLE();
+    void Log_Write_SAMBA_EKF();
     void Log_Write_WIND();
     void Log_Write_Control_Tuning();
     void Log_Write_Performance();

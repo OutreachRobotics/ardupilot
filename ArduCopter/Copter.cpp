@@ -395,8 +395,7 @@ void Copter::ten_hz_logging_loop()
     {
         Log_Write_SAMPLE();
     }
-    Log_Write_MAMBA();
-    logger.Write_RCIN();
+    Log_Write_SAMBA();
     logger.Write_GPS(gps.primary_sensor());
     windSensor.update();
     Log_Write_WIND();
@@ -459,9 +458,6 @@ void Copter::twentyfive_hz_logging()
         Log_Write_EKF_POS();
     }
 
-    if (should_log(MASK_LOG_IMU)) {
-        logger.Write_IMU();
-    }
 #endif
 
 #if PRECISION_LANDING == ENABLED
@@ -476,8 +472,10 @@ void Copter::twentyfive_hz_logging()
     }
 #endif
     Log_Write_Attitude();
-    Log_Write_MAMBA();
+    Log_Write_SAMBA_EKF();
     logger.Write_RCIN();
+    logger.Write_IMU();
+
 }
 
 // three_hz_loop - 3.3hz loop

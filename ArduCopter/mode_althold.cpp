@@ -45,15 +45,15 @@ void ModeAltHold::run()
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
     }
 
-    // Only call controller each 8 timestep to have 50Hzs
+    // Only call controller each 8 timestep to have 50Hz
     if (counter>7){
         if(taxi_mode)
         {
-            attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
+            attitude_control->deleaves_controller_taxi(yaw_input, motors->armed());
         }
         else
         {
-            attitude_control->deleaves_controller_angVelHold_PD(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
+            attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
         }
         counter=0;
     }

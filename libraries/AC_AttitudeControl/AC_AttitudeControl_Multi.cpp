@@ -856,8 +856,12 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
 
     lowPassSetPointFilter();
 
+    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
+    Mat states = delEKF.getEKFStates();
+    Mat k_lqr = delEKF.getLQRgain();
+
     // LQR control
-    yaw_angle_error= target_yaw-ctrl_ang.z;
+    yaw_angle_error= target_yaw-states[9];
     
     if (yaw_angle_error>M_PI){
         target_yaw=target_yaw-2*M_PI;
@@ -865,10 +869,6 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     if (yaw_angle_error<-M_PI){
         target_yaw=target_yaw+2*M_PI;
     }
-
-    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
-    Mat states = delEKF.getEKFStates();
-    Mat k_lqr = delEKF.getLQRgain();
 
     double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
     Mat ff = Mat(3,1,ff_array);
@@ -1023,5 +1023,10 @@ void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure)
 Vector3f AC_AttitudeControl_Multi::getDelEKFOrientation()
 {
     return delEKF.getPlatformOrientation();
+}
+
+Mat AC_AttitudeControl_Multi::getDelEKFStates()
+{
+    return delEKF.getEKFStates();
 }
 

@@ -159,8 +159,9 @@ enum LoggingParameters {
      LOG_GUIDEDTARGET_MSG,
      LOG_SYSIDD_MSG,
      LOG_SYSIDS_MSG,
-     LOG_MAMBA_MSG,
+     LOG_SAMBA_MSG,
      LOG_SAMPLE_MSG,
+     LOG_SAMBA_EKF_MSG,
      LOG_WIND_MSG
 };
 
