@@ -832,7 +832,7 @@ void AP_Logger::Write_Rate(const AP_AHRS_View *ahrs,
 {
     const Vector3f &rate_targets = attitude_control.rate_bf_targets();
     const Vector3f &filtered_ang = attitude_control.get_filtered_ang();
-    const Vector3f &ds_filtered_ang = attitude_control.get_ds_filtered_ang();
+    const Vector3f &delekf_euler = attitude_control.get_delEKF_orientation();
     const struct log_Rate pkt_rate{
         LOG_PACKET_HEADER_INIT(LOG_RATE_MSG),
         time_us         : AP_HAL::micros64(),
@@ -845,9 +845,9 @@ void AP_Logger::Write_Rate(const AP_AHRS_View *ahrs,
         control_yaw     : rate_targets.z,
         yaw             : degrees(ahrs->get_gyro().z),
         yaw_out         : degrees(filtered_ang.z),
-        control_accel   : degrees(ds_filtered_ang.x),
-        accel           : degrees(ds_filtered_ang.y),
-        accel_out       : degrees(ds_filtered_ang.z)
+        control_accel   : degrees(delekf_euler.x),
+        accel           : degrees(delekf_euler.y),
+        accel_out       : degrees(delekf_euler.z)
     };
     WriteBlock(&pkt_rate, sizeof(pkt_rate));
 }

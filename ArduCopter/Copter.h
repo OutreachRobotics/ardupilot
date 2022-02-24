@@ -67,6 +67,7 @@
 #include <AC_Sprayer/AC_Sprayer.h>
 #include <AP_ADSB/AP_ADSB.h>
 #include <AP_WindSensor/AP_ModernDevice.h>
+#include <DEL_EKF/del_ekf.h>
 
 // Configuration
 #include "defines.h"
