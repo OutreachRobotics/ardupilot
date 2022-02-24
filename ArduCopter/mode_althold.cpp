@@ -28,12 +28,12 @@ void ModeAltHold::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
 
-    lateral_input = -(float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
+    lateral_input = -(float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT; // range -1 to 1
     pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
     yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
     thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
 
-    float forward = (pitch_input * sqrtf(2)/2 - lateral_input * sqrtf(2)/2) / (sqrtf(2));
+    float forward = (pitch_input * sqrtf(2)/2 - lateral_input * sqrtf(2)/2) / (sqrtf(2)); //range -1 to 1
     float lateral = (pitch_input * sqrtf(2)/2 + lateral_input * sqrtf(2)/2) / (sqrtf(2));
     float yaw_moment = yaw_input;
 

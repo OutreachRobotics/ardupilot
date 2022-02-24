@@ -364,18 +364,10 @@ void AC_AttitudeControl_Multi::rate_controller_run()
 
 void AC_AttitudeControl_Multi::downSamplingDataFilter()
 {
-    // Low pass filter on orientation
-    if(hal.rcin->read(CH_6) <1500)
-    {
-        Quaternion attitude_vehicle_quat;
-        _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
-        attitude_vehicle_quat.to_euler(ahrs_ang.x, ahrs_ang.y, ahrs_ang.z);
-    }
-    else
-    {
-        ahrs_ang = delEKF.getPlatformOrientation();
-    }
 
+    Quaternion attitude_vehicle_quat;
+    _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
+    attitude_vehicle_quat.to_euler(ahrs_ang.x, ahrs_ang.y, ahrs_ang.z);
 
     ds_filtered_ang.x = B1_DS*ahrs_ang.x + B0_DS*last_ahrs_ang.x - A0_DS*ds_filtered_ang.x;
     ds_filtered_ang.y = B1_DS*ahrs_ang.y + B0_DS*last_ahrs_ang.y - A0_DS*ds_filtered_ang.y;
@@ -792,8 +784,6 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
 void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed)
 {
     // Control runs at 50Hz
-    // Low pass filter to reduce vibration in data
-    lowPassDataFilter();
 
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
     if(!armed)
@@ -810,25 +800,35 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
             target_yaw += yaw*YAW_SENSITIVITY;
         }
 
-        // Forward control, velocity on move, angular on hold
+        // Forward control
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*pitch_sensitivity*get_sensitivity_coeff();
+            target_forward = forward*MAX_PITCH;
+        }
+        else
+        {
+            target_forward = 0.0f;
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*roll_sensitivity*get_sensitivity_coeff();
+            target_lateral = lateral*MAX_ROLL;
+        }
+        else
+        {
+            target_forward = 0.0f;
         }
     }    
-    target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
-    target_lateral = constrain_value(target_lateral, MIN_ROLL, MAX_ROLL);
 
     lowPassSetPointFilter();
 
+    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
+    Mat states = delEKF.getEKFStates();
+    Mat k_lqr = delEKF.getLQRgain();
+
     // LQR control
-    yaw_angle_error= target_yaw-ctrl_ang.z;
+    yaw_angle_error= target_yaw-states[9];
     
     if (yaw_angle_error>M_PI){
         target_yaw=target_yaw-2*M_PI;
@@ -837,9 +837,6 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
         target_yaw=target_yaw+2*M_PI;
     }
 
-    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
-    Mat states = delEKF.getEKFStates();
-    Mat k_lqr = delEKF.getLQRgain();
 
     double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
     Mat ff = Mat(3,1,ff_array);
