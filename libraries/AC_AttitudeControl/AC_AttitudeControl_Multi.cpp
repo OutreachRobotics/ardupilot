@@ -1014,7 +1014,7 @@ float AC_AttitudeControl_Multi::get_sensitivity_coeff()
 
 void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure)
 {
-    delEKF.update_R_coeff(_pid_rate_yaw.kI());
+    delEKF.update_length(get_mamba_length());
     delEKF.linearDynamicsEstimation(F_in, measure);
     mamba_orientation = delEKF.getPlatformOrientation();
     mamba_states = delEKF.getEKFStates();

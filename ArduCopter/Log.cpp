@@ -160,6 +160,7 @@ struct PACKED log_SAMBA_EKF {
     float phi2p;
     float phi3p_dt;
     float phi3p;
+    float length;
 };
 
 // Write a SAMPLE packet
@@ -179,7 +180,8 @@ void Copter::Log_Write_SAMBA_EKF()
         phi2p_dt    : (float)states[6],
         phi2p       : (float)states[7],
         phi3p_dt    : (float)states[8],
-        phi3p       : (float)states[9]
+        phi3p       : (float)states[9],
+        length      : attitude_control->get_mamba_length()
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 };
@@ -627,7 +629,7 @@ const struct LogStructure Copter::log_structure[] = {
 // @Field: states from the EKF
 
     {LOG_SAMBA_EKF_MSG, sizeof(log_SAMBA_EKF),
-      "SEKF", "Qffffffffff",  "TimeUS,p1cd,p1c,p1pd,p1p,p2cd,p2c,p2pd,p2p,p3pd,p3p", "srrrrrrrrrr", "F----------" },  // Message Name, Format, Variables names, Units, Multiplier
+      "SEKF", "Qfffffffffff",  "TimeUS,p1cd,p1c,p1pd,p1p,p2cd,p2c,p2pd,p2p,p3pd,p3p,len", "srrrrrrrrrrm", "F-----------" },  // Message Name, Format, Variables names, Units, Multiplier
 
 
 // @LoggerMessage: WIND

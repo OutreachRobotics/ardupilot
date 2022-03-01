@@ -54,6 +54,7 @@ public:
     Mat getLQRgain();
     Mat createCommandMat(Vector3f orientation);
     void update_R_coeff(float r_value);
+    void update_length(float length);
 
 private:
     Mat x_roll;
