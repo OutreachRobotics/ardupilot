@@ -169,7 +169,7 @@ void Copter::Log_Write_SAMBA_EKF()
     Mat states = attitude_control->getDelEKFStates();
 
     struct log_SAMBA_EKF pkt = {
-        LOG_PACKET_HEADER_INIT(LOG_SAMPLE_MSG),
+        LOG_PACKET_HEADER_INIT(LOG_SAMBA_EKF_MSG),
         time_us  : AP_HAL::micros64(),
         phi1c_dt    : (float)states[0],
         phi1c       : (float)states[1],

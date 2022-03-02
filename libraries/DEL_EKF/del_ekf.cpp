@@ -141,6 +141,10 @@ void DelEKF::linearDynamicsEstimation(Vector3f F_in, Vector3f measure)
 
 void DelEKF::propagateStates(Mat F_in)
 {
+	H_roll = ((F_roll+I4x4)*B_roll)*(TS/2);
+	H_pitch = ((F_pitch+I4x4)*B_pitch)*(TS/2);
+	H_yaw = ((F_yaw+I2x2)*B_yaw)*(TS/2);
+
 	x_roll_prop = F_roll*x_roll + H_roll*F_in[0];
 	x_pitch_prop = F_pitch*x_pitch + H_pitch*F_in[1];
 	x_yaw_prop = F_yaw*x_yaw + H_yaw*F_in[2];
@@ -148,6 +152,10 @@ void DelEKF::propagateStates(Mat F_in)
 
 void DelEKF::propagateCovariance()
 {
+	Q_trap_roll = (F_roll*Qe_roll*(F_roll.t()) + Qe_roll) * (TS/2);
+	Q_trap_pitch = (F_pitch*Qe_pitch*(F_pitch.t()) + Qe_pitch) * (TS/2);
+	Q_trap_yaw = (F_yaw*Qe_yaw*(F_yaw.t()) + Qe_yaw) * (TS/2);
+
 	P_roll_prop = F_roll*P_roll*(F_roll.t()) + Q_trap_roll;
 	P_pitch_prop = F_pitch*P_pitch*(F_pitch.t()) + Q_trap_pitch;
 	P_yaw_prop = F_yaw*P_yaw*(F_yaw.t()) + Q_trap_yaw;

@@ -392,43 +392,12 @@ void AC_AttitudeControl_Multi::downSamplingDataFilter()
 
     yaw_kp = 20.0f;
     yaw_kd = 12.0f;
-
-    if(get_mamba_length()<8.0f)
-    {
-        roll_kp = 28.0f;
-        roll_kd = 46.0f;
-        pitch_kp = 50.0f;
-        pitch_kd = 50.0f;
-        roll_sensitivity = 0.007f;
-        pitch_sensitivity = 0.007f;
-    }
-    else if(get_mamba_length()<12.0f)
-    {
-        roll_kp = 43.0f;
-        roll_kd = 70.0f;
-        pitch_kp = 85.0;
-        pitch_kd = 85.0f;
-        roll_sensitivity = 0.0038f;
-        pitch_sensitivity = 0.0038f;
-    }
-    else if(get_mamba_length()<17.0f)
-    {
-        roll_kp = 48.0f;
-        roll_kd = 89.0f;
-        pitch_kp = 139.0;
-        pitch_kd = 139.0f;
-        roll_sensitivity = 0.0025f;
-        pitch_sensitivity = 0.0025f;
-    }    
-    else
-    {
-        roll_kp = 73.0f;
-        roll_kd = 119.0f;
-        pitch_kp = 166.0;
-        pitch_kd = 166.0f;
-        roll_sensitivity = 0.00188f;
-        pitch_sensitivity = 0.00188f;
-    }
+    roll_kp = 28.0f;
+    roll_kd = 46.0f;
+    pitch_kp = 50.0f;
+    pitch_kd = 50.0f;
+    roll_sensitivity = 0.003f;
+    pitch_sensitivity = 0.003f;
 }
 
 void AC_AttitudeControl_Multi::lowPassDataFilter()
