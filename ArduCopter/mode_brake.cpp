@@ -17,7 +17,7 @@ bool ModeBrake::init(bool ignore_checks)
 // should be called at 100hz or more
 void ModeBrake::run()
 {
-    float yaw_input;
+    float lateral_input, pitch_input, yaw_input, thrust_input;
 
     // We use a NED frame as per the UAV standard
     // Roll, pitch, yaw channel are between -1 and 1
@@ -26,7 +26,14 @@ void ModeBrake::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
 
+    lateral_input = -(float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT; // range -1 to 1
+    pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
     yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
+    thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
+
+    float forward = (pitch_input * sqrtf(2)/2 - lateral_input * sqrtf(2)/2) / (sqrtf(2)); //range -1 to 1
+    float lateral = (pitch_input * sqrtf(2)/2 + lateral_input * sqrtf(2)/2) / (sqrtf(2));
+    float yaw_moment = yaw_input;
 
     if (!motors->armed()) {
         // Motors should be Stopped
@@ -39,7 +46,7 @@ void ModeBrake::run()
 
     // Only call controller each 8 timestep to have 50Hzs
     if (counter>7){
-        attitude_control->deleaves_controller_taxi(yaw_input, motors->armed());
+        attitude_control->deleaves_controller_angVelHold_PD(lateral, forward, yaw_moment, thrust_input, motors->armed());
         counter=0;
     }
     counter++;

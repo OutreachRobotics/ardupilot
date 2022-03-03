@@ -474,6 +474,7 @@ void Copter::twentyfive_hz_logging()
     sony_cam.manage();
     gcs().set_camera_angle(sony_cam.get_camera_angle());
     gcs().set_distance(rangefinder.state->distance_cm);
+    Log_Write_MAMBA();
 }
 
 // three_hz_loop - 3.3hz loop

@@ -40,11 +40,11 @@
  # define AC_ATC_MULTI_RATE_YAW_FILT_HZ     2.5f
 #endif
 
-#define YAW_SENSITIVITY                     0.01f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
+#define YAW_SENSITIVITY                     0.02f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
 #define MAX_ACTUATOR_THRUST                 (2.0*3.2f)
 #define MAX_ACTUATOR_MOMENT                 (4.0f*3.2f*0.1125f)
 
-#define M_PLATFORM                          2.0f
+#define M_PLATFORM                          2.4f
 #define MAX_PITCH                           0.25f // 17.5° - 10 N to keep that angle
 #define MAX_ROLL                            0.25f
 #define MIN_PITCH                           (-MAX_PITCH)

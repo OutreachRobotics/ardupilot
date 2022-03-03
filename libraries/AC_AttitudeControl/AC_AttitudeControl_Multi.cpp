@@ -713,7 +713,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         }
         else
         {
-            target_forward = 0;
+            target_lateral = 0;
         }
     }    
 
@@ -784,6 +784,8 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
 void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed)
 {
     // Control runs at 50Hz
+    // Low pass filter to reduce vibration in data
+    lowPassDataFilter();
 
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
     if(!armed)
@@ -817,7 +819,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
         }
         else
         {
-            target_forward = 0.0f;
+            target_lateral = 0.0f;
         }
     }    
 
@@ -828,7 +830,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     Mat k_lqr = delEKF.getLQRgain();
 
     // LQR control
-    yaw_angle_error= target_yaw-states[9];
+    yaw_angle_error= target_yaw-ctrl_ang.z;
     
     if (yaw_angle_error>M_PI){
         target_yaw=target_yaw-2*M_PI;
@@ -856,6 +858,8 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     {
         _motors.set_lateral(lateral_command);
         _motors.set_forward(forward_command);
+        // _motors.set_lateral(0);
+        // _motors.set_forward(0);
         _motors.set_yaw(yaw_input);
         _motors.set_throttle(throttle);
     }
