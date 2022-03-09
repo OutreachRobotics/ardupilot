@@ -830,7 +830,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     Mat k_lqr = delEKF.getLQRgain();
 
     // LQR control
-    yaw_angle_error= target_yaw-ctrl_ang.z;
+    yaw_angle_error= target_yaw-states[9];
     
     if (yaw_angle_error>M_PI){
         target_yaw=target_yaw-2*M_PI;
@@ -858,8 +858,6 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     {
         _motors.set_lateral(lateral_command);
         _motors.set_forward(forward_command);
-        // _motors.set_lateral(0);
-        // _motors.set_forward(0);
         _motors.set_yaw(yaw_input);
         _motors.set_throttle(throttle);
     }
