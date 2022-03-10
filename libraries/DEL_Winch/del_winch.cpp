@@ -18,6 +18,11 @@ extern const AP_HAL::HAL& hal;
 
 DelWinch::DelWinch()
 {
+
+}
+
+void DelWinch::init()
+{
     _winch_port = hal.serial(WINCH_UART);
     _winch_port->begin(57600,50,50);
 

@@ -49,6 +49,7 @@ class DelWinch
 {
 public:
     DelWinch();
+    void init();
     void manage();
 
 private:

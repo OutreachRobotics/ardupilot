@@ -471,7 +471,7 @@ private:
     AC_Loiter *loiter_nav;
 
     AP_Sony sony_cam;
-    // DelWinch delWinch;
+    DelWinch delWinch;
 
 #if MODE_CIRCLE_ENABLED == ENABLED
     AC_Circle *circle_nav;

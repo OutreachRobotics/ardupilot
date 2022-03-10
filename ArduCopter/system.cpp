@@ -223,6 +223,7 @@ void Copter::init_ardupilot()
     // }
     set_mode(Mode::Number::ALT_HOLD, ModeReason::INITIALISED);
 
+    delWinch.init();
 
     // flag that initialisation has completed
     ap.initialised = true;
