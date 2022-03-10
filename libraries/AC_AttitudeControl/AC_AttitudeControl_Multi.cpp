@@ -787,10 +787,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     // Low pass filter to reduce vibration in data
     lowPassDataFilter();
 
+    Mat states = delEKF.getEKFStates();
+    Mat k_lqr = delEKF.getLQRgain();
+
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
     if(!armed)
     {
-        target_yaw = ctrl_ang.z;
+        target_yaw = states[9];
         target_forward = 0.0f;
         target_lateral = 0.0f;
     }
@@ -825,10 +828,6 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
 
     lowPassSetPointFilter();
 
-    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
-    Mat states = delEKF.getEKFStates();
-    Mat k_lqr = delEKF.getLQRgain();
-
     // LQR control
     yaw_angle_error= target_yaw-states[9];
     
@@ -838,6 +837,8 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     if (yaw_angle_error<-M_PI){
         target_yaw=target_yaw+2*M_PI;
     }
+
+    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
 
 
     double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
@@ -985,6 +986,7 @@ float AC_AttitudeControl_Multi::get_sensitivity_coeff()
 void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure)
 {
     delEKF.update_R_coeff(_pid_rate_yaw.kI());
+    delEKF.update_LQR_gain(get_rope_length());
     delEKF.linearDynamicsEstimation(F_in, measure);
     mamba_orientation = delEKF.getPlatformOrientation();
     mamba_states = delEKF.getEKFStates();

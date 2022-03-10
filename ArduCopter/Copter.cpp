@@ -472,6 +472,7 @@ void Copter::twentyfive_hz_logging()
 #endif
     Log_Write_Attitude();
     sony_cam.manage();
+    // delWinch.manage();
     gcs().set_camera_angle(sony_cam.get_camera_angle());
     gcs().set_distance(rangefinder.state->distance_cm);
     Log_Write_MAMBA();

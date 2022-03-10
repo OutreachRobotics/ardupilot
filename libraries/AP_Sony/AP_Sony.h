@@ -35,7 +35,7 @@
 
 #define MIN_SERVO_PWM                   600
 #define MAX_SERVO_PWM                   2380
-#define SERVO_INCREMENT                 10
+#define SERVO_INCREMENT                 3
 
 class AP_Sony
 {

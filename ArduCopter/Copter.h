@@ -68,6 +68,7 @@
 #include <AP_ADSB/AP_ADSB.h>
 #include <DEL_EKF/del_ekf.h>
 #include <AP_Sony/AP_Sony.h>
+#include <DEL_Winch/del_winch.h>
 
 // Configuration
 #include "defines.h"
@@ -470,6 +471,7 @@ private:
     AC_Loiter *loiter_nav;
 
     AP_Sony sony_cam;
+    // DelWinch delWinch;
 
 #if MODE_CIRCLE_ENABLED == ENABLED
     AC_Circle *circle_nav;

@@ -27,10 +27,6 @@
 	double bpitch [] = {0.435160,0.000000,0.078480,0.000000};
 	double byaw [] = {60.975600,0.000000};
 
-	double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
--12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
-0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,1.465772,7.591193};
-
 
 	double i2[] = {1,0,
 					0,1};
@@ -112,6 +108,9 @@ DelEKF::DelEKF()
 	H_pitch = ((F_pitch+I4x4)*B_pitch)*(TS/2);
 	H_yaw = ((F_yaw+I2x2)*B_yaw)*(TS/2);
 
+	double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
+		-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+		0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,1.465772,7.591193};
 	k_lqr = Mat(3,10,k_lqr_array);
 }
 
@@ -194,34 +193,64 @@ void DelEKF::stateCovarianceUpdate(Mat measure)
 
 void DelEKF::wrapPropStates()
 {
-	x_roll_prop[PHI1_C] += x_roll_prop[PHI1_C]<M_PI ? 2.0*M_PI : 0.0;
-	x_roll_prop[PHI1_C] -= x_roll_prop[PHI1_C]>M_PI ? 2.0*M_PI : 0.0;
-	x_roll_prop[PHI1_P] += x_roll_prop[PHI1_P]<M_PI ? 2.0*M_PI : 0.0;
-	x_roll_prop[PHI1_P] -= x_roll_prop[PHI1_P]>M_PI ? 2.0*M_PI : 0.0;
+	while(abs(x_roll_prop[PHI1_C])>M_PI)
+	{
+		x_roll_prop[PHI1_C] += x_roll_prop[PHI1_C]<M_PI ? 2.0*M_PI : 0.0;
+		x_roll_prop[PHI1_C] -= x_roll_prop[PHI1_C]>M_PI ? 2.0*M_PI : 0.0;
+	}
+	while(abs(x_roll_prop[PHI1_P])>M_PI)
+	{
+		x_roll_prop[PHI1_P] += x_roll_prop[PHI1_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_roll_prop[PHI1_P] -= x_roll_prop[PHI1_P]>M_PI ? 2.0*M_PI : 0.0;
+	}
 
-	x_pitch_prop[PHI2_C] += x_pitch_prop[PHI2_C]<M_PI ? 2.0*M_PI : 0.0;
-	x_pitch_prop[PHI2_C] -= x_pitch_prop[PHI2_C]>M_PI ? 2.0*M_PI : 0.0;
-	x_pitch_prop[PHI2_P] += x_pitch_prop[PHI2_P]<M_PI ? 2.0*M_PI : 0.0;
-	x_pitch_prop[PHI2_P] -= x_pitch_prop[PHI2_P]>M_PI ? 2.0*M_PI : 0.0;
+	while(abs(x_pitch_prop[PHI2_C])>M_PI)
+	{
+		x_pitch_prop[PHI2_C] += x_pitch_prop[PHI2_C]<M_PI ? 2.0*M_PI : 0.0;
+		x_pitch_prop[PHI2_C] -= x_pitch_prop[PHI2_C]>M_PI ? 2.0*M_PI : 0.0;
+	}
+	while(abs(x_pitch_prop[PHI2_P])>M_PI)
+	{
+		x_pitch_prop[PHI2_P] += x_pitch_prop[PHI2_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_pitch_prop[PHI2_P] -= x_pitch_prop[PHI2_P]>M_PI ? 2.0*M_PI : 0.0;
+	}
 
-	x_yaw_prop[PHI3_P] += x_yaw_prop[PHI3_P]<M_PI ? 2.0*M_PI : 0.0;
-	x_yaw_prop[PHI3_P] -= x_yaw_prop[PHI3_P]>M_PI ? 2.0*M_PI : 0.0;
+	while(abs(x_yaw_prop[PHI3_P])>M_PI)
+	{
+		x_yaw_prop[PHI3_P] += x_yaw_prop[PHI3_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_yaw_prop[PHI3_P] -= x_yaw_prop[PHI3_P]>M_PI ? 2.0*M_PI : 0.0;
+	}
 }
 
 void DelEKF::wrapStates()
 {
-	x_roll[PHI1_C] += x_roll[PHI1_C]<M_PI ? 2.0*M_PI : 0.0;
-	x_roll[PHI1_C] -= x_roll[PHI1_C]>M_PI ? 2.0*M_PI : 0.0;
-	x_roll[PHI1_P] += x_roll[PHI1_P]<M_PI ? 2.0*M_PI : 0.0;
-	x_roll[PHI1_P] -= x_roll[PHI1_P]>M_PI ? 2.0*M_PI : 0.0;
+	while(abs(x_roll[PHI1_C])>M_PI)
+	{
+		x_roll[PHI1_C] += x_roll[PHI1_C]<M_PI ? 2.0*M_PI : 0.0;
+		x_roll[PHI1_C] -= x_roll[PHI1_C]>M_PI ? 2.0*M_PI : 0.0;
+	}
+	while(abs(x_roll[PHI1_P])>M_PI)
+	{
+		x_roll[PHI1_P] += x_roll[PHI1_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_roll[PHI1_P] -= x_roll[PHI1_P]>M_PI ? 2.0*M_PI : 0.0;
+	}
 
-	x_pitch[PHI2_C] += x_pitch[PHI2_C]<M_PI ? 2.0*M_PI : 0.0;
-	x_pitch[PHI2_C] -= x_pitch[PHI2_C]>M_PI ? 2.0*M_PI : 0.0;
-	x_pitch[PHI2_P] += x_pitch[PHI2_P]<M_PI ? 2.0*M_PI : 0.0;
-	x_pitch[PHI2_P] -= x_pitch[PHI2_P]>M_PI ? 2.0*M_PI : 0.0;
+	while(abs(x_pitch[PHI2_C])>M_PI)
+	{
+		x_pitch[PHI2_C] += x_pitch[PHI2_C]<M_PI ? 2.0*M_PI : 0.0;
+		x_pitch[PHI2_C] -= x_pitch[PHI2_C]>M_PI ? 2.0*M_PI : 0.0;
+	}
+	while(abs(x_pitch[PHI2_P])>M_PI)
+	{
+		x_pitch[PHI2_P] += x_pitch[PHI2_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_pitch[PHI2_P] -= x_pitch[PHI2_P]>M_PI ? 2.0*M_PI : 0.0;
+	}
 
-	x_yaw[PHI3_P] += x_yaw[PHI3_P]<M_PI ? 2.0*M_PI : 0.0;
-	x_yaw[PHI3_P] -= x_yaw[PHI3_P]>M_PI ? 2.0*M_PI : 0.0;
+	while(abs(x_yaw[PHI3_P])>M_PI)
+	{
+		x_yaw[PHI3_P] += x_yaw[PHI3_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_yaw[PHI3_P] -= x_yaw[PHI3_P]>M_PI ? 2.0*M_PI : 0.0;
+	}
 }
 
 Vector3f DelEKF::getPlatformOrientation()
@@ -252,7 +281,70 @@ Mat DelEKF::createCommandMat(Vector3f orientation)
 
 void DelEKF::update_R_coeff(float r_value)
 {
-	Re_pitch = r_value;
-	Re_roll = r_value;
-	Re_yaw = 10.0f;	
+	Re_pitch = 0.0001;
+	Re_roll = 0.0001;
+	Re_yaw = r_value;	
+}
+
+void DelEKF::update_LQR_gain(float test)
+{
+	if(test<6.0f)
+	{
+		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
+			-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,1.465772,7.591193};
+		k_lqr = Mat(3,10,k_lqr_array);
+	}
+	else if(test<7.0f)
+	{
+		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
+			-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,0.755772,3.251193};
+		k_lqr = Mat(3,10,k_lqr_array);
+	}
+	else if(test<8.0f)
+	{
+		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
+			-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,0.594104,1.721865};
+		k_lqr = Mat(3,10,k_lqr_array);
+	}
+	else if(test<9.0f)
+	{
+		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
+			-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,2.465772,5.591193};
+		k_lqr = Mat(3,10,k_lqr_array);
+	}
+	// This one is the best so far
+	else if(test<10.0f)
+	{
+		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
+			-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,0.465772,2.591193};
+		k_lqr = Mat(3,10,k_lqr_array);
+	}
+	else if(test<11.0f)
+	{
+		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
+			-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,1.2,3.5};
+		k_lqr = Mat(3,10,k_lqr_array);
+	}
+	else if(test<12.0f)
+	{
+		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
+			-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,1.465772,7.591193};
+		k_lqr = Mat(3,10,k_lqr_array);
+	}
+	else if(test<13.0f)
+	{
+		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
+			-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,1.465772,7.591193};
+		k_lqr = Mat(3,10,k_lqr_array);
+	}
+
+
 }

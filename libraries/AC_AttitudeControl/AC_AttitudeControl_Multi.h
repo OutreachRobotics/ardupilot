@@ -42,7 +42,7 @@
 
 #define YAW_SENSITIVITY                     0.02f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
 #define MAX_ACTUATOR_THRUST                 (2.0*3.2f)
-#define MAX_ACTUATOR_MOMENT                 (4.0f*3.2f*0.1125f)
+#define MAX_ACTUATOR_MOMENT                 (4.0f*2.0f*0.1125f)
 
 #define M_PLATFORM                          2.4f
 #define MAX_PITCH                           0.25f // 17.5° - 10 N to keep that angle

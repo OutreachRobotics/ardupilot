@@ -33,6 +33,7 @@ def build(bld):
             'AP_KDECAN',
             'DEL_EKF',
             'AP_Sony',
+            'DEL_Winch',
         ],
     )
 
