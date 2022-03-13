@@ -24,7 +24,7 @@
 #define RX_BUFFER_LEN 7
 
 #define WINCH_MID_CHANNEL 1500.0f
-#define WINCH_DEADBAND 0.02f
+#define WINCH_DEADBAND 0.05f
 #define WINCH_RANGE 500.0f
 
 #define WINCH_MAX_SPEED 50
@@ -41,6 +41,12 @@ enum Direction
     Down
 };
 
+union PositionRead
+{
+    uint16_t pos;
+    uint8_t byte[2];
+};
+
 /***************************************************************************
 	Class :
 ***************************************************************************/
@@ -55,7 +61,7 @@ public:
 private:
     AP_HAL::UARTDriver *_winch_port;
     uint8_t tx_buffer[TX_BUFFER_LEN];
-    uint16_t position_read;
+    PositionRead position_read;
     uint8_t speed_read;
     uint8_t direction_read;
     uint8_t error;

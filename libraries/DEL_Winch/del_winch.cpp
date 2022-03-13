@@ -18,15 +18,9 @@ extern const AP_HAL::HAL& hal;
 
 DelWinch::DelWinch()
 {
-
-}
-
-void DelWinch::init()
-{
     _winch_port = hal.serial(WINCH_UART);
-    _winch_port->begin(57600,50,50);
-
-    position_read = 0;
+    
+    position_read.pos = 0;
     speed_read = 0;
     direction_read = Neutral;
     speed = 0;
@@ -40,6 +34,11 @@ void DelWinch::init()
     tx_buffer[3] = WINCH_FOOTER;
 }
 
+void DelWinch::init()
+{
+    _winch_port->begin(57600,50,50);
+}
+
 void DelWinch::manage()
 {
     // Receiving status from the winch
@@ -47,10 +46,8 @@ void DelWinch::manage()
     {
         if(_winch_port->read() == WINCH_HEADER)
         {
-            uint16_t temp;
-            temp = _winch_port->read();
-            position_read = _winch_port->read();
-            position_read = (temp<<8) | position_read;
+            position_read.byte[0] = _winch_port->read();
+            position_read.byte[1] = _winch_port->read();
             speed_read = _winch_port->read();
             direction_read = _winch_port->read();
             error = _winch_port->read();
@@ -64,7 +61,6 @@ void DelWinch::manage()
     if(abs(winch_input)>WINCH_DEADBAND)
     {
         direction = winch_input>0.0f ? Up : Down;
-        direction = direction==Up && position_read<10 ? Neutral : direction;
         speed = uint8_t(abs(winch_input) * WINCH_MAX_SPEED);
     }
     else
