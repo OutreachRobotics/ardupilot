@@ -1394,15 +1394,16 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
     while(_deleaves_port->available()>1)
     {
         uint8_t temp = _deleaves_port->read();
-        if(temp == DELEAVES_DATA_HEADER)
+        if(temp == DELEAVES_DATA_HEADER && _deleaves_port->available()>7)
         {
             cuttingPercentage = _deleaves_port->read();
-            uint8_t tempValue = (uint8_t)_deleaves_port->read();
+            uint8_t tempValue = _deleaves_port->read();
             if(tempValue!=armStatus && tempValue && AP_HAL::millis()-last_arm_time>5000)
             {
                 last_arm_time = AP_HAL::millis();
                 gcs().send_text(MAV_SEVERITY_INFO, "#Sampling started");
-            }            
+            } 
+            armStatus = tempValue;           
             batteryVoltage = _deleaves_port->read();
             batterySOC = _deleaves_port->read();
             wrist1 = _deleaves_port->read();
@@ -1443,6 +1444,10 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
             default:
                 break;
             }
+        }
+        else
+        {   
+            break;
         }
     }
 
