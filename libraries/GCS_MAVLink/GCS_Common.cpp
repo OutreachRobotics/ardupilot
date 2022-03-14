@@ -1445,10 +1445,6 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
                 break;
             }
         }
-        else
-        {   
-            break;
-        }
     }
 
     // do absolutely nothing if we are locked
