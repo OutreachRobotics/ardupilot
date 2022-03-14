@@ -27,19 +27,9 @@
 
 #define GCS_DEBUG_SEND_MESSAGE_TIMINGS 0
 #define UART_DELEAVES 4
+#define DELEAVES_DATA_HEADER 0xFE
+#define DELEAVES_MESSAGE_HEADER 0xF9
 
-enum messageID
-{
-    CuttingPercentage,
-    ArmStatus,
-    BatteryVoltage,
-    BatterySOC,
-    TextMessage,
-    Wrist1Pos,
-    Wrist2Pos,
-    GraspPos,
-    SawPWM
-};
 
 enum textMessageID
 {

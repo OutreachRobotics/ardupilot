@@ -309,7 +309,7 @@ void DelEKF::update_length(float length)
 
 		k_lqr = Mat(3,10,k_lqr_array);
 	}
-	else
+	else if(length<17.0f)
 	{
 		double froll [] = {0.999873,-0.101862,0.000125,0.099976,
 0.002500,0.999873,0.000000,0.000125,

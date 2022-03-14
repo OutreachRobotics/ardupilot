@@ -1384,7 +1384,6 @@ void
 GCS_MAVLINK::update_receive(uint32_t max_time_us)
 {
     taxiMode = hal.rcin->read(CH_6) > 1500;
-    const uint16_t nbytesDeLeaves = _deleaves_port->available();
 
     AP_Logger *logger = AP_Logger::get_singleton();
     if(!logger->CardInserted())
@@ -1392,113 +1391,58 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
         gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
     }
 
-    for (uint16_t i=0; i<nbytesDeLeaves; i++)
+    while(_deleaves_port->available()>1)
     {
-        const uint8_t c = (uint8_t)_deleaves_port->read();
-        switch (c)
+        uint8_t temp = _deleaves_port->read();
+        if(temp == DELEAVES_DATA_HEADER)
         {
-        case CuttingPercentage:
-            if(nbytesDeLeaves-i>1)
+            cuttingPercentage = _deleaves_port->read();
+            uint8_t tempValue = (uint8_t)_deleaves_port->read();
+            if(tempValue!=armStatus && tempValue && AP_HAL::millis()-last_arm_time>5000)
             {
-                uint8_t tempValue = (uint8_t)_deleaves_port->read();
-                cuttingPercentage = tempValue == 2 ? cuttingPercentage : tempValue;
-                i++;
-            }
-            break;
-        case ArmStatus:
-            if(nbytesDeLeaves-i>1)
+                last_arm_time = AP_HAL::millis();
+                gcs().send_text(MAV_SEVERITY_INFO, "#Sampling started");
+            }            
+            batteryVoltage = _deleaves_port->read();
+            batterySOC = _deleaves_port->read();
+            wrist1 = _deleaves_port->read();
+            wrist2 = _deleaves_port->read();
+            grasp = _deleaves_port->read();
+            saw = _deleaves_port->read();            
+        }
+        else if(temp == DELEAVES_MESSAGE_HEADER)
+        {
+            deleavesMessage = (uint8_t)_deleaves_port->read();
+            switch (deleavesMessage)
             {
-                uint8_t tempValue = (uint8_t)_deleaves_port->read();
-                if(tempValue!=armStatus && tempValue && AP_HAL::millis()-last_arm_time>5000)
-                {
-                    last_arm_time = AP_HAL::millis();
-                    gcs().send_text(MAV_SEVERITY_INFO, "#Sampling started");
-                }
-                armStatus = tempValue;
-                i++;
+            case SamplingCompleted:
+                gcs().send_text(MAV_SEVERITY_INFO, "#Sampling completed");
+                gcs().set_log_sample_data();
+                break;
+            case CalibrationStarted:
+                gcs().send_text(MAV_SEVERITY_INFO, "#Calibration started");
+                break;
+            case LowBattery:
+                gcs().send_text(MAV_SEVERITY_INFO, "#Low battery");
+                break;
+            case SawNotConnected:
+                gcs().send_text(MAV_SEVERITY_ALERT, "Saw not connected");
+                break;
+            case SawJammed:
+                gcs().send_text(MAV_SEVERITY_ALERT, "Saw jammed during the cutting sequence");
+                break;
+            case SawHighCurrent:
+                gcs().send_text(MAV_SEVERITY_ALERT, "Saw high current protection triggered");
+                break;
+            case SamplingStucked:
+                gcs().send_text(MAV_SEVERITY_ALERT, "Unable to complete the sampling sequence");
+                break;
+            case NoCalibration:
+                gcs().send_text(MAV_SEVERITY_ALERT, "The cutting sequence needs to be stopped for calibration");
+                break;
+            default:
+                break;
             }
-            break;
-        case BatteryVoltage:
-            if(nbytesDeLeaves-i>1)
-            {
-                batteryVoltage = (uint8_t)_deleaves_port->read();
-                i++;
-            }
-            break;
-        case BatterySOC:
-            if(nbytesDeLeaves-i>1)
-            {
-                batterySOC = (uint8_t)_deleaves_port->read();
-                i++;
-            }
-            break;
-        case TextMessage:
-            if(nbytesDeLeaves-i>1)
-            {
-                deleavesMessage = (uint8_t)_deleaves_port->read();
-                switch (deleavesMessage)
-                {
-                case SamplingCompleted:
-                    gcs().send_text(MAV_SEVERITY_INFO, "#Sampling completed");
-                    gcs().set_log_sample_data();
-                    break;
-                case CalibrationStarted:
-                    gcs().send_text(MAV_SEVERITY_INFO, "#Calibration started");
-                    break;
-                case LowBattery:
-                    gcs().send_text(MAV_SEVERITY_INFO, "#Low battery");
-                    break;
-                case SawNotConnected:
-                    gcs().send_text(MAV_SEVERITY_ALERT, "Saw not connected");
-                    break;
-                case SawJammed:
-                    gcs().send_text(MAV_SEVERITY_ALERT, "Saw jammed during the cutting sequence");
-                    break;
-                case SawHighCurrent:
-                    gcs().send_text(MAV_SEVERITY_ALERT, "Saw high current protection triggered");
-                    break;
-                case SamplingStucked:
-                    gcs().send_text(MAV_SEVERITY_ALERT, "Unable to complete the sampling sequence");
-                    break;
-                case NoCalibration:
-                    gcs().send_text(MAV_SEVERITY_ALERT, "The cutting sequence needs to be stopped for calibration");
-                    break;
-                default:
-                    break;
-                }
-                i++;
-            }
-            break;
-        case Wrist1Pos:
-            if(nbytesDeLeaves-i>1)
-            {
-                wrist1 = (uint8_t)_deleaves_port->read();
-                i++;
-            }
-            break;
-        case Wrist2Pos:
-            if(nbytesDeLeaves-i>1)
-            {
-                wrist2 = (uint8_t)_deleaves_port->read();
-                i++;
-            }
-            break;
-        case GraspPos:
-            if(nbytesDeLeaves-i>1)
-            {
-                grasp = (uint8_t)_deleaves_port->read();
-                i++;
-            }
-            break;
-        case SawPWM:
-            if(nbytesDeLeaves-i>1)
-            {
-                saw = (uint8_t)_deleaves_port->read();
-                i++;
-            }
-            break;
-        default:
-            break;
         }
     }
 
