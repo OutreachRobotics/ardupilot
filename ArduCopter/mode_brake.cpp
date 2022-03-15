@@ -46,7 +46,7 @@ void ModeBrake::run()
 
     // Only call controller each 8 timestep to have 50Hzs
     if (counter>7){
-        attitude_control->deleaves_controller_angVelHold_PD(lateral, forward, yaw_moment, thrust_input, motors->armed());
+        attitude_control->deleaves_controller_angVelHold_LQR_PD(lateral, forward, yaw_moment, thrust_input, motors->armed());
         counter=0;
     }
     counter++;

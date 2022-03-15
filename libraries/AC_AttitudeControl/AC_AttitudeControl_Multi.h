@@ -81,6 +81,16 @@
 #define B0_SP                                  0.0592
 #define A0_SP                                 -0.8816
 
+// // Low pass filter coefficient fc = 0.5 Hz, Fs = 50 Hz
+// #define B1_SP                                  0.0305
+// #define B0_SP                                  0.0305
+// #define A0_SP                                 -0.9391
+
+// // Low pass filter coefficient fc = 0.25 Hz, Fs = 50 Hz
+// #define B1_SP                                  0.0155
+// #define B0_SP                                  0.0155
+// #define A0_SP                                 -0.9691
+
 enum Control_Type
 {
   pd_control,
@@ -125,6 +135,7 @@ public:
     void deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed);
+    void deleaves_controller_angVelHold_LQR_PD(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_taxi(float yaw, bool armed);
     void constrainCommand();
 

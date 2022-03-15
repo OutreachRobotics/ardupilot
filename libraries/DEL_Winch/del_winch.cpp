@@ -56,7 +56,9 @@ void DelWinch::manage()
         }
     }
 
-    winch_input = (hal.rcin->read(CH_3)-WINCH_MID_CHANNEL)/WINCH_RANGE;
+    uint16_t winch_rc_in = hal.rcin->read(CH_3)<1000 ? WINCH_MID_CHANNEL : hal.rcin->read(CH_3);
+    winch_input = (winch_rc_in-WINCH_MID_CHANNEL)/WINCH_RANGE;
+
 
     if(abs(winch_input)>WINCH_DEADBAND)
     {
