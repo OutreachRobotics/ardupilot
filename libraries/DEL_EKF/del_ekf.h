@@ -52,6 +52,7 @@ public:
     Vector3f getPlatformOrientation();
     Mat getEKFStates();
     Mat getLQRgain();
+    Mat getLQRgain_taxi();
     Mat createCommandMat(Vector3f orientation);
     void update_R_coeff(float r_value);
     void update_length(float length);

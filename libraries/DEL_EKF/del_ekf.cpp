@@ -230,6 +230,14 @@ Mat DelEKF::getLQRgain()
 	return k_lqr;
 }
 
+Mat DelEKF::getLQRgain_taxi()
+{
+	double k_lqr_array[] = {   -0.0000,   -0.0000,    0.0000,    0.0000,    9.1023,   10.6138,   33.0339,  -11.7028,    0.0000,    0.0000,
+   -9.5826,  -68.3837,  -33.1381,   68.7290,   -0.0000,    0.0000,   -0.0000,   -0.0000,    0.0000,    0.0000,
+0.000000,0.000000,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,15.827118,64.039825}; 
+	return Mat(3,10,k_lqr_array);
+}
+
 Mat DelEKF::createCommandMat(Vector3f orientation)
 {
 	double command[] = {0.0000, orientation.x, 0.0000, orientation.x, 

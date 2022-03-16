@@ -81,6 +81,11 @@
 #define B0_SP                                  0.0592
 #define A0_SP                                 -0.8816
 
+// Low pass filter coefficient fc = 1 Hz, Fs = 50 Hz
+#define B1_SP_T                                  0.006244029
+#define B0_SP_T                                  0.006244029
+#define A0_SP_T                                  0.987511942
+
 enum Control_Type
 {
   pd_control,
@@ -126,6 +131,7 @@ public:
     void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_taxi(float yaw, bool armed);
+    void deleaves_controller_taxi_LQR(float yaw, bool armed);
     void constrainCommand();
 
     // are we producing min throttle?
@@ -141,6 +147,7 @@ public:
     void parameter_sanity_check() override;
     float get_mamba_length();
     float get_sensitivity_coeff();
+    float get_R_mat();
 
     void updateDelEKF(Vector3f F_in, Vector3f measure);
     Vector3f getDelEKFOrientation();

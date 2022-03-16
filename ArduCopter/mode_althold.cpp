@@ -49,7 +49,7 @@ void ModeAltHold::run()
     if (counter>7){
         if(taxi_mode)
         {
-            attitude_control->deleaves_controller_taxi(yaw_input, motors->armed());
+            attitude_control->deleaves_controller_taxi_LQR(yaw_input, motors->armed());
         }
         else
         {
