@@ -81,7 +81,7 @@ void Copter::Log_Write_Attitude()
 
 
 
-struct PACKED log_MAMBA {
+struct PACKED log_SIMBA {
     LOG_PACKET_HEADER;
     uint64_t time_us;
     float f_x;
@@ -99,13 +99,13 @@ struct PACKED log_MAMBA {
     float phi3_p;
 };
 
-// Write a MAMBA packet
-void Copter::Log_Write_MAMBA()
+// Write a SIMBA packet
+void Copter::Log_Write_SIMBA()
 {
     Mat delekf_states = attitude_control->get_delEKF_states();
 
-    struct log_MAMBA pkt = {
-        LOG_PACKET_HEADER_INIT(LOG_MAMBA_MSG),
+    struct log_SIMBA pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_SIMBA_MSG),
         time_us         : AP_HAL::micros64(),
         f_x             : motors->get_lateral(),
         f_y             : motors->get_forward(),      
@@ -124,6 +124,30 @@ void Copter::Log_Write_MAMBA()
     logger.WriteBlock(&pkt, sizeof(pkt));
 };
 
+struct PACKED log_DelWinch {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float position;
+    float speed;
+    float command;
+    uint8_t direction;
+    uint8_t error;
+};
+
+// Write a winch packet
+void Copter::Log_Write_Winch()
+{
+    struct log_DelWinch pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_DELWINCH_MSG),
+        time_us         : AP_HAL::micros64(),
+        position        : delWinch.getPosition()/100.0f,
+        speed           : delWinch.getSpeed()/100.0f,
+        command         : delWinch.getSpeedCommand()/100.0f,
+        direction       : delWinch.getDirection(),
+        error           : delWinch.getError()
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+};
 
 // Write an EKF and POS packet
 void Copter::Log_Write_EKF_POS()
@@ -512,14 +536,24 @@ const struct LogStructure Copter::log_structure[] = {
     { LOG_PARAMTUNE_MSG, sizeof(log_ParameterTuning),
       "PTUN", "QBfff",         "TimeUS,Param,TunVal,TunMin,TunMax", "s----", "F----" },
 
-// @LoggerMessage: MAMB
-// @Description: MAMBA Interesting log info
+// @LoggerMessage: SIMB
+// @Description: SIMBA Interesting log info
 // @URL: 
 // @Field: TimeUS: Time since system startup
 // @Field: yaw_value: Yaw angle in degree
 
-    {LOG_MAMBA_MSG, sizeof(log_MAMBA),
-      "MAMB", "Qfffffffffffff",  "TimeUS,fx,fy,fz,x0,x1,x2,x3,x4,x5,x6,x7,x8,x9", "sNNNErErErErEr", "F-------------" },  // Message Name, Format, Variables names, Units, Multiplier
+    {LOG_SIMBA_MSG, sizeof(log_SIMBA),
+      "SIMB", "Qfffffffffffff",  "TimeUS,fx,fy,fz,x0,x1,x2,x3,x4,x5,x6,x7,x8,x9", "sNNNErErErErEr", "F-------------" },  // Message Name, Format, Variables names, Units, Multiplier
+
+// @LoggerMessage: WINC
+// @Description: Winch Interesting log info
+// @URL: 
+// @Field: TimeUS: Time since system startup
+// @Field: yaw_value: Yaw angle in degree
+
+    {LOG_DELWINCH_MSG, sizeof(log_DelWinch),
+      "WINC", "QfffBB",  "TimeUS,pos,speed,command,dir,err", "smnn--", "F-----" },  // Message Name, Format, Variables names, Units, Multiplier
+
 
 // @LoggerMessage: CTUN
 // @Description: Control Tuning information

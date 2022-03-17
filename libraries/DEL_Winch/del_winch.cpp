@@ -77,3 +77,28 @@ void DelWinch::manage()
     _winch_port->write(tx_buffer,TX_BUFFER_LEN);   
 
 }
+
+    uint16_t DelWinch::getPosition()
+    {
+        return position_read.pos;
+    }
+
+    uint8_t DelWinch::getSpeed()
+    {
+        return speed_read;
+    }
+
+    uint8_t DelWinch::getSpeedCommand()
+    {
+        return speed;
+    }
+
+    uint8_t DelWinch::getDirection()
+    {
+        return direction_read;
+    }
+
+    uint8_t DelWinch::getError()
+    {
+        return error;
+    }

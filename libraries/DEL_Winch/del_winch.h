@@ -57,6 +57,11 @@ public:
     DelWinch();
     void init();
     void manage();
+    uint16_t getPosition();
+    uint8_t getSpeed();
+    uint8_t getSpeedCommand();
+    uint8_t getDirection();
+    uint8_t getError();
 
 private:
     AP_HAL::UARTDriver *_winch_port;

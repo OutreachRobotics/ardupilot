@@ -475,7 +475,8 @@ void Copter::twentyfive_hz_logging()
     delWinch.manage();
     gcs().set_camera_angle(sony_cam.get_camera_angle());
     gcs().set_distance(rangefinder.state->distance_cm);
-    Log_Write_MAMBA();
+    Log_Write_SIMBA();
+    Log_Write_Winch();
 }
 
 // three_hz_loop - 3.3hz loop
