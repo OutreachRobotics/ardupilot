@@ -44,8 +44,16 @@ void AP_Sony::handle_rc_input()
     here_zoom_in = hal.rcin->read(HERE_ZOOM_CH) > HERE_MID_VALUE && hal.rcin->read(HERE_ZOOM_SERVO_CH) > HERE_ZOOM_SERVO_UP;
     here_zoom_out = hal.rcin->read(HERE_ZOOM_CH) > HERE_MID_VALUE && hal.rcin->read(HERE_ZOOM_SERVO_CH) < HERE_ZOOM_SERVO_DOWN;
 
-    servo_up = !(hal.rcin->read(HERE_ZOOM_CH) > HERE_MID_VALUE) && hal.rcin->read(HERE_ZOOM_SERVO_CH) > HERE_ZOOM_SERVO_UP;
-    servo_down = !(hal.rcin->read(HERE_ZOOM_CH) > HERE_MID_VALUE) && hal.rcin->read(HERE_ZOOM_SERVO_CH) < HERE_ZOOM_SERVO_DOWN; 
+    if(hal.rcin->read(CH_3) < 1000)
+    {
+        servo_up = false;
+        servo_down = false;
+    }
+    else
+    {
+        servo_up = !(hal.rcin->read(HERE_ZOOM_CH) > HERE_MID_VALUE) && hal.rcin->read(HERE_ZOOM_SERVO_CH) > HERE_ZOOM_SERVO_UP;
+        servo_down = !(hal.rcin->read(HERE_ZOOM_CH) > HERE_MID_VALUE) && hal.rcin->read(HERE_ZOOM_SERVO_CH) < HERE_ZOOM_SERVO_DOWN; 
+    }
     
     if(hal.rcin->read(HERE_PHOTO_CH) > HERE_MID_VALUE && !here_focus_btn && !here_photo_btn)
     {
