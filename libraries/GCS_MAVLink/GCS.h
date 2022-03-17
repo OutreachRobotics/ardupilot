@@ -884,6 +884,10 @@ public:
     uint32_t    camera_angle;
     uint32_t    distance_value;
 
+    void        setWinchAltitude(float newAlt);
+    float       getWinchAltitude();
+    float       winchAltitude;
+
     void send_to_active_channels(uint32_t msgid, const char *pkt);
 
     void send_text(MAV_SEVERITY severity, const char *fmt, ...) FMT_PRINTF(3, 4);

@@ -4400,6 +4400,17 @@ int32_t GCS_MAVLINK::global_position_int_relative_alt() const {
     posD *= -1000.0f; // change from down to up and metres to millimeters
     return posD;
 }
+
+void GCS::setWinchAltitude(float newAlt)
+{
+    winchAltitude = newAlt;
+}
+
+float GCS::getWinchAltitude()
+{
+    return winchAltitude;
+}
+
 void GCS_MAVLINK::send_global_position_int()
 {
     AP_AHRS &ahrs = AP::ahrs();
@@ -4417,7 +4428,7 @@ void GCS_MAVLINK::send_global_position_int()
         global_position_current_loc.lat, // in 1E7 degrees
         global_position_current_loc.lng, // in 1E7 degrees
         global_position_int_alt(),       // millimeters above ground/sea level
-        global_position_int_relative_alt(), // millimeters above home
+        gcs().getWinchAltitude()*1000,   // millimeters above home
         vel.x * 100,                     // X speed cm/s (+ve North)
         vel.y * 100,                     // Y speed cm/s (+ve East)
         vel.z * 100,                     // Z speed cm/s (+ve Down)
