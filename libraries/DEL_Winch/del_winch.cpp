@@ -42,19 +42,20 @@ void DelWinch::init()
 void DelWinch::manage()
 {
     // Receiving status from the winch
-    while(_winch_port->available() > RX_BUFFER_LEN)
+    while(_winch_port->available()>6)
     {
         if(_winch_port->read() == WINCH_HEADER)
         {
             position_read.byte[0] = _winch_port->read();
-            position_read.byte[1] = _winch_port->read();
+            position_read.byte[1] = _winch_port->read(); 
             speed_read = _winch_port->read();
             direction_read = _winch_port->read();
             error = _winch_port->read();
             error |= _winch_port->read() == WINCH_FOOTER;
-            _winch_port->flush();
         }
     }
+
+
 
     uint16_t winch_rc_in = hal.rcin->read(CH_3)<1000 ? WINCH_MID_CHANNEL : hal.rcin->read(CH_3);
     winch_input = (winch_rc_in-WINCH_MID_CHANNEL)/WINCH_RANGE;

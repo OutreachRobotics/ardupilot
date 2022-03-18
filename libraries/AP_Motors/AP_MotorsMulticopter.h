@@ -29,7 +29,7 @@
 #define T2PWM_COEF2                     -154.34f
 #define T2PWM_COEF3                     520.56f
 #define T2PWM_COEF4                     1037.04f
-#define LOW_PWM_LIMIT                   1050.0f
+#define LOW_PWM_LIMIT                   1075.0f
 #define HIGH_PWM_LIMIT                  2000.0f
 #define ACTUATOR_LEVER                  0.1125f
 #define MAX_THRUST                      3.2f

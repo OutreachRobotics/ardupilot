@@ -4428,7 +4428,7 @@ void GCS_MAVLINK::send_global_position_int()
         global_position_current_loc.lat, // in 1E7 degrees
         global_position_current_loc.lng, // in 1E7 degrees
         global_position_int_alt(),       // millimeters above ground/sea level
-        gcs().getWinchAltitude()*1000,   // millimeters above home
+        gcs().getWinchAltitude()*10,   // millimeters above home
         vel.x * 100,                     // X speed cm/s (+ve North)
         vel.y * 100,                     // Y speed cm/s (+ve East)
         vel.z * 100,                     // Z speed cm/s (+ve Down)
