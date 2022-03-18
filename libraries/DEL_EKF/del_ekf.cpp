@@ -283,7 +283,7 @@ void DelEKF::update_R_coeff(float r_value)
 {
 	Re_pitch = 0.0001;
 	Re_roll = 0.0001;
-	Re_yaw = r_value;	
+	Re_yaw = 1000;	
 }
 
 void DelEKF::update_LQR_gain(float test)
