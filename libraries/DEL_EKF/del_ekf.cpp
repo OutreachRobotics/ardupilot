@@ -133,7 +133,7 @@ Mat DelEKF::commandLPF(Mat F_in)
 {
 	Mat F_in_filt(3,1);
 
-	F_in_filt = F_in*0.1582 + last_F_in*0.1582 + last_F_in_filt*0.6835;
+	F_in_filt = F_in*0.177 + last_F_in*0.177 + last_F_in_filt*0.646;
 	last_F_in_filt = F_in_filt;
 	last_F_in = F_in;
 
