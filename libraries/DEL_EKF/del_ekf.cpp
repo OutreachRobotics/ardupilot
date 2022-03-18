@@ -195,29 +195,29 @@ void DelEKF::wrapPropStates()
 {
 	while(abs(x_roll_prop[PHI1_C])>M_PI)
 	{
-		x_roll_prop[PHI1_C] += x_roll_prop[PHI1_C]<M_PI ? 2.0*M_PI : 0.0;
+		x_roll_prop[PHI1_C] += x_roll_prop[PHI1_C]<-M_PI ? 2.0*M_PI : 0.0;
 		x_roll_prop[PHI1_C] -= x_roll_prop[PHI1_C]>M_PI ? 2.0*M_PI : 0.0;
 	}
 	while(abs(x_roll_prop[PHI1_P])>M_PI)
 	{
-		x_roll_prop[PHI1_P] += x_roll_prop[PHI1_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_roll_prop[PHI1_P] += x_roll_prop[PHI1_P]<-M_PI ? 2.0*M_PI : 0.0;
 		x_roll_prop[PHI1_P] -= x_roll_prop[PHI1_P]>M_PI ? 2.0*M_PI : 0.0;
 	}
 
 	while(abs(x_pitch_prop[PHI2_C])>M_PI)
 	{
-		x_pitch_prop[PHI2_C] += x_pitch_prop[PHI2_C]<M_PI ? 2.0*M_PI : 0.0;
+		x_pitch_prop[PHI2_C] += x_pitch_prop[PHI2_C]<-M_PI ? 2.0*M_PI : 0.0;
 		x_pitch_prop[PHI2_C] -= x_pitch_prop[PHI2_C]>M_PI ? 2.0*M_PI : 0.0;
 	}
 	while(abs(x_pitch_prop[PHI2_P])>M_PI)
 	{
-		x_pitch_prop[PHI2_P] += x_pitch_prop[PHI2_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_pitch_prop[PHI2_P] += x_pitch_prop[PHI2_P]<-M_PI ? 2.0*M_PI : 0.0;
 		x_pitch_prop[PHI2_P] -= x_pitch_prop[PHI2_P]>M_PI ? 2.0*M_PI : 0.0;
 	}
 
 	while(abs(x_yaw_prop[PHI3_P])>M_PI)
 	{
-		x_yaw_prop[PHI3_P] += x_yaw_prop[PHI3_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_yaw_prop[PHI3_P] += x_yaw_prop[PHI3_P]<-M_PI ? 2.0*M_PI : 0.0;
 		x_yaw_prop[PHI3_P] -= x_yaw_prop[PHI3_P]>M_PI ? 2.0*M_PI : 0.0;
 	}
 }
@@ -226,29 +226,29 @@ void DelEKF::wrapStates()
 {
 	while(abs(x_roll[PHI1_C])>M_PI)
 	{
-		x_roll[PHI1_C] += x_roll[PHI1_C]<M_PI ? 2.0*M_PI : 0.0;
+		x_roll[PHI1_C] += x_roll[PHI1_C]<-M_PI ? 2.0*M_PI : 0.0;
 		x_roll[PHI1_C] -= x_roll[PHI1_C]>M_PI ? 2.0*M_PI : 0.0;
 	}
 	while(abs(x_roll[PHI1_P])>M_PI)
 	{
-		x_roll[PHI1_P] += x_roll[PHI1_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_roll[PHI1_P] += x_roll[PHI1_P]<-M_PI ? 2.0*M_PI : 0.0;
 		x_roll[PHI1_P] -= x_roll[PHI1_P]>M_PI ? 2.0*M_PI : 0.0;
 	}
 
 	while(abs(x_pitch[PHI2_C])>M_PI)
 	{
-		x_pitch[PHI2_C] += x_pitch[PHI2_C]<M_PI ? 2.0*M_PI : 0.0;
+		x_pitch[PHI2_C] += x_pitch[PHI2_C]<-M_PI ? 2.0*M_PI : 0.0;
 		x_pitch[PHI2_C] -= x_pitch[PHI2_C]>M_PI ? 2.0*M_PI : 0.0;
 	}
 	while(abs(x_pitch[PHI2_P])>M_PI)
 	{
-		x_pitch[PHI2_P] += x_pitch[PHI2_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_pitch[PHI2_P] += x_pitch[PHI2_P]<-M_PI ? 2.0*M_PI : 0.0;
 		x_pitch[PHI2_P] -= x_pitch[PHI2_P]>M_PI ? 2.0*M_PI : 0.0;
 	}
 
 	while(abs(x_yaw[PHI3_P])>M_PI)
 	{
-		x_yaw[PHI3_P] += x_yaw[PHI3_P]<M_PI ? 2.0*M_PI : 0.0;
+		x_yaw[PHI3_P] += x_yaw[PHI3_P]<-M_PI ? 2.0*M_PI : 0.0;
 		x_yaw[PHI3_P] -= x_yaw[PHI3_P]>M_PI ? 2.0*M_PI : 0.0;
 	}
 }
