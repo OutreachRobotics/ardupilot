@@ -135,7 +135,6 @@ public:
     void deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed);
-    void deleaves_controller_angVelHold_LQR_PD(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_taxi(float yaw, bool armed);
     void constrainCommand();
 
@@ -185,8 +184,8 @@ protected:
     float target_yaw, yaw_angle_error, yaw_angle_error_last, yaw_angle_error_dt, yaw_input;
     float target_forward, forward_error, forward_error_last, forward_error_dt, forward_command;
     float target_lateral, lateral_error, lateral_error_last, lateral_error_dt, lateral_command;
-    float last_target_lateral, last_target_forward;
-    float filtered_target_lateral, filtered_target_forward;
+    float last_target_lateral, last_target_forward, last_target_yaw;
+    float filtered_target_lateral, filtered_target_forward, filtered_target_yaw;
     float roll_kp, roll_kd, pitch_kp, pitch_kd, yaw_kp, yaw_kd;
     float pitch_sensitivity, roll_sensitivity;
 };

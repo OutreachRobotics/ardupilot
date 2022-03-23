@@ -408,9 +408,18 @@ void AC_AttitudeControl_Multi::lowPassSetPointFilter()
 {
     filtered_target_lateral = B1_SP*target_lateral + B0_SP*last_target_lateral - A0_SP*filtered_target_lateral;
     filtered_target_forward = B1_SP*target_forward + B0_SP*last_target_forward - A0_SP*filtered_target_forward;
+    if(abs(target_yaw-filtered_target_yaw) < 1.0f)
+    {
+        filtered_target_yaw = B1_SP*target_yaw + B0_SP*last_target_yaw - A0_SP*filtered_target_yaw;
+    }
+    else
+    {
+        filtered_target_yaw = target_yaw;
+    }
 
     last_target_lateral = target_lateral;
     last_target_forward = target_forward;
+    last_target_yaw = target_yaw;
 }
 
 
@@ -448,26 +457,29 @@ void AC_AttitudeControl_Multi::deleaves_controller_acro(float lateral, float for
 void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed)
 {
     //run at 50Hz
+    lowPassDataFilter();
 
     //Initialize target yaw to the value of yaw when not armed or update it with joystick when armed
     target_yaw = !armed ? ahrs_ang.z : target_yaw + yaw*YAW_SENSITIVITY;
     target_lateral = 0.0f;
     target_forward = 0.0f;
-    yaw_angle_error = target_yaw - ahrs_ang.z ;
+
+    lowPassSetPointFilter();
+
+    yaw_angle_error = filtered_target_yaw - ahrs_ang.z ;
 
     //Correction for target angle more than half-turn away
     if (yaw_angle_error>M_PI){
-        target_yaw=target_yaw-2*M_PI;
-        yaw_angle_error= target_yaw-ahrs_ang.z ;
+        filtered_target_yaw=filtered_target_yaw-2*M_PI;
+        yaw_angle_error= filtered_target_yaw-ahrs_ang.z ;
         yaw_angle_error_last=yaw_angle_error_last-2*M_PI;
     }
 
     if (yaw_angle_error<-M_PI){
-        target_yaw=target_yaw+2*M_PI;
-        yaw_angle_error= target_yaw-ahrs_ang.z;
+        filtered_target_yaw=filtered_target_yaw+2*M_PI;
+        yaw_angle_error= filtered_target_yaw-ahrs_ang.z;
         yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
     }
-    lowPassSetPointFilter();
 
     yaw_angle_error_dt=(yaw_angle_error-yaw_angle_error_last)*50; //50 Hz
     yaw_input= yaw_kp*yaw_angle_error+yaw_kd*yaw_angle_error_dt;
@@ -476,7 +488,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
     // For logging purpose
     _attitude_target_euler_angle.x = 0.0f;
     _attitude_target_euler_angle.y = 0.0f;
-    _attitude_target_euler_angle.z = target_yaw;
+    _attitude_target_euler_angle.z = filtered_target_yaw;
 
     constrainCommand();
 
@@ -720,18 +732,18 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     lowPassSetPointFilter();
 
     // Yaw PD control
-    yaw_angle_error= target_yaw-ctrl_ang.z;
+    yaw_angle_error= filtered_target_yaw-ctrl_ang.z;
 
     //Correction for target angle more than half-turn away
     if (yaw_angle_error>M_PI){
-        target_yaw=target_yaw-2*M_PI;
-        yaw_angle_error= target_yaw-ctrl_ang.z ;
+        filtered_target_yaw=filtered_target_yaw-2*M_PI;
+        yaw_angle_error= filtered_target_yaw-ctrl_ang.z ;
         yaw_angle_error_last=yaw_angle_error_last-2*M_PI;
     }
 
     if (yaw_angle_error<-M_PI){
-        target_yaw=target_yaw+2*M_PI;
-        yaw_angle_error= target_yaw-ctrl_ang.z;
+        filtered_target_yaw=filtered_target_yaw+2*M_PI;
+        yaw_angle_error= filtered_target_yaw-ctrl_ang.z;
         yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
     }
 
@@ -756,7 +768,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     // For logging purpose
     _attitude_target_euler_angle.x = filtered_target_lateral;
     _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _attitude_target_euler_angle.z = filtered_target_yaw;
 
     if(armed)
     {
@@ -829,16 +841,16 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     lowPassSetPointFilter();
 
     // LQR control
-    yaw_angle_error= target_yaw-states[9];
+    yaw_angle_error= filtered_target_yaw-states[9];
     
     if (yaw_angle_error>M_PI){
-        target_yaw=target_yaw-2*M_PI;
+        filtered_target_yaw=filtered_target_yaw-2*M_PI;
     }
     if (yaw_angle_error<-M_PI){
-        target_yaw=target_yaw+2*M_PI;
+        filtered_target_yaw=filtered_target_yaw+2*M_PI;
     }
 
-    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
+    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,filtered_target_yaw));
 
 
     double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
@@ -853,107 +865,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     // For logging purpose
     _attitude_target_euler_angle.x = filtered_target_lateral;
     _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
-
-    if(armed)
-    {
-        _motors.set_lateral(lateral_command);
-        _motors.set_forward(forward_command);
-        _motors.set_yaw(yaw_input);
-        _motors.set_throttle(throttle);
-    }
-    else
-    {
-        _motors.set_lateral(0.0f);
-        _motors.set_forward(0.0f);
-        _motors.set_yaw(0.0f);
-        _motors.set_throttle(0.0f);        
-    }
-    
-    // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
-}
-
-void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR_PD(float lateral, float forward, float yaw, float throttle, bool armed)
-{
-    // Control runs at 50Hz
-    // Low pass filter to reduce vibration in data
-    lowPassDataFilter();
-
-    Mat states = delEKF.getEKFStates();
-    Mat k_lqr = delEKF.getLQRgain();
-
-    //Initialize target angle to the value of angle when not armed or update it with joystick when armed
-    if(!armed)
-    {
-        target_yaw = states[9];
-        target_forward = 0.0f;
-        target_lateral = 0.0f;
-    }
-    else
-    {
-        // Yaw control, simple deadband check
-        if(abs(yaw) > DEADBAND)
-        {
-            target_yaw += yaw*YAW_SENSITIVITY;
-        }
-
-        // Forward control
-        if(abs(forward) > DEADBAND)
-        {
-            target_forward = forward*MAX_PITCH;
-        }
-        else
-        {
-            target_forward = 0.0f;
-        }
-        
-        // Lateral control, based on the same principle as forward control
-        if(abs(lateral) > DEADBAND)
-        {
-            target_lateral = lateral*MAX_ROLL;
-        }
-        else
-        {
-            target_lateral = 0.0f;
-        }
-    }    
-
-    lowPassSetPointFilter();
-
-    // LQR control
-    yaw_angle_error= target_yaw-states[9];
-    
-    if (yaw_angle_error>M_PI){
-        target_yaw=target_yaw-2*M_PI;
-    }
-    if (yaw_angle_error<-M_PI){
-        target_yaw=target_yaw+2*M_PI;
-    }
-
-    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
-
-
-    double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
-    Mat ff = Mat(3,1,ff_array);
-    Mat out = (k_lqr * (command - states)) + ff;
-    forward_command = out[0];
-    lateral_command = -out[1];
-    
-    yaw_angle_error_dt=(yaw_angle_error-yaw_angle_error_last)*50; //50 Hz
-    yaw_input= yaw_kp*yaw_angle_error+yaw_kd*yaw_angle_error_dt;
-    yaw_angle_error_last=yaw_angle_error; //assign new error to last
-
-    constrainCommand();
-
-    // For logging purpose
-    _attitude_target_euler_angle.x = filtered_target_lateral;
-    _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _attitude_target_euler_angle.z = filtered_target_yaw;
 
     if(armed)
     {
