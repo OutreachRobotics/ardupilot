@@ -41,11 +41,11 @@
 #endif
 
 #define YAW_SENSITIVITY                     0.01f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
-#define PMAX_ACTUATOR_THRUST                13.0f
+#define PMAX_ACTUATOR_THRUST                14.0f
 #define RMAX_ACTUATOR_THRUST                (13.0f*(ROLL_ADJUSTMENT+1.0f)/2.0f)
 
 #define M_PLATFORM                          3.24f
-#define MAX_PITCH                           0.305f // 17.5° - 10 N to keep that angle
+#define MAX_PITCH                           0.38f // 17.5° - 10 N to keep that angle
 #define MAX_ROLL                            (MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
 #define MIN_PITCH                           (-MAX_PITCH)
 #define MIN_ROLL                            (-MAX_ROLL)
