@@ -770,6 +770,7 @@ private:
 
     // Log.cpp
     void Log_Write_SIMBA();
+    void Log_Write_Target();
     void Log_Write_Winch();
     void Log_Write_Control_Tuning();
     void Log_Write_Performance();

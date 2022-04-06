@@ -478,6 +478,7 @@ void Copter::twentyfive_hz_logging()
     gcs().setWinchAltitude(delWinch.getPosition()/100.0f);
     Log_Write_SIMBA();
     Log_Write_Winch();
+    Log_Write_Target();
 }
 
 // three_hz_loop - 3.3hz loop

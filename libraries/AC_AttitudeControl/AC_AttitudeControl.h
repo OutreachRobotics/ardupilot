@@ -181,6 +181,8 @@ public:
     // **NOTE** Using vector3f*deg(100) is more efficient than deg(vector3f)*100 or deg(vector3d*100) because it gives the
     // same result with the fewest multiplications. Even though it may look like a bug, it is intentional. See issue 4895.
     Vector3f get_att_target_euler_cd() const { return _attitude_target_euler_angle * degrees(100.0f); }
+    Vector3f get_att_target_euler() const { return _attitude_target_euler_angle; }
+    Vector3f get_att_target_euler_filtered() const { return _attitude_target_euler_angle_filtered; }
 
     // Return the body-to-NED target attitude used by the quadplane-specific attitude control input methods
     Quaternion get_attitude_target_quat() const { return _attitude_target_quat; }
@@ -395,6 +397,7 @@ protected:
     // This represents a 321-intrinsic rotation in NED frame to the target (setpoint)
     // attitude used in the attitude controller, in radians.
     Vector3f            _attitude_target_euler_angle;
+    Vector3f            _attitude_target_euler_angle_filtered;
 
     // This represents the angular velocity of the target (setpoint) attitude used in
     // the attitude controller as 321-intrinsic euler angle derivatives, in radians per

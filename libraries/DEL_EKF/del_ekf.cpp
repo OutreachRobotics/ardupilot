@@ -286,6 +286,12 @@ void DelEKF::update_R_coeff(float r_value)
 	Re_yaw = 1000;	
 }
 
+void DelEKF::setYawValue(double newValue)
+{
+	x_yaw[PHI3_P] = newValue;
+	x_yaw_prop[PHI3_P] = newValue;
+}
+
 void DelEKF::update_LQR_gain(float test)
 {
 	if(test<6.0f)

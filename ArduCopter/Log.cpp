@@ -124,6 +124,35 @@ void Copter::Log_Write_SIMBA()
     logger.WriteBlock(&pkt, sizeof(pkt));
 };
 
+struct PACKED log_TARGET{
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float targetForward;
+    float targetLateral;
+    float targetYaw;
+    float filteredTargetForward;
+    float filteredTargetLateral;
+    float filteredTargetYaw;
+    
+};
+void Copter::Log_Write_Target()
+{
+    Vector3f targets = attitude_control->get_att_target_euler();   
+    Vector3f filtered_targets = attitude_control->get_att_target_euler_filtered(); 
+
+    struct log_TARGET pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_TARGET_MSG),
+        time_us                 : AP_HAL::micros64(),
+        targetForward           : targets.y,
+        targetLateral           : targets.x,
+        targetYaw               : targets.z,
+        filteredTargetForward   : filtered_targets.y,
+        filteredTargetLateral   : filtered_targets.x,
+        filteredTargetYaw       : filtered_targets.z
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
 struct PACKED log_DelWinch {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -553,6 +582,14 @@ const struct LogStructure Copter::log_structure[] = {
 
     {LOG_DELWINCH_MSG, sizeof(log_DelWinch),
       "WINC", "QfffBB",  "TimeUS,pos,speed,command,dir,err", "smnn--", "F-----" },  // Message Name, Format, Variables names, Units, Multiplier
+
+// @LoggerMessage: TARG
+// @Description: Attitude target Interesting log info
+// @URL: 
+// @Field: TimeUS: Time since system startup
+
+    {LOG_TARGET_MSG, sizeof(log_TARGET),
+      "TARG", "Qffffff",  "TimeUS,for,lat,yaw,ffor,flat,fyaw", "srrrrrr", "F------" },  // Message Name, Format, Variables names, Units, Multiplier
 
 
 // @LoggerMessage: CTUN
