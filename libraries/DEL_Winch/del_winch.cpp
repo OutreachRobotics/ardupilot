@@ -46,16 +46,14 @@ void DelWinch::manage()
     {
         if(_winch_port->read() == WINCH_HEADER)
         {
-            position_read.byte[0] = _winch_port->read();
-            position_read.byte[1] = _winch_port->read(); 
+            position_read.byte[1] = _winch_port->read();
+            position_read.byte[0] = _winch_port->read(); 
             speed_read = _winch_port->read();
             direction_read = _winch_port->read();
             error = _winch_port->read();
             error |= _winch_port->read() == WINCH_FOOTER;
         }
     }
-
-
 
     uint16_t winch_rc_in = hal.rcin->read(CH_3)<1000 ? WINCH_MID_CHANNEL : hal.rcin->read(CH_3);
     winch_input = (winch_rc_in-WINCH_MID_CHANNEL)/WINCH_RANGE;
@@ -71,9 +69,11 @@ void DelWinch::manage()
         direction = Neutral;
         speed = 0;
     }
+    hal.console->printf("\r\nSIMBA_dir:%d",direction);
+    hal.console->printf("\r\nSIMBA_speed:%d",speed);
 
     // Sending commands to the winch
-    tx_buffer[1] = direction;
+    tx_buffer[1] = (uint8_t)direction;
     tx_buffer[2] = speed;
     _winch_port->write(tx_buffer,TX_BUFFER_LEN);   
 

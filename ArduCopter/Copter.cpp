@@ -475,7 +475,7 @@ void Copter::twentyfive_hz_logging()
     delWinch.manage();
     gcs().set_camera_angle(sony_cam.get_camera_angle());
     gcs().set_distance(rangefinder.state->distance_cm);
-    gcs().setWinchAltitude(delWinch.getPosition()/100.0f);
+    gcs().setWinchAltitude(delWinch.getPosition());
     Log_Write_SIMBA();
     Log_Write_Winch();
     Log_Write_Target();
