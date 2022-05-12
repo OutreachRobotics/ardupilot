@@ -62,6 +62,7 @@ public:
     uint8_t getSpeedCommand();
     uint8_t getDirection();
     uint8_t getError();
+    uint8_t getCurrent();
 
 private:
     AP_HAL::UARTDriver *_winch_port;
@@ -69,6 +70,7 @@ private:
     PositionRead position_read;
     uint8_t speed_read;
     uint8_t direction_read;
+    uint8_t current;
     uint8_t error;
     uint8_t speed;
     Direction direction;

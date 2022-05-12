@@ -50,8 +50,8 @@ void DelWinch::manage()
             position_read.byte[0] = _winch_port->read(); 
             speed_read = _winch_port->read();
             direction_read = _winch_port->read();
+            current = _winch_port->read();
             error = _winch_port->read();
-            error |= _winch_port->read() == WINCH_FOOTER;
         }
     }
 
@@ -69,8 +69,6 @@ void DelWinch::manage()
         direction = Neutral;
         speed = 0;
     }
-    hal.console->printf("\r\nSIMBA_dir:%d",direction);
-    hal.console->printf("\r\nSIMBA_speed:%d",speed);
 
     // Sending commands to the winch
     tx_buffer[1] = (uint8_t)direction;
@@ -97,6 +95,11 @@ void DelWinch::manage()
     uint8_t DelWinch::getDirection()
     {
         return direction_read;
+    }
+
+    uint8_t DelWinch::getCurrent()
+    {
+        return current;
     }
 
     uint8_t DelWinch::getError()

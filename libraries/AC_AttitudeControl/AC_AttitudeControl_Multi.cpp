@@ -371,7 +371,14 @@ void AC_AttitudeControl_Multi::downSamplingDataFilter()
 
     ds_filtered_ang.x = B1_DS*ahrs_ang.x + B0_DS*last_ahrs_ang.x - A0_DS*ds_filtered_ang.x;
     ds_filtered_ang.y = B1_DS*ahrs_ang.y + B0_DS*last_ahrs_ang.y - A0_DS*ds_filtered_ang.y;
-    ds_filtered_ang.z = B1_DS*ahrs_ang.z + B0_DS*last_ahrs_ang.z - A0_DS*ds_filtered_ang.z;
+    if(abs(ahrs_ang.z-last_ahrs_ang.z)<M_PI)
+    {
+        ds_filtered_ang.z = B1_DS*ahrs_ang.z + B0_DS*last_ahrs_ang.z - A0_DS*ds_filtered_ang.z;
+    }
+    else
+    {
+        ds_filtered_ang.z = ahrs_ang.z;
+    }
 
     // Low pass filter on gyroscope data
     ang_vel = _ahrs.get_gyro_latest();
@@ -394,7 +401,14 @@ void AC_AttitudeControl_Multi::lowPassDataFilter()
 {
     ctrl_ang.x = B1_LP*ds_filtered_ang.x + B0_LP*last_ds_filtered_ang.x - A0_LP*ctrl_ang.x;
     ctrl_ang.y = B1_LP*ds_filtered_ang.y + B0_LP*last_ds_filtered_ang.y - A0_LP*ctrl_ang.y;
-    ctrl_ang.z = B1_LP*ds_filtered_ang.z + B0_LP*last_ds_filtered_ang.z - A0_LP*ctrl_ang.z;
+    if(abs(last_ds_filtered_ang.z-last_ds_filtered_ang.z)<M_PI)
+    {
+       ctrl_ang.z = B1_LP*ds_filtered_ang.z + B0_LP*last_ds_filtered_ang.z - A0_LP*ctrl_ang.z;
+    }
+    else
+    {
+        ctrl_ang.z = ds_filtered_ang.z;
+    }
 
     ctrl_ang_vel.x = B1_LP*ds_filtered_ang_vel.x + B0_LP*last_ds_filtered_ang_vel.x - A0_LP*ctrl_ang_vel.x;
     ctrl_ang_vel.y = B1_LP*ds_filtered_ang_vel.y + B0_LP*last_ds_filtered_ang_vel.y - A0_LP*ctrl_ang_vel.y;
@@ -480,20 +494,18 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
 
     lowPassSetPointFilter();
 
-    yaw_angle_error = filtered_target_yaw - ctrl_ang.z ;
+    // yaw_angle_error = filtered_target_yaw - ctrl_ang.z ;
 
-    //Correction for target angle more than half-turn away
-    if (yaw_angle_error>M_PI){
-        filtered_target_yaw=filtered_target_yaw-2*M_PI;
-        yaw_angle_error= filtered_target_yaw-ctrl_ang.z ;
-        yaw_angle_error_last=yaw_angle_error_last-2*M_PI;
-    }
+    // //Correction for target angle more than half-turn away
+    // if (yaw_angle_error>M_PI){
+    //     filtered_target_yaw=filtered_target_yaw-2*M_PI;
+    // }
 
-    if (yaw_angle_error<-M_PI){
-        filtered_target_yaw=filtered_target_yaw+2*M_PI;
-        yaw_angle_error= filtered_target_yaw-ctrl_ang.z;
-        yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
-    }
+    // if (yaw_angle_error<-M_PI){
+    //     filtered_target_yaw=filtered_target_yaw+2*M_PI;
+    // }
+
+    // yaw_angle_error= filtered_target_yaw-ctrl_ang.z;
 
     yaw_angle_error_dt=(yaw_angle_error-yaw_angle_error_last)*50; //50 Hz
     yaw_input= yaw_kp*yaw_angle_error+yaw_kd*yaw_angle_error_dt;
@@ -502,7 +514,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
     // For logging purpose
     _attitude_target_euler_angle.x = 0.0f;
     _attitude_target_euler_angle.y = 0.0f;
-    _attitude_target_euler_angle.z = filtered_target_yaw;
+    _attitude_target_euler_angle.z = target_yaw;
 
     constrainCommand();
 
@@ -865,7 +877,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     lowPassSetPointFilter();
 
 
-    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,filtered_target_yaw));
+    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
 
 
     double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
@@ -880,7 +892,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     // For logging purpose
     _attitude_target_euler_angle.x = filtered_target_lateral;
     _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = filtered_target_yaw;
+    _attitude_target_euler_angle.z = target_yaw;
 
     if(armed)
     {

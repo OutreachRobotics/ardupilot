@@ -574,7 +574,7 @@ void AP_Logger::Write_Attitude(const Vector3f &targets)
         roll            : (int16_t)ahrs.roll_sensor,
         control_pitch   : (int16_t)targets.y,
         pitch           : (int16_t)ahrs.pitch_sensor,
-        control_yaw     : (uint16_t)wrap_360_cd(targets.z),
+        control_yaw     : (uint16_t)targets.z,
         yaw             : (uint16_t)wrap_360_cd(ahrs.yaw_sensor),
         error_rp        : (uint16_t)(ahrs.get_error_rp() * 100),
         error_yaw       : (uint16_t)(ahrs.get_error_yaw() * 100),

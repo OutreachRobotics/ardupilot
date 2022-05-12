@@ -160,6 +160,7 @@ struct PACKED log_DelWinch {
     float speed;
     float command;
     uint8_t direction;
+    float current;
     uint8_t error;
 };
 
@@ -173,6 +174,7 @@ void Copter::Log_Write_Winch()
         speed           : delWinch.getSpeed()/100.0f,
         command         : delWinch.getSpeedCommand()/100.0f,
         direction       : delWinch.getDirection(),
+        current         : delWinch.getCurrent()/10.0f,
         error           : delWinch.getError()
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
@@ -581,7 +583,7 @@ const struct LogStructure Copter::log_structure[] = {
 // @Field: yaw_value: Yaw angle in degree
 
     {LOG_DELWINCH_MSG, sizeof(log_DelWinch),
-      "WINC", "QfffBB",  "TimeUS,pos,speed,command,dir,err", "smnn--", "F-----" },  // Message Name, Format, Variables names, Units, Multiplier
+      "WINC", "QfffBfB",  "TimeUS,pos,speed,command,dir,cur,err", "smnn-A-", "F------" },  // Message Name, Format, Variables names, Units, Multiplier
 
 // @LoggerMessage: TARG
 // @Description: Attitude target Interesting log info
