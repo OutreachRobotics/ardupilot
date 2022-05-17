@@ -248,27 +248,23 @@ void AP_MotorsMulticopter::output()
     float lateral = _lateral_in/2.0f;
     float yaw_force = _yaw_in/(4.0f*0.1125f);
 
-    float front, back, left, right, yawCtrClk, yawClk;
-    front = forward>0.0f?forward:0.0f;
-    back = forward<0.0f?-forward:0.0f;
-    left = lateral>0.0f?lateral:0.0f;
-    right = lateral<0.0f?-lateral:0.0f;
-    yawClk = yaw_force>0.0f?yaw_force:0.0f;
-    yawCtrClk = yaw_force<0.0f?-yaw_force:0.0f;
-  
-    _actuator[0] = right + constrain_float(yaw_force,0.0f-right,MAX_THRUST-right) + (yawClk>left ? yawClk-left : 0.0f);
-    _actuator[1] = left + constrain_float(-yaw_force,0.0f-left,MAX_THRUST-left) + (yawCtrClk>right ? yawCtrClk-right : 0.0f);
-    
-    _actuator[2] = back + constrain_float(yaw_force,0.0f-back,MAX_THRUST-back) + (yawClk>front ? yawClk-front : 0.0f);
-    _actuator[3] = front + constrain_float(-yaw_force,0.0f-front,MAX_THRUST-front) + (yawCtrClk>back ? yawCtrClk-back : 0.0f);
+    float motor01 = -lateral + yaw_force;
+    float motor23 = -forward + yaw_force;
+    float motor45 = lateral + yaw_force;
+    float motor67 = forward + yaw_force;
 
-    _actuator[4] = left + constrain_float(yaw_force,0.0f-left,MAX_THRUST-left) + (yawClk>right ? yawClk-right : 0.0f);
-    _actuator[5] = right + constrain_float(-yaw_force,0.0f-right,MAX_THRUST-right) + (yawCtrClk>left ? yawCtrClk-left : 0.0f);
 
-    _actuator[6] = front + constrain_float(yaw_force,0.0f-front,MAX_THRUST-front) + (yawClk>back ? yawClk-back : 0.0f);
-    _actuator[7] = back + constrain_float(-yaw_force,0.0f-back,MAX_THRUST-back) + (yawCtrClk>front ? yawCtrClk-front : 0.0f);
+    _actuator[0] = motor01>0 ? abs(motor01) : 0.0f;
+    _actuator[1] = motor01<0 ? abs(motor01) : 0.0f;
+    _actuator[2] = motor23>0 ? abs(motor23) : 0.0f;
+    _actuator[3] = motor23<0 ? abs(motor23) : 0.0f;
+    _actuator[4] = motor45>0 ? abs(motor45) : 0.0f;
+    _actuator[5] = motor45<0 ? abs(motor45) : 0.0f;
+    _actuator[6] = motor67>0 ? abs(motor67) : 0.0f;
+    _actuator[7] = motor67<0 ? abs(motor67) : 0.0f;
 
     for (int i = 0; i < 8; i++) {
+        constrain_float(_actuator[i], 0.0f, MAX_THRUST);
         rc_write(i, output_to_pwm(_actuator[i]));
     }
 };

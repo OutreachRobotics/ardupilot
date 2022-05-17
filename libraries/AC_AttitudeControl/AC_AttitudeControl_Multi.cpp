@@ -1007,7 +1007,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
 
 void AC_AttitudeControl_Multi::constrainCommand()
 {
-    yaw_input=constrain_float(yaw_input,-MAX_ACTUATOR_MOMENT,MAX_ACTUATOR_MOMENT);
+    yaw_input=constrain_float(yaw_input,-MAX_ACTUATOR_MOMENT,MAX_ACTUATOR_MOMENT);    
     lateral_command=constrain_float(lateral_command,-MAX_ACTUATOR_THRUST,MAX_ACTUATOR_THRUST);
     forward_command=constrain_float(forward_command,-MAX_ACTUATOR_THRUST,MAX_ACTUATOR_THRUST);
 }
