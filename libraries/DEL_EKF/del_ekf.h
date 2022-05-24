@@ -43,10 +43,10 @@ public:
     DelEKF();
     Mat gyro2statesDt(Mat gyro_in);
     Mat commandLPF(Mat F_in);
-    void linearDynamicsEstimation(Vector3f F_in, Vector3f measure);
+    void linearDynamicsEstimation(Vector3f F_in, Vector3f gyro, Vector3f angle);
     void propagateStates(Mat F_in);
     void propagateCovariance();
-    void stateCovarianceUpdate(Mat measure);
+    void stateCovarianceUpdate(Mat gyro, Mat angle);
     void wrapPropStates();
     void wrapStates();
     Vector3f getPlatformOrientation();
@@ -83,9 +83,9 @@ private:
     Mat Qe_roll;
     Mat Qe_pitch;
     Mat Qe_yaw;
-    double Re_roll;
-    double Re_pitch;
-    double Re_yaw;
+    Mat Re_roll;
+    Mat Re_pitch;
+    Mat Re_yaw;
 
     Mat C_roll;
     Mat C_pitch;
