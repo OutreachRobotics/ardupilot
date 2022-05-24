@@ -314,8 +314,8 @@ Mat DelEKF::getYawEKFdata()
 
 void DelEKF::update_R_coeff(float r_value)
 {
-	double roll_R_array [] = {0.00001,0,0,r_value};
-	double pitch_R_array [] = {0.00001,0,0,r_value};
+	double roll_R_array [] = {1e-10,0,0,1e-3};
+	double pitch_R_array [] = {1e-10,0,0,1e-3};
 	double yaw_R_array [] = {100,0,0,r_value};
 	Re_roll = Mat(2,2,roll_R_array);
 	Re_pitch = Mat(2,2,pitch_R_array);
