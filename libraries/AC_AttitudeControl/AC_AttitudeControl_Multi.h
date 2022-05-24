@@ -137,6 +137,7 @@ public:
     void deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_taxi(float yaw, bool armed);
     void constrainCommand();
+    void tuneMotor(bool armed);
 
     // are we producing min throttle?
     bool is_throttle_mix_min() const override { return (_throttle_rpy_mix < 1.25f * _thr_mix_min); }

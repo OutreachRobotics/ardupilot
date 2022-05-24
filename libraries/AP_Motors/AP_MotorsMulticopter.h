@@ -29,7 +29,7 @@
 #define T2PWM_COEF2                     -154.34f
 #define T2PWM_COEF3                     520.56f
 #define T2PWM_COEF4                     1037.04f
-#define LOW_PWM_LIMIT                   1075.0f
+#define LOW_PWM_LIMIT                   1150.0f
 #define HIGH_PWM_LIMIT                  2000.0f
 #define ACTUATOR_LEVER                  0.1125f
 #define MAX_THRUST                      3.2f
@@ -207,6 +207,8 @@ protected:
     float               _throttle_limit;        // ratio of throttle limit between hover and maximum
     float               _throttle_thrust_max;   // the maximum allowed throttle thrust 0.0 to 1.0 in the range throttle_min to throttle_max
     float               _disarm_safe_timer;     // Timer for the esc when transitioning between zero pwm to minimum
+    uint32_t            _tune_last_time;
+    uint8_t             _tune_motor;
 
     // vehicle supplied callback for thrust compensation. Used for tiltrotors and tiltwings
     thrust_compensation_fn_t _thrust_compensation_callback;

@@ -99,10 +99,25 @@ struct PACKED log_SIMBA {
     float phi3_p;
 };
 
+struct PACKED log_YAW_DATA {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float ke0;
+    float ke1;
+    float p0;
+    float p1;
+    float p2;
+    float p3;
+    float xp0;
+    float xp1;
+    
+};
+
 // Write a SIMBA packet
 void Copter::Log_Write_SIMBA()
 {
     Mat delekf_states = attitude_control->get_delEKF_states();
+    Mat delekf_yawData = attitude_control->get_delEKF_yawData();
 
     struct log_SIMBA pkt = {
         LOG_PACKET_HEADER_INIT(LOG_SIMBA_MSG),
@@ -122,6 +137,20 @@ void Copter::Log_Write_SIMBA()
         phi3_p          : (float)delekf_states[9],
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
+
+    struct log_YAW_DATA pkt2 = {
+        LOG_PACKET_HEADER_INIT(LOG_YAW_MSG),
+        time_us         : AP_HAL::micros64(),
+        ke0             : (float)delekf_yawData[0],
+        ke1             : (float)delekf_yawData[1],      
+        p0              : (float)delekf_yawData[2],
+        p1              : (float)delekf_yawData[3],
+        p2              : (float)delekf_yawData[4],
+        p3              : (float)delekf_yawData[5],
+        xp0             : (float)delekf_yawData[6],
+        xp1             : (float)delekf_yawData[7],
+    };
+    logger.WriteBlock(&pkt2, sizeof(pkt2));
 };
 
 struct PACKED log_TARGET{
@@ -575,6 +604,16 @@ const struct LogStructure Copter::log_structure[] = {
 
     {LOG_SIMBA_MSG, sizeof(log_SIMBA),
       "SIMB", "Qfffffffffffff",  "TimeUS,fx,fy,fz,x0,x1,x2,x3,x4,x5,x6,x7,x8,x9", "sNNNErErErErEr", "F-------------" },  // Message Name, Format, Variables names, Units, Multiplier
+
+// @LoggerMessage: YAW_DATA
+// @Description: SIMBA Interesting log info
+// @URL: 
+// @Field: TimeUS: Time since system startup
+// @Field: yaw_value: Yaw angle in degree
+
+    {LOG_YAW_MSG, sizeof(log_YAW_DATA),
+      "SIMY", "Qffffffff",  "TimeUS,ke0,ke1,p0,p1,p2,p3,xp0,xp1", "s--------", "F--------" },  // Message Name, Format, Variables names, Units, Multiplier
+
 
 // @LoggerMessage: WINC
 // @Description: Winch Interesting log info

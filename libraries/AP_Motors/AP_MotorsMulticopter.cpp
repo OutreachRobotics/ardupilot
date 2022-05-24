@@ -226,6 +226,8 @@ AP_MotorsMulticopter::AP_MotorsMulticopter(uint16_t loop_rate, uint16_t speed_hz
     _throttle_radio_max = 1900;
 
     cameraStarted = false;
+    _tune_motor = 0;
+    _tune_last_time = 0;
 };
 
 // output - sends commands to the motors
@@ -263,9 +265,27 @@ void AP_MotorsMulticopter::output()
     _actuator[6] = motor67>0 ? abs(motor67) : 0.0f;
     _actuator[7] = motor67<0 ? abs(motor67) : 0.0f;
 
-    for (int i = 0; i < 8; i++) {
-        constrain_float(_actuator[i], 0.0f, MAX_THRUST);
-        rc_write(i, output_to_pwm(_actuator[i]));
+    if(_throttle_in>0.5f)
+    {
+        if(AP_HAL::millis()-_tune_last_time > 5000)
+        {
+            _tune_last_time = AP_HAL::millis();
+            if(_tune_motor++ >= 7)
+            {
+                _tune_motor = 0;
+            }
+        }
+
+        for (int i = 0; i < 8; i++) {
+            rc_write(i, i==_tune_motor?1150:1150);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 8; i++) {
+            constrain_float(_actuator[i], 0.0f, MAX_THRUST);
+            rc_write(i, output_to_pwm(_actuator[i]));
+        }
     }
 };
 

@@ -100,6 +100,10 @@ DelEKF::DelEKF()
 	last_F_in = Mat(3,1);
     last_F_in_filt = Mat(3,1);
 
+	Ke_roll = Mat(4,1);
+	Ke_roll = Mat(4,1);
+	Ke_roll = Mat(2,1);
+
 	Q_trap_roll = (F_roll*Qe_roll*(F_roll.t()) + Qe_roll) * (TS/2);
 	Q_trap_pitch = (F_pitch*Qe_pitch*(F_pitch.t()) + Qe_pitch) * (TS/2);
 	Q_trap_yaw = (F_yaw*Qe_yaw*(F_yaw.t()) + Qe_yaw) * (TS/2);
@@ -178,9 +182,9 @@ void DelEKF::stateCovarianceUpdate(Mat measure)
 	Mat tempPitch = C_pitch*P_pitch_prop*(C_pitch.t());
 	Mat tempYaw = C_yaw*P_yaw_prop*(C_yaw.t());
 
-	Mat Ke_roll = P_roll_prop*(C_roll.t()) * (1/(tempRoll[0] + Re_roll));
-	Mat Ke_pitch = P_pitch_prop*(C_pitch.t()) * (1/(tempPitch[0] + Re_pitch));
-	Mat Ke_yaw = P_yaw_prop*(C_yaw.t()) * (1/(tempYaw[0] + Re_yaw));
+	Ke_roll = P_roll_prop*(C_roll.t()) * (1/(tempRoll[0] + Re_roll));
+	Ke_pitch = P_pitch_prop*(C_pitch.t()) * (1/(tempPitch[0] + Re_pitch));
+	Ke_yaw = P_yaw_prop*(C_yaw.t()) * (1/(tempYaw[0] + Re_yaw));
 
 	x_roll = x_roll_prop + Ke_roll*(measure[0]-x_roll_prop[PHI1DT_P]);
 	x_pitch = x_pitch_prop + Ke_pitch*(measure[1]-x_pitch_prop[PHI2DT_P]);
@@ -279,11 +283,18 @@ Mat DelEKF::createCommandMat(Vector3f orientation)
 	return Mat(10,1,command);
 }
 
+Mat DelEKF::getYawEKFdata()
+{
+	double yawData[] = {Ke_yaw[0], Ke_yaw[1], P_yaw[0], P_yaw[1], P_yaw[2], P_yaw[3], x_yaw_prop[0], x_yaw_prop[1]};
+	return Mat(8,1,yawData);
+}
+
+
 void DelEKF::update_R_coeff(float r_value)
 {
 	Re_pitch = 0.0001;
 	Re_roll = 0.0001;
-	Re_yaw = 1000;	
+	Re_yaw = r_value;	
 }
 
 void DelEKF::setYawValue(double newValue)

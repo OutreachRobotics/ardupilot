@@ -161,7 +161,8 @@ enum LoggingParameters {
      LOG_SYSIDS_MSG,
      LOG_SIMBA_MSG,
      LOG_DELWINCH_MSG,
-     LOG_TARGET_MSG
+     LOG_TARGET_MSG,
+     LOG_YAW_MSG
 };
 
 #define MASK_LOG_ATTITUDE_FAST          (1<<0)

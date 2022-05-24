@@ -467,7 +467,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_acro(float lateral, float for
     _motors.set_lateral(lateral*MAX_ACTUATOR_THRUST);
     _motors.set_forward(forward*MAX_ACTUATOR_THRUST);
     _motors.set_yaw(yaw*MAX_ACTUATOR_MOMENT);
-    _motors.set_throttle(throttle);
+    _motors.set_throttle(0.0f);
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed)
@@ -521,7 +521,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
     _motors.set_lateral(lateral*MAX_ACTUATOR_THRUST);
     _motors.set_forward(forward*MAX_ACTUATOR_THRUST);
     _motors.set_yaw(yaw_input);
-    _motors.set_throttle(throttle);
+    _motors.set_throttle(0.0f);
 
     // For logging purpose
     _rate_target_ang_vel.x = lateral*MAX_ACTUATOR_THRUST;
@@ -580,7 +580,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
     _motors.set_lateral(lateral*MAX_ACTUATOR_THRUST);
     _motors.set_forward(forward_command);
     _motors.set_yaw(yaw_input);
-    _motors.set_throttle(throttle);
+    _motors.set_throttle(0.0f);
 
     // For logging purpose
     _rate_target_ang_vel.x = lateral*MAX_ACTUATOR_THRUST;
@@ -638,7 +638,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward*MAX_ACTUATOR_THRUST);
     _motors.set_yaw(yaw_input);
-    _motors.set_throttle(throttle);
+    _motors.set_throttle(0.0f);
 
     // For logging purpose
     _rate_target_ang_vel.x = lateral_command;
@@ -703,7 +703,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_approachHold(float lateral, f
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward_command);
     _motors.set_yaw(yaw_input);
-    _motors.set_throttle(throttle);
+    _motors.set_throttle(0.0f);
 
     // For logging purpose
     _rate_target_ang_vel.x = lateral_command;
@@ -801,7 +801,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         _motors.set_lateral(lateral_command);
         _motors.set_forward(forward_command);
         _motors.set_yaw(yaw_input);
-        _motors.set_throttle(throttle);
+        _motors.set_throttle(0.0f);
     }
     else
     {
@@ -899,7 +899,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
         _motors.set_lateral(lateral_command);
         _motors.set_forward(forward_command);
         _motors.set_yaw(yaw_input);
-        _motors.set_throttle(throttle);
+        _motors.set_throttle(0.0f);
     }
     else
     {
@@ -1005,6 +1005,23 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     _attitude_target_ang_vel = ds_filtered_ang;
 } 
 
+void AC_AttitudeControl_Multi::tuneMotor(bool armed)
+{
+    if(armed)
+    {
+        _motors.set_throttle(1.0f);
+    }
+    else
+    {
+        _motors.set_throttle(0.0f);
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(0.0f);
+        _motors.set_yaw(0.0f);
+        _motors.set_throttle(0.0f); 
+    }
+}
+
+
 void AC_AttitudeControl_Multi::constrainCommand()
 {
     yaw_input=constrain_float(yaw_input,-MAX_ACTUATOR_MOMENT,MAX_ACTUATOR_MOMENT);    
@@ -1029,6 +1046,7 @@ void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure)
     delEKF.linearDynamicsEstimation(F_in, measure);
     mamba_orientation = delEKF.getPlatformOrientation();
     mamba_states = delEKF.getEKFStates();
+    yawData = delEKF.getYawEKFdata();
 }
 
 Vector3f AC_AttitudeControl_Multi::getDelEKFOrientation()
