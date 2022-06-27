@@ -12,20 +12,20 @@
 	Global variables declaration :
 ***************************************************************************/
 
-	double froll [] = {0.999883,-0.093598,0.000086,0.069084,
-0.002500,0.999883,0.000000,0.000086,
-0.000263,0.210317,0.999737,-0.210319,
+	double froll [] = {0.999977,-0.018720,0.000017,0.013817,
+0.002500,0.999977,0.000000,0.000017,
+0.000263,0.210324,0.999737,-0.210324,
 0.000000,0.000263,0.002500,0.999737};
-	double fpitch [] = {0.999883,-0.093598,0.000086,0.069084,
-0.002500,0.999883,0.000000,0.000086,
-0.000263,0.210317,0.999737,-0.210319,
+	double fpitch [] = {0.999977,-0.018720,0.000017,0.013817,
+0.002500,0.999977,0.000000,0.000017,
+0.000263,0.210324,0.999737,-0.210324,
 0.000000,0.000263,0.002500,0.999737};
 	double fyaw [] = {1.000000,0.000000,
 0.002500,1.000000};
 	
-	double broll [] = {0.435160,0.000000,0.078480,0.000000};
-	double bpitch [] = {0.435160,0.000000,0.078480,0.000000};
-	double byaw [] = {48.54368932,0.000000};
+	double broll [] = {0.087032,0.000000,0.078480,0.000000};
+	double bpitch [] = {0.087032,0.000000,0.078480,0.000000};
+	double byaw [] = {60.975600,0.000000};
 
 
 	double i2[] = {1,0,
@@ -50,8 +50,7 @@
 						0,0,0,1};
 	double cpitch [] = {0,0,1,0,
 						0,0,0,1};
-	double cyaw [] = {1,0,
-					0,1};
+	double cyaw [] = {1,0};
 
 	double R_value [] = {100,0,
 					0, 100};
@@ -92,11 +91,11 @@ DelEKF::DelEKF()
 	
 	Re_roll = Mat(2,2,R_value);
 	Re_pitch = Mat(2,2,R_value);
-	Re_yaw = Mat(2,2,R_value);
+	Re_yaw = 100.0f;
 	
 	C_roll = Mat(2,4,croll);
 	C_pitch = Mat(2,4,cpitch);
-	C_yaw = Mat(2,2,cyaw);
+	C_yaw = Mat(1,2,cyaw);
 	
 	I4x4 = Mat(4,4,i4);
 	I2x2 = Mat(2,2,i2);
@@ -105,8 +104,8 @@ DelEKF::DelEKF()
     last_F_in_filt = Mat(3,1);
 
 	Ke_roll = Mat(4,1);
-	Ke_roll = Mat(4,1);
-	Ke_roll = Mat(2,1);
+	Ke_pitch = Mat(4,1);
+	Ke_yaw = Mat(2,1);
 
 	Q_trap_roll = (F_roll*Qe_roll*(F_roll.t()) + Qe_roll) * (TS/2);
 	Q_trap_pitch = (F_pitch*Qe_pitch*(F_pitch.t()) + Qe_pitch) * (TS/2);
@@ -184,33 +183,27 @@ void DelEKF::propagateCovariance()
 
 void DelEKF::stateCovarianceUpdate(Mat gyro, Mat angle)
 {
-	double roll_measure_array[2] = {gyro[0],angle[0]};
-	double pitch_measure_array[2] = {gyro[1],angle[1]};
-	double yaw_measure_array[2] = {gyro[2],angle[2]};
+	double roll_measure_array[] = {gyro[0],angle[0]};
+	double pitch_measure_array[] = {gyro[1],angle[1]};
+	double yaw_measure = gyro[2];
 
 	Mat roll_measure = Mat(2,1,roll_measure_array);
 	Mat pitch_measure = Mat(2,1,pitch_measure_array);
-	Mat	yaw_measure = Mat(2,1,yaw_measure_array);
 
-	double roll_calc_array[2] = {x_roll_prop[PHI1DT_P],x_roll_prop[PHI1_P]};
-	double pitch_calc_array[2] = {x_pitch_prop[PHI2DT_P],x_pitch_prop[PHI2_P]};
-	double yaw_calc_array[2] = {x_yaw_prop[PHI3DT_P],x_yaw_prop[PHI3_P]};
-
-	Mat roll_calc = Mat(2,1,roll_calc_array);
-	Mat pitch_calc = Mat(2,1,pitch_calc_array);
-	Mat	yaw_calc = Mat(2,1,yaw_calc_array);
+	Mat roll_calc = C_roll*x_roll_prop;
+	Mat pitch_calc = C_pitch*x_pitch_prop;
 
 	Mat tempRoll = (C_roll*P_roll_prop*(C_roll.t())) + Re_roll;
 	Mat tempPitch = (C_pitch*P_pitch_prop*(C_pitch.t())) + Re_pitch;
-	Mat tempYaw = (C_yaw*P_yaw_prop*(C_yaw.t())) + Re_yaw;
+	Mat tempYaw = (C_yaw*P_yaw_prop*(C_yaw.t()));
 
 	Ke_roll = P_roll_prop*(C_roll.t()) * (tempRoll.inv());
 	Ke_pitch = P_pitch_prop*(C_pitch.t()) * (tempPitch.inv());
-	Ke_yaw = P_yaw_prop*(C_yaw.t()) * (tempYaw.inv());
+	Ke_yaw = P_yaw_prop*(C_yaw.t()) * (1/(tempYaw[0] + Re_yaw));
 
 	x_roll = x_roll_prop + Ke_roll*(roll_measure-roll_calc);
 	x_pitch = x_pitch_prop + Ke_pitch*(pitch_measure-pitch_calc);
-	x_yaw = x_yaw_prop + Ke_yaw*(yaw_measure-yaw_calc);
+	x_yaw = x_yaw_prop + Ke_yaw*(yaw_measure-x_yaw_prop[PHI3DT_P]);
 
 	P_roll = (I4x4-Ke_roll*C_roll) * P_roll_prop * (I4x4-Ke_roll*C_roll).t() + Ke_roll*Re_roll*Ke_roll.t();
 	P_pitch = (I4x4-Ke_pitch*C_pitch) * P_pitch_prop * (I4x4-Ke_pitch*C_pitch).t() + Ke_pitch*Re_pitch*Ke_pitch.t();
@@ -305,21 +298,20 @@ Mat DelEKF::createCommandMat(Vector3f orientation)
 	return Mat(10,1,command);
 }
 
-Mat DelEKF::getYawEKFdata()
+Mat DelEKF::getEKFdata()
 {
-	double yawData[] = {Ke_yaw[0], Ke_yaw[1], P_yaw[0], P_yaw[1], P_yaw[2], P_yaw[3], x_yaw_prop[0], x_yaw_prop[1]};
-	return Mat(8,1,yawData);
+	double rollData[] = {Ke_roll[0], Ke_roll[1], Ke_roll[2], Ke_roll[3], P_roll[0], P_roll[5], P_roll[10], P_roll[15], x_roll_prop[0], x_roll_prop[1], x_roll_prop[2], x_roll_prop[3]};
+	return Mat(12,1,rollData);
 }
 
 
 void DelEKF::update_R_coeff(float r_value)
 {
-	double roll_R_array [] = {1e-10,0,0,1e-3};
-	double pitch_R_array [] = {1e-10,0,0,1e-3};
-	double yaw_R_array [] = {100,0,0,r_value};
+	double roll_R_array [] = {1e-10,0,0,r_value};
+	double pitch_R_array [] = {1e-10,0,0,r_value};
 	Re_roll = Mat(2,2,roll_R_array);
 	Re_pitch = Mat(2,2,pitch_R_array);
-	Re_yaw = Mat(2,2,yaw_R_array);	
+	Re_yaw = 100;	
 }
 
 void DelEKF::setYawValue(double newValue)
@@ -353,9 +345,9 @@ void DelEKF::update_LQR_gain(float test)
 	}
 	else if(test<9.0f)
 	{
-		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,12.787206,3.123093,40.079406,-3.297939,-0.000000,0.000000,
-			-12.786448,-3.033323,-40.081359,3.208438,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
-			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,0.6203,3.1405};
+		double k_lqr_array[] = {0.000000,0.000000,-0.000000,-0.000000,6.5008,20.9640,7.2816,-16.9364,-0.000000,0.000000,
+			-6.4956,-20.6848,-7.2830,16.6621,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
+			0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,-0.000000,0.000000,0.6118,2.6764};  
 		k_lqr = Mat(3,10,k_lqr_array);
 	}
 	else if(test<10.0f)

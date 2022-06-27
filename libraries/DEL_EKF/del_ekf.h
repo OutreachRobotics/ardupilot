@@ -53,7 +53,7 @@ public:
     Mat getEKFStates();
     Mat getLQRgain();
     Mat createCommandMat(Vector3f orientation);
-    Mat getYawEKFdata();
+    Mat getEKFdata();
     void update_R_coeff(float r_value);
     void setYawValue(double newValue);
     void update_LQR_gain(float test);
@@ -85,7 +85,7 @@ private:
     Mat Qe_yaw;
     Mat Re_roll;
     Mat Re_pitch;
-    Mat Re_yaw;
+    double Re_yaw;
 
     Mat C_roll;
     Mat C_pitch;
