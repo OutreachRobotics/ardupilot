@@ -30,11 +30,14 @@
 	double pyaw[] = {1,0,
 					0,1};
 
-	double croll [] = {0,0,1,0};
-	double cpitch [] = {0,0,1,0};
+	double croll [] = {0,0,1,0,
+						0,0,0,1};
+	double cpitch [] = {0,0,1,0,
+						0,0,0,1};
 	double cyaw [] = {1,0};
 
-	double R_value = 100;
+	double R_value [] = {0.1f,0,
+						0,1e-3};
 	
 
 /***************************************************************************
@@ -70,12 +73,12 @@ DelEKF::DelEKF()
 	Qe_pitch = Mat(4,4,i4);
 	Qe_yaw = Mat(2,2,i2);
 	
-	Re_roll = R_value;
-	Re_pitch = R_value;
-	Re_yaw = R_value;
+	Re_roll = Mat(2,2,R_value);
+	Re_pitch = Mat(2,2,R_value);
+	Re_yaw = 100.0f;
 	
-	C_roll = Mat(1,4,croll);
-	C_pitch = Mat(1,4,cpitch);
+	C_roll = Mat(2,4,croll);
+	C_pitch = Mat(2,4,cpitch);
 	C_yaw = Mat(1,2,cyaw);
 	
 	I4x4 = Mat(4,4,i4);
@@ -122,20 +125,22 @@ Mat DelEKF::commandLPF(Mat F_in)
 }
 
 
-void DelEKF::linearDynamicsEstimation(Vector3f F_in, Vector3f measure)
+void DelEKF::linearDynamicsEstimation(Vector3f F_in, Vector3f gyro, Vector3f angle)
 {
 	double F_in_array[] = {F_in.x, F_in.y, F_in.z};
 	Mat F_in_mat = Mat(3,1,F_in_array);
-	double measure_array[] = {measure.x, measure.y, measure.z};
-	Mat measure_mat = Mat(3,1,measure_array); 
+	double gyro_array[] = {gyro.x, gyro.y, gyro.z};
+	Mat gyro_mat = Mat(3,1,gyro_array); 
+	double angle_array[] = {angle.x, angle.y, angle.z};
+	Mat angle_mat = Mat(3,1,angle_array); 
 
 	Mat F_in_filt = commandLPF(F_in_mat);
-	Mat measure_mat_corrected = gyro2statesDt(measure_mat);
+	Mat gyro_mat_corrected = gyro2statesDt(gyro_mat);
 
 	propagateStates(F_in_filt);
 	wrapPropStates();
 	propagateCovariance();
-	stateCovarianceUpdate(measure_mat_corrected);
+	stateCovarianceUpdate(gyro_mat_corrected, angle_mat);
 	wrapStates();
 }
 
@@ -161,19 +166,29 @@ void DelEKF::propagateCovariance()
 	P_yaw_prop = F_yaw*P_yaw*(F_yaw.t()) + Q_trap_yaw;
 }
 
-void DelEKF::stateCovarianceUpdate(Mat measure)
+void DelEKF::stateCovarianceUpdate(Mat gyro, Mat angle)
 {
-	Mat tempRoll = C_roll*P_roll_prop*(C_roll.t());
-	Mat tempPitch = C_pitch*P_pitch_prop*(C_pitch.t());
-	Mat tempYaw = C_yaw*P_yaw_prop*(C_yaw.t());
+	double roll_measure_array[] = {gyro[0],angle[0]};
+	double pitch_measure_array[] = {gyro[1],angle[1]};
+	double yaw_measure = gyro[2];
 
-	Mat Ke_roll = P_roll_prop*(C_roll.t()) * (1/(tempRoll[0] + Re_roll));
-	Mat Ke_pitch = P_pitch_prop*(C_pitch.t()) * (1/(tempPitch[0] + Re_pitch));
+	Mat roll_measure = Mat(2,1,roll_measure_array);
+	Mat pitch_measure = Mat(2,1,pitch_measure_array);
+
+	Mat roll_calc = C_roll*x_roll_prop;
+	Mat pitch_calc = C_pitch*x_pitch_prop;
+
+	Mat tempRoll = (C_roll*P_roll_prop*(C_roll.t())) + Re_roll;
+	Mat tempPitch = (C_pitch*P_pitch_prop*(C_pitch.t())) + Re_pitch;
+	Mat tempYaw = (C_yaw*P_yaw_prop*(C_yaw.t()));
+
+	Mat Ke_roll = P_roll_prop*(C_roll.t()) * (tempRoll.inv());
+	Mat Ke_pitch = P_pitch_prop*(C_pitch.t()) * (tempPitch.inv());
 	Mat Ke_yaw = P_yaw_prop*(C_yaw.t()) * (1/(tempYaw[0] + Re_yaw));
 
-	x_roll = x_roll_prop + Ke_roll*(measure[0]-x_roll_prop[PHI1DT_P]);
-	x_pitch = x_pitch_prop + Ke_pitch*(measure[1]-x_pitch_prop[PHI2DT_P]);
-	x_yaw = x_yaw_prop + Ke_yaw*(measure[2]-x_yaw_prop[PHI3DT_P]);
+	x_roll = x_roll_prop + Ke_roll*(roll_measure-roll_calc);
+	x_pitch = x_pitch_prop + Ke_pitch*(pitch_measure-pitch_calc);
+	x_yaw = x_yaw_prop + Ke_yaw*(yaw_measure-x_yaw_prop[PHI3DT_P]);
 
 	P_roll = (I4x4-Ke_roll*C_roll) * P_roll_prop * (I4x4-Ke_roll*C_roll).t() + Ke_roll*Re_roll*Ke_roll.t();
 	P_pitch = (I4x4-Ke_pitch*C_pitch) * P_pitch_prop * (I4x4-Ke_pitch*C_pitch).t() + Ke_pitch*Re_pitch*Ke_pitch.t();
@@ -248,9 +263,11 @@ Mat DelEKF::createCommandMat(Vector3f orientation)
 
 void DelEKF::update_R_coeff(float r_value)
 {
-	Re_pitch = r_value;
-	Re_roll = r_value;
-	Re_yaw = r_value;	
+	double roll_R_array [] = {0.1f,0,0,r_value};
+	double pitch_R_array [] = {0.1f,0,0,r_value};
+	Re_roll = Mat(2,2,roll_R_array);
+	Re_pitch = Mat(2,2,pitch_R_array);
+	Re_yaw = 0.1f;		
 }
 
 void DelEKF::update_length(float length)

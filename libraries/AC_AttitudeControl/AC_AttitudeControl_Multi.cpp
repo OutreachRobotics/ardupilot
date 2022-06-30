@@ -1063,7 +1063,7 @@ void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure)
 {
     delEKF.update_length(get_mamba_length());
     delEKF.update_R_coeff(_pid_rate_yaw.kI());
-    delEKF.linearDynamicsEstimation(F_in, measure);
+    delEKF.linearDynamicsEstimation(F_in, measure, ahrs_ang);
     mamba_orientation = delEKF.getPlatformOrientation();
     mamba_states = delEKF.getEKFStates();
 }
