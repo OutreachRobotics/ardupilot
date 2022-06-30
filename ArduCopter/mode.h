@@ -587,7 +587,9 @@ protected:
 
     const char *name() const override { return "BRAKE"; }
     const char *name4() const override { return "BRAK"; }
-    int counter;
+    uint32_t counter;
+    uint32_t timeStarted;
+    bool sequenceStarted;
 private:
 
 

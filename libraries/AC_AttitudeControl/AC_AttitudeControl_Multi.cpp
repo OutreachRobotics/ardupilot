@@ -438,7 +438,6 @@ void AC_AttitudeControl_Multi::lowPassSetPointFilter()
     _attitude_target_euler_angle_filtered = Vector3f(filtered_target_lateral, filtered_target_forward,filtered_target_yaw);
 }
 
-
 // sanity check parameters.  should be called once before takeoff
 void AC_AttitudeControl_Multi::parameter_sanity_check()
 {
@@ -588,6 +587,84 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
     _rate_target_ang_vel.z = yaw_input;
     _rate_sysid_ang_vel = ctrl_ang;
     _attitude_target_ang_vel = ds_filtered_ang;
+}
+
+void AC_AttitudeControl_Multi::deleaves_controller_forHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed)
+{
+     // Control runs at 50Hz
+    // Low pass filter to reduce vibration in data
+    lowPassDataFilter();
+
+    Mat states = delEKF.getEKFStates();
+    Mat k_lqr = delEKF.getLQRgain();
+
+    //Initialize target angle to the value of angle when not armed or update it with joystick when armed
+    if(!armed)
+    {
+        target_yaw = states[9];
+        target_forward = 0.0f;
+        target_lateral = 0.0f;
+    }
+    else
+    {
+        // Yaw control, simple deadband check
+        if(abs(yaw) > DEADBAND)
+        {
+            target_yaw += yaw*YAW_SENSITIVITY;
+        }
+        target_forward = forward;
+        target_lateral = lateral*MAX_ROLL;
+    }    
+
+    // LQR control
+    yaw_angle_error= target_yaw-states[9];
+    
+    if (yaw_angle_error>M_PI){
+        target_yaw=target_yaw-2*M_PI;
+    }
+    if (yaw_angle_error<-M_PI){
+        target_yaw=target_yaw+2*M_PI;
+    }
+
+    Mat command = delEKF.createCommandMat(Vector3f(target_lateral,target_forward,target_yaw));
+
+
+    double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(target_lateral), 0};
+    Mat ff = Mat(3,1,ff_array);
+    Mat out = (k_lqr * (command - states)) + ff;
+    forward_command = out[0];
+    lateral_command = -out[1];
+    yaw_input = out[2];
+
+    constrainCommand();
+
+    // For logging purpose
+    _attitude_target_euler_angle.x = target_lateral;
+    _attitude_target_euler_angle.y = target_forward;
+    _attitude_target_euler_angle.z = target_yaw;
+
+    if(armed)
+    {
+        _motors.set_lateral(lateral_command);
+        _motors.set_forward(forward_command);
+        _motors.set_yaw(yaw_input);
+        _motors.set_throttle(0.0f);
+    }
+    else
+    {
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(0.0f);
+        _motors.set_yaw(0.0f);
+        _motors.set_throttle(0.0f);        
+    }
+    
+    // For logging purpose
+    _rate_target_ang_vel.x = lateral_command;
+    _rate_target_ang_vel.y = forward_command;
+    _rate_target_ang_vel.z = yaw_input;
+    _rate_sysid_ang_vel = ctrl_ang;
+    _attitude_target_ang_vel = ds_filtered_ang;
+
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)

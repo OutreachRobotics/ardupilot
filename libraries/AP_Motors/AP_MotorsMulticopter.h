@@ -25,12 +25,12 @@
 #define AP_MOTORS_SLEW_TIME_DEFAULT     0.0f    // slew rate limit for thrust output
 #define AP_MOTORS_SAFE_TIME_DEFAULT     1.0f    // Time for the esc when transitioning between zero pwm to minimum
 
-#define T2PWM_COEF1                     27.00f
-#define T2PWM_COEF2                     -154.34f
-#define T2PWM_COEF3                     520.56f
-#define T2PWM_COEF4                     1037.04f
-#define LOW_PWM_LIMIT                   1150.0f
-#define HIGH_PWM_LIMIT                  2000.0f
+#define T2PWM_COEF1                     23.69f
+#define T2PWM_COEF2                     -141.45f
+#define T2PWM_COEF3                     437.33f
+#define T2PWM_COEF4                     1170.1f
+#define LOW_PWM_LIMIT                   1170.0f
+#define HIGH_PWM_LIMIT                  1900.0f
 #define ACTUATOR_LEVER                  0.1125f
 #define MAX_THRUST                      3.2f
 

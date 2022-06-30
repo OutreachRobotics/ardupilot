@@ -10,6 +10,8 @@
 bool ModeBrake::init(bool ignore_checks)
 {
     counter = 0;
+    timeStarted = AP_HAL::millis();
+    sequenceStarted = false;
     return true;
 }
 
@@ -17,7 +19,8 @@ bool ModeBrake::init(bool ignore_checks)
 // should be called at 100hz or more
 void ModeBrake::run()
 {
-    float lateral_input, pitch_input, yaw_input, thrust_input;
+    float pitch_input, yaw_input;
+    float lateral, forward;
 
     // We use a NED frame as per the UAV standard
     // Roll, pitch, yaw channel are between -1 and 1
@@ -26,27 +29,53 @@ void ModeBrake::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
 
-    lateral_input = -(float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT; // range -1 to 1
     pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
     yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
-    thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
 
-    float forward = (pitch_input * sqrtf(2)/2 - lateral_input * sqrtf(2)/2) / (sqrtf(2)); //range -1 to 1
-    float lateral = (pitch_input * sqrtf(2)/2 + lateral_input * sqrtf(2)/2) / (sqrtf(2));
     float yaw_moment = yaw_input;
 
-    if (!motors->armed()) {
-        // Motors should be Stopped
-        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
+    if(!sequenceStarted && pitch_input>0.5)
+    {
+        sequenceStarted = true;
+        timeStarted = AP_HAL::millis();
+        lateral = 0.0f;
+        forward = 0.0f;
     }
-    
-    else {
-        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
+    else if(sequenceStarted && pitch_input<-0.5)
+    {
+        sequenceStarted = false;
+        lateral = 0.0f;
+        forward = 0.0f;
+    }
+    else if(sequenceStarted)
+    {
+        uint32_t now = AP_HAL::millis();
+        if(now-timeStarted<5000)
+        {
+            lateral = 0.0f;
+            forward = 0.0f;
+        }
+        else if(now-timeStarted<20000)
+        {
+            lateral = 0.0f;
+            forward = 0.10f;
+        } 
+        else
+        {
+            sequenceStarted = false;
+            lateral = 0.0f;
+            forward = 0.0f;
+        }
+    }
+    else
+    {
+        lateral = 0.0f;
+        forward = 0.0f;
     }
 
     // Only call controller each 8 timestep to have 50Hzs
     if (counter>7){
-        attitude_control->deleaves_controller_angVelHold_LQR(lateral, forward, yaw_moment, thrust_input, motors->armed());
+        attitude_control->deleaves_controller_forHold_LQR(lateral,forward,yaw_moment,0.0f,motors->armed());
         counter=0;
     }
     counter++;
