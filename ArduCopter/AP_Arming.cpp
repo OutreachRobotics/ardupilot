@@ -21,9 +21,9 @@ void AP_Arming_Copter::update(void)
 
 bool AP_Arming_Copter::pre_arm_checks(bool display_failure)
 {
-    const bool passed = run_pre_arm_checks(display_failure);
-    set_pre_arm_check(passed);
-    return passed;
+    // const bool passed = run_pre_arm_checks(display_failure);
+    // set_pre_arm_check(passed);
+    return true;
 }
 
 // perform pre-arm checks
@@ -472,9 +472,10 @@ bool AP_Arming_Copter::gps_checks(bool display_failure)
 bool AP_Arming_Copter::pre_arm_ekf_attitude_check()
 {
     // get ekf filter status
-    nav_filter_status filt_status = copter.inertial_nav.get_filter_status();
+    // nav_filter_status filt_status = copter.inertial_nav.get_filter_status();
 
-    return filt_status.flags.attitude;
+    // return filt_status.flags.attitude;
+    return true;
 }
 
 // check nothing is too close to vehicle
@@ -625,13 +626,13 @@ bool AP_Arming_Copter::alt_checks(bool display_failure)
 //  has side-effect that logging is started
 bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
 {
-    const AP_AHRS_NavEKF &ahrs = AP::ahrs_navekf();
+    // const AP_AHRS_NavEKF &ahrs = AP::ahrs_navekf();
 
     // always check if inertial nav has started and is ready
-    if (!ahrs.healthy()) {
-        check_failed(true, "AHRS not healthy");
-        return false;
-    }
+    // if (!ahrs.healthy()) {
+    //     check_failed(true, "AHRS not healthy");
+    //     return false;
+    // }
 #define ALLOW_ARM_NO_COMPASS
 #ifndef ALLOW_ARM_NO_COMPASS
     // if external source of heading is available, we can skip compass health check
@@ -681,12 +682,12 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
     }
 
     // check lean angle
-    if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_INS)) {
-        if (degrees(acosf(ahrs.cos_roll()*ahrs.cos_pitch()))*100.0f > copter.aparm.angle_max) {
-            check_failed(ARMING_CHECK_INS, true, "Leaning");
-            return false;
-        }
-    }
+    // if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_INS)) {
+    //     if (degrees(acosf(ahrs.cos_roll()*ahrs.cos_pitch()))*100.0f > copter.aparm.angle_max) {
+    //         check_failed(ARMING_CHECK_INS, true, "Leaning");
+    //         return false;
+    //     }
+    // }
 
     // check adsb
 #if HAL_ADSB_ENABLED
