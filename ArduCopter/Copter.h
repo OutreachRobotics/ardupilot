@@ -69,6 +69,7 @@
 #include <DEL_EKF/del_ekf.h>
 #include <AP_Sony/AP_Sony.h>
 #include <DEL_Winch/del_winch.h>
+#include <DEL_LED/del_led.h>
 
 // Configuration
 #include "defines.h"
@@ -472,6 +473,7 @@ private:
 
     AP_Sony sony_cam;
     DelWinch delWinch;
+    DelLed delLed;
 
 #if MODE_CIRCLE_ENABLED == ENABLED
     AC_Circle *circle_nav;

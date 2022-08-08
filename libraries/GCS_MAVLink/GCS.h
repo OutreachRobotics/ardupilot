@@ -887,6 +887,12 @@ public:
     void        setWinchAltitude(float newAlt);
     float       getWinchAltitude();
     float       winchAltitude;
+    void        setLedCommand(float led0,float led1,float led2,float led3,float led4,float led5,float led6);
+    uint8_t*    getLedCommand();
+    uint8_t     led_command[7];
+    void        setSimbaBattery(int16_t voltage);
+    int16_t     getSimbaVoltage();
+    int16_t     simba_voltage;
 
     void send_to_active_channels(uint32_t msgid, const char *pkt);
 

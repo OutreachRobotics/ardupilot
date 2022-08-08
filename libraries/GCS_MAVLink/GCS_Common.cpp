@@ -1335,6 +1335,12 @@ void GCS_MAVLINK::send_message(enum ap_message id)
 void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
                                  const mavlink_message_t &msg)
 {
+    if(msg.msgid == MAV_CMD_USER_1) {
+        hal.console->println("Message received");
+    }
+    if(msg.msgid==183) {
+        hal.console->println("Message received #2");
+    }
     // we exclude radio packets because we historically used this to
     // make it possible to use the CLI over the radio
     if (msg.msgid != MAVLINK_MSG_ID_RADIO && msg.msgid != MAVLINK_MSG_ID_RADIO_STATUS) {
@@ -1362,6 +1368,8 @@ void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
         // e.g. enforce-sysid says we shouldn't look at this packet
         return;
     }
+        
+
     handleMessage(msg);
 }
 
@@ -3965,6 +3973,8 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
         break;
 
     case MAV_CMD_DO_SET_SERVO:
+        gcs().setLedCommand(packet.param1,packet.param2,packet.param3,packet.param4,packet.param5,packet.param6,packet.param7);
+        break;
     case MAV_CMD_DO_REPEAT_SERVO:
     case MAV_CMD_DO_SET_RELAY:
     case MAV_CMD_DO_REPEAT_RELAY:
@@ -4342,6 +4352,10 @@ void GCS_MAVLINK::send_sys_status()
         battery_current = -1;
         battery_remaining = -1;
     }
+    int16_t batteryVoltage = gcs().getSimbaVoltage();
+    battery_remaining = batteryVoltage>=19200 ?
+        int8_t((batteryVoltage-19200.0f) / (25000.0f-19200.0f) * 100) : 0;
+    battery_remaining = constrain_int16(battery_remaining, 0, 100);
 
     uint32_t control_sensors_present;
     uint32_t control_sensors_enabled;
@@ -4360,7 +4374,7 @@ void GCS_MAVLINK::send_sys_status()
         control_sensors_enabled,
         control_sensors_health,
         static_cast<uint16_t>(AP::scheduler().load_average() * 1000),
-        battery.voltage() * 1000,  // mV
+        batteryVoltage,  // mV
         battery_current,        // in 10mA units
         battery_remaining,      // in %
         0,  // comm drops %,
@@ -4409,6 +4423,32 @@ void GCS::setWinchAltitude(float newAlt)
 float GCS::getWinchAltitude()
 {
     return winchAltitude;
+}
+
+void GCS::setLedCommand(float led0,float led1,float led2,float led3,float led4,float led5,float led6)
+{
+    led_command[0] = uint8_t(led0*255);
+    led_command[1] = uint8_t(led1*255);
+    led_command[2] = uint8_t(led2*255);
+    led_command[3] = uint8_t(led3*255);
+    led_command[4] = uint8_t(led4*255);
+    led_command[5] = uint8_t(led5*255);
+    led_command[6] = uint8_t(led6*255);
+}
+
+uint8_t* GCS::getLedCommand()
+{
+    return led_command;
+}
+
+void GCS::setSimbaBattery(int16_t voltage)
+{
+    simba_voltage = voltage;
+}
+
+int16_t GCS::getSimbaVoltage()
+{
+    return simba_voltage;
 }
 
 void GCS_MAVLINK::send_global_position_int()
