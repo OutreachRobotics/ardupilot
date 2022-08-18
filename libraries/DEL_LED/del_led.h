@@ -54,6 +54,7 @@ private:
     AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev = nullptr;
     BatteryVoltage batteryVoltage;
     uint8_t ledPower[LED_COUNT];
+    uint8_t ledCtr;
 };
 
 #endif

@@ -277,7 +277,7 @@ void AP_MotorsMulticopter::output()
         }
 
         for (int i = 0; i < 8; i++) {
-            rc_write(i, i==_tune_motor?1150:1150);
+            rc_write(i, i==_tune_motor?1250:1000);
         }
     }
     else

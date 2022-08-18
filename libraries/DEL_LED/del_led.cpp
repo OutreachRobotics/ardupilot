@@ -38,6 +38,7 @@ void DelLed::init()
         ledPower[i] = 0;
     }
     batteryVoltage.voltage = 0;
+    ledCtr = 0;
 }
 
 void DelLed::setLedPower(uint8_t* ledCommand)
@@ -58,6 +59,13 @@ void DelLed::manage()
     if(!_dev->get_semaphore()->take(2) || !_dev){
         return;
     }
-    _dev->transfer(ledPower,LED_COUNT,nullptr,0);
-    _dev->transfer(nullptr,0,&batteryVoltage.bytes.lsb,sizeof(batteryVoltage.voltage));
+    if(ledCtr++<1)
+    {
+        _dev->transfer(ledPower,LED_COUNT,nullptr,0);
+    }
+    else
+    {
+        ledCtr = 0;
+        _dev->transfer(nullptr,0,&batteryVoltage.bytes.lsb,sizeof(batteryVoltage.voltage));
+    }
 }
