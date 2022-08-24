@@ -511,8 +511,8 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
     yaw_angle_error_last=yaw_angle_error; //assign new error to last
 
     // For logging purpose
-    _attitude_target_euler_angle.x = 0.0f;
-    _attitude_target_euler_angle.y = 0.0f;
+    _attitude_target_euler_angle.x = lateral*MAX_ROLL;
+    _attitude_target_euler_angle.y = forward*MAX_PITCH;
     _attitude_target_euler_angle.z = target_yaw;
 
     constrainCommand();
