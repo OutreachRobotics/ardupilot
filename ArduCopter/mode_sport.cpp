@@ -181,17 +181,7 @@ void ModeSport::run()
     // Only call controller each 8 timestep to have 50Hz
     if (counter>7){
         if(lateralSequenceArmed)
-        {
-            attitude_control->deleaves_controller_latHold(lateral_target, pitch_input, yaw_input, thrust_input, lateralSequenceArmed, motors->armed());
-        }
-        else if(forwardSequenceArmed)
-        {
-            attitude_control->deleaves_controller_forHold(lateral_input, forward_target, yaw_input, thrust_input, forwardSequenceArmed, motors->armed());
-        }
-        else
-        {
-            attitude_control->deleaves_controller_approachHold(lateral_target, forward_target, yaw_input, thrust_input, approachSequenceArmed, motors->armed());           
-        }
+        attitude_control->deleaves_controller_step_LQR(lateral_target, forward_target, yaw_input, thrust_input, motors->armed());
         counter=0;
     }
     counter++;
