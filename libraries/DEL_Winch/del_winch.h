@@ -43,7 +43,7 @@ enum Direction
 
 union PositionRead
 {
-    uint16_t pos;
+    int16_t pos;
     uint8_t byte[2];
 };
 
@@ -57,7 +57,7 @@ public:
     DelWinch();
     void init();
     void manage();
-    uint16_t getPosition();
+    int16_t getPosition();
     uint8_t getSpeed();
     uint8_t getSpeedCommand();
     uint8_t getDirection();

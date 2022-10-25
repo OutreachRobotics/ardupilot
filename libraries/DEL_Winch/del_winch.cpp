@@ -77,7 +77,7 @@ void DelWinch::manage()
 
 }
 
-    uint16_t DelWinch::getPosition()
+    int16_t DelWinch::getPosition()
     {
         return position_read.pos;
     }
