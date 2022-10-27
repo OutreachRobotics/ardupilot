@@ -124,7 +124,7 @@ void ModeSport::run()
         }
         else
         {
-            lateral_target = 0.12f;
+            lateral_target = 0.5f;
             forward_target = 0.0f;
         }       
     }
@@ -139,22 +139,36 @@ void ModeSport::run()
         else
         {
             lateral_target = 0.0f;
-            forward_target = 0.2f;
+            forward_target = 0.5f;
         }
     }
     else if(approachSequenceArmed)
     {
         uint32_t now = AP_HAL::millis();
-        if(now-forwardSequenceStart<10000)
+        if(now-approachSequenceStart<10000)
         {
             lateral_target = 0.0f;
             forward_target = 0.0f;
         }
+        else if(now-approachSequenceStart<20000)
+        {
+            lateral_target = 0.25f;
+            forward_target = 0.5f;            
+        }
+        else if(now-approachSequenceStart<30000)
+        {
+            lateral_target = 0.4f;
+            forward_target = 0.5f;            
+        }
+        else if(now-approachSequenceStart<40000)
+        {
+            lateral_target = 0.25f;
+            forward_target = 0.5f;            
+        }
         else
         {
-            float mamba_length = constrain_float(attitude_control->get_mamba_length(), 5.0f, 50.0f);            
-            lateral_target = constrain_float(asinf(1.0f/mamba_length),MIN_ROLL,MAX_ROLL);
-            forward_target = constrain_float(asinf(3.0f/mamba_length),MIN_PITCH,MAX_PITCH);            
+            lateral_target = 0.25f;
+            forward_target = 0.65f;            
         }
     }
     else
@@ -180,8 +194,14 @@ void ModeSport::run()
 
     // Only call controller each 8 timestep to have 50Hz
     if (counter>7){
-        if(lateralSequenceArmed)
-        attitude_control->deleaves_controller_step_LQR(lateral_target, forward_target, yaw_input, thrust_input, motors->armed());
+        if(lateralSequenceArmed || forwardSequenceArmed)
+        {
+            attitude_control->deleaves_controller_step_LQR(lateral_target, forward_target, yaw_input, thrust_input, motors->armed());
+        }
+        else
+        {
+            attitude_control->deleaves_controller_step_LQR(lateral_target, forward_target, yaw_input, thrust_input, motors->armed());
+        }
         counter=0;
     }
     counter++;

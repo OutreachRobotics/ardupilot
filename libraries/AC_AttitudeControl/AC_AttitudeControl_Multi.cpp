@@ -892,14 +892,17 @@ void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float
         {
             target_yaw += yaw*YAW_SENSITIVITY;
         }
-
-        target_forward = forward;
-        target_lateral = lateral;
+        // Forward control, velocity on move, angular on hold
+        target_forward = forward*MAX_PITCH;
+        // Lateral control, based on the same principle as forward control
+        target_lateral = lateral*MAX_ROLL;
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
     target_lateral = constrain_value(target_lateral, MIN_ROLL, MAX_ROLL);
-
-    Mat command = delEKF.createCommandMat(Vector3f(target_lateral,target_forward,target_yaw));
+    filtered_target_forward = target_forward;
+    filtered_target_lateral = target_lateral;
+    
+    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
     Mat k_lqr = delEKF.getLQRgain();
 
     // LQR control
@@ -922,8 +925,8 @@ void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float
     constrainCommand();
 
     // For logging purpose
-    _attitude_target_euler_angle.x = target_lateral;
-    _attitude_target_euler_angle.y = target_forward;
+    _attitude_target_euler_angle.x = filtered_target_lateral;
+    _attitude_target_euler_angle.y = filtered_target_forward;
     _attitude_target_euler_angle.z = target_yaw;
 
     if(armed)
