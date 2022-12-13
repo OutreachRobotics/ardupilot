@@ -613,7 +613,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold_LQR(float lateral, fl
             target_yaw += yaw*YAW_SENSITIVITY;
         }
         target_forward = forward;
-        target_lateral = lateral*MAX_ROLL;
+        target_lateral = lateral;
     }    
 
     // LQR control

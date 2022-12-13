@@ -55,10 +55,20 @@ void ModeBrake::run()
             lateral = 0.0f;
             forward = 0.0f;
         }
-        else if(now-timeStarted<20000)
+        else if(now-timeStarted<15000)
         {
             lateral = 0.0f;
             forward = 0.10f;
+        } 
+        else if(now-timeStarted<25000)
+        {
+            lateral = 0.0f;
+            forward = 0.0f;
+        } 
+        else if(now-timeStarted<35000)
+        {
+            lateral = 0.1f;
+            forward = 0.1f;
         } 
         else
         {
