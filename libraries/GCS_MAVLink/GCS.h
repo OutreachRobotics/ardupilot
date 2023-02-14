@@ -501,6 +501,7 @@ protected:
     MAV_RESULT handle_command_debug_trap(const mavlink_command_long_t &packet);
 
     void handle_optical_flow(const mavlink_message_t &msg);
+    MAV_RESULT handle_herelink_msg(const mavlink_command_long_t);
 
     MAV_RESULT handle_fixed_mag_cal_yaw(const mavlink_command_long_t &packet);
 
