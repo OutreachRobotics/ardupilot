@@ -4096,9 +4096,6 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
         break;
 
     case MAV_CMD_DO_SET_SERVO:
-        result = handle_herelink_msg(packet);
-        break;
-
     case MAV_CMD_DO_REPEAT_SERVO:
     case MAV_CMD_DO_SET_RELAY:
     case MAV_CMD_DO_REPEAT_RELAY:
@@ -4147,21 +4144,6 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
     }
 
     return result;
-}
-
-MAV_RESULT GCS_MAVLINK::handle_herelink_msg(const mavlink_command_long_t msg)
-{
-    if(msg.param1<20)
-    {
-        mavlink_msg_command_long_send(chan, 42, 100, 2500,false,0,0,0,0,0,0,0);
-        hal.console->printf("\r\nStarted video recording\r\n");
-    }
-    else if(msg.param1<30)
-    {
-        mavlink_msg_command_long_send(chan, 42, 100, 2501,false,0,0,0,0,0,0,0);
-        hal.console->printf("\r\nStopped video recording\r\n");
-    }
-    return MAV_RESULT_ACCEPTED;
 }
 
 bool GCS_MAVLINK::command_long_stores_location(const MAV_CMD command)
