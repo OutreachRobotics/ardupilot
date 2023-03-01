@@ -397,8 +397,6 @@ void Copter::ten_hz_logging_loop()
     }
     Log_Write_SAMBA();
     logger.Write_GPS(gps.primary_sensor());
-    windSensor.update();
-    Log_Write_WIND();
     
     if (should_log(MASK_LOG_MOTBATT)) {
         Log_Write_MotBatt();

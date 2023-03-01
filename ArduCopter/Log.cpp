@@ -198,21 +198,6 @@ struct PACKED log_WIND {
     float v_off;
 };
 
-// Write a SAMPLE packet
-void Copter::Log_Write_WIND()
-{  
-    struct log_WIND pkt = {
-        LOG_PACKET_HEADER_INIT(LOG_WIND_MSG),
-        time_us  : AP_HAL::micros64(),
-        w_speed : windSensor.get_wind_speed(),
-        w_volt : windSensor.get_wind_voltage(), 
-        temp : windSensor.get_temp(),
-        t_voltage : windSensor.get_temp_voltage(),
-        v_off : windSensor.get_voltage_offset()
-    };
-    logger.WriteBlock(&pkt, sizeof(pkt));
-};
-
 // Write an EKF and POS packet
 void Copter::Log_Write_EKF_POS()
 {

@@ -66,8 +66,8 @@
 #include <AP_Parachute/AP_Parachute.h>
 #include <AC_Sprayer/AC_Sprayer.h>
 #include <AP_ADSB/AP_ADSB.h>
-#include <AP_WindSensor/AP_ModernDevice.h>
 #include <DEL_EKF/del_ekf.h>
+#include <DEL_Sampler/del_sampler.h>
 
 // Configuration
 #include "defines.h"
@@ -246,8 +246,6 @@ private:
     RC_Channel *channel_yaw;
 
     AP_Logger logger;
-
-    AP_ModernDevice windSensor;
 
     // flight modes convenience array
     AP_Int8 *flight_modes;
@@ -770,7 +768,6 @@ private:
     void Log_Write_SAMBA();
     void Log_Write_SAMPLE();
     void Log_Write_SAMBA_EKF();
-    void Log_Write_WIND();
     void Log_Write_Control_Tuning();
     void Log_Write_Performance();
     void Log_Write_Attitude();
