@@ -40,6 +40,7 @@
 #include <AP_RCMapper/AP_RCMapper.h>
 #include <AP_VisualOdom/AP_VisualOdom.h>
 #include <AP_OSD/AP_OSD.h>
+#include <AP_FETtecOneWire/AP_FETtecOneWire.h>
 
 #if HAL_MAX_CAN_PROTOCOL_DRIVERS
   #include <AP_CANManager/AP_CANManager.h>
@@ -116,9 +117,7 @@ const AP_Param::GroupInfo AP_Arming::var_info[] = {
 
     // @Param: CHECK
     // @DisplayName: Arm Checks to Perform (bitmask)
-    // @Description: Checks prior to arming motor. This is a bitmask of checks that will be performed before allowing arming. The default is no checks, allowing arming at any time. You can select whatever checks you prefer by adding together the values of each check type to set this parameter. For example, to only allow arming when you have GPS lock and no RC failsafe you would set ARMING_CHECK to 72. For most users it is recommended that you set this to 1 to enable all checks.
-    // @Values: 0:None,1:All,2:Barometer,4:Compass,8:GPS Lock,16:INS(INertial Sensors - accels & gyros),32:Parameters,64:RC Channels,128:Board voltage,256:Battery Level,1024:LoggingAvailable,2048:Hardware safety switch,4096:GPS configuration,8192:System,16384:Mission,32768:RangeFinder,65536:Camera,131072:AuxAuth,524288:FFT
-    // @Values{Plane}: 0:None,1:All,2:Barometer,4:Compass,8:GPS Lock,16:INS(INertial Sensors - accels & gyros),32:Parameters,64:RC Channels,128:Board voltage,256:Battery Level,512:Airspeed,1024:LoggingAvailable,2048:Hardware safety switch,4096:GPS configuration,8192:System,16384:Mission,32768:RangeFinder,65536:Camera,131072:AuxAuth,524288:FFT
+    // @Description: Checks prior to arming motor. This is a bitmask of checks that will be performed before allowing arming. For most users it is recommended to leave this at the default of 1 (all checks enabled). You can select whatever checks you prefer by adding together the values of each check type to set this parameter. For example, to only allow arming when you have GPS lock and no RC failsafe you would set ARMING_CHECK to 72.
     // @Bitmask: 0:All,1:Barometer,2:Compass,3:GPS lock,4:INS,5:Parameters,6:RC Channels,7:Board voltage,8:Battery Level,10:Logging Available,11:Hardware safety switch,12:GPS Configuration,13:System,14:Mission,15:Rangefinder,16:Camera,17:AuxAuth,18:VisualOdometry,19:FFT
     // @Bitmask{Plane}: 0:All,1:Barometer,2:Compass,3:GPS lock,4:INS,5:Parameters,6:RC Channels,7:Board voltage,8:Battery Level,9:Airspeed,10:Logging Available,11:Hardware safety switch,12:GPS Configuration,13:System,14:Mission,15:Rangefinder,16:Camera,17:AuxAuth,19:FFT
     // @User: Standard
@@ -363,6 +362,12 @@ bool AP_Arming::ins_checks(bool report)
             return false;
         }
 
+        // no arming while doing temp cal
+        if (ins.temperature_cal_running()) {
+            check_failed(ARMING_CHECK_INS, report, "temperature cal running");
+            return false;
+        }
+        
         // check AHRS attitudes are consistent
         char failure_msg[50] = {};
         if (!AP::ahrs().attitudes_consistent(failure_msg, ARRAY_SIZE(failure_msg))) {
@@ -456,6 +461,18 @@ bool AP_Arming::gps_checks(bool report)
 {
     const AP_GPS &gps = AP::gps();
     if ((checks_to_perform & ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_GPS)) {
+
+        // Any failure messages from GPS backends
+        if ((checks_to_perform & ARMING_CHECK_ALL) ||
+            (checks_to_perform & ARMING_CHECK_GPS)) {
+            char failure_msg[50] = {};
+            if (!AP::gps().backends_healthy(failure_msg, ARRAY_SIZE(failure_msg))) {
+                if (failure_msg[0] != '\0') {
+                    check_failed(ARMING_CHECK_GPS, report, "%s", failure_msg);
+                }
+                return false;
+            }
+        }
 
         //GPS OK?
         if (!AP::ahrs().home_is_set() ||
@@ -558,6 +575,10 @@ bool AP_Arming::rc_arm_checks(AP_Arming::Method method)
     // ensure all rc channels have different functions
     if (rc().duplicate_options_exist()) {
         check_failed(ARMING_CHECK_PARAMETERS, true, "Duplicate Aux Switch Options");
+        check_passed = false;
+    }
+    if (rc().flight_mode_channel_conflicts_with_rc_option()) {
+        check_failed(ARMING_CHECK_PARAMETERS, true, "Mode channel and RC%d_OPTION conflict", rc().flight_mode_channel_number());
         check_passed = false;
     }
     const RCMapper * rcmap = AP::rcmap();
@@ -825,6 +846,7 @@ bool AP_Arming::system_checks(bool report)
 // check nothing is too close to vehicle
 bool AP_Arming::proximity_checks(bool report) const
 {
+#if HAL_PROXIMITY_ENABLED
     const AP_Proximity *proximity = AP::proximity();
     // return true immediately if no sensor present
     if (proximity == nullptr) {
@@ -839,6 +861,7 @@ bool AP_Arming::proximity_checks(bool report) const
         check_failed(report, "check proximity sensor");
         return false;
     }
+#endif
 
     return true;
 }
@@ -900,7 +923,9 @@ bool AP_Arming::can_checks(bool report)
                 }
                 case AP_CANManager::Driver_Type_EFI_NWPMU:
                 case AP_CANManager::Driver_Type_USD1:
+                case AP_CANManager::Driver_Type_MPPT_PacketDigital:
                 case AP_CANManager::Driver_Type_None:
+                case AP_CANManager::Driver_Type_Benewake:
                     break;
             }
         }
@@ -967,6 +992,24 @@ bool AP_Arming::osd_checks(bool display_failure) const
             check_failed(ARMING_CHECK_CAMERA, display_failure, "%s", fail_msg);
             return false;
         }
+    }
+#endif
+    return true;
+}
+
+bool AP_Arming::fettec_checks(bool display_failure) const
+{
+#if HAL_AP_FETTEC_ONEWIRE_ENABLED
+    const AP_FETtecOneWire *f = AP_FETtecOneWire::get_singleton();
+    if (f == nullptr) {
+        return true;
+    }
+
+    // check camera is ready
+    char fail_msg[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN+1];
+    if (!f->pre_arm_check(fail_msg, ARRAY_SIZE(fail_msg))) {
+        check_failed(ARMING_CHECK_ALL, display_failure, "FETtec: %s", fail_msg);
+        return false;
     }
 #endif
     return true;
@@ -1133,9 +1176,11 @@ bool AP_Arming::pre_arm_checks(bool report)
         &  proximity_checks(report)
         &  camera_checks(report)
         &  osd_checks(report)
+        &  fettec_checks(report)
         &  visodom_checks(report)
         &  aux_auth_checks(report)
-        &  disarm_switch_checks(report);
+        &  disarm_switch_checks(report)
+        &  fence_checks(report);
 }
 
 bool AP_Arming::arm_checks(AP_Arming::Method method)
@@ -1159,6 +1204,14 @@ bool AP_Arming::arm_checks(AP_Arming::Method method)
         (checks_to_perform & ARMING_CHECK_GPS_CONFIG)) {
         if (!AP::gps().prepare_for_arming()) {
             return false;
+        }
+    }
+
+    AC_Fence *fence = AP::fence();
+    if (fence != nullptr) {
+        // If a fence is set to auto-enable, turn on the fence
+        if(fence->auto_enabled() == AC_Fence::AutoEnable::ONLY_WHEN_ARMED) {
+            fence->enable(true);
         }
     }
     
@@ -1204,7 +1257,7 @@ bool AP_Arming::arm(AP_Arming::Method method, const bool do_arming_checks)
 }
 
 //returns true if disarming occurred successfully
-bool AP_Arming::disarm(const AP_Arming::Method method)
+bool AP_Arming::disarm(const AP_Arming::Method method, bool do_disarm_checks)
 {
     if (!armed) { // already disarmed
         return false;
@@ -1228,6 +1281,13 @@ bool AP_Arming::disarm(const AP_Arming::Method method)
         fft->save_params_on_disarm();
     }
 #endif
+
+    AC_Fence *fence = AP::fence();
+    if (fence != nullptr) {
+        if(fence->auto_enabled() == AC_Fence::AutoEnable::ONLY_WHEN_ARMED) {
+            fence->enable(false);
+        }
+    }
 
     return true;
 }
@@ -1254,11 +1314,11 @@ bool AP_Arming::rc_checks_copter_sub(const bool display_failure, const RC_Channe
         const RC_Channel *channel = channels[i];
         const char *channel_name = channel_names[i];
         // check if radio has been calibrated
-        if (channel->get_radio_min() > 1300) {
+        if (channel->get_radio_min() > RC_Channel::RC_CALIB_MIN_LIMIT_PWM) {
             check_failed(ARMING_CHECK_RC, display_failure, "%s radio min too high", channel_name);
             ret = false;
         }
-        if (channel->get_radio_max() < 1700) {
+        if (channel->get_radio_max() < RC_Channel::RC_CALIB_MAX_LIMIT_PWM) {
             check_failed(ARMING_CHECK_RC, display_failure, "%s radio max too low", channel_name);
             ret = false;
         }

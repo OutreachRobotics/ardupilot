@@ -53,10 +53,13 @@ bool Compass::_start_calibration(uint8_t i, bool retry, float delay)
         return false;
     }
     Priority prio = Priority(i);
+
+#if COMPASS_MAX_INSTANCES > 1
     if (_priority_did_list[prio] != _priority_did_stored_list[prio]) {
         gcs().send_text(MAV_SEVERITY_ERROR, "Compass cal requires reboot after priority change");
         return false;
     }
+#endif
     
     if (_calibrator[prio] == nullptr) {
         _calibrator[prio] = new CompassCalibrator();
@@ -197,7 +200,7 @@ bool Compass::_accept_calibration(uint8_t i)
         set_and_save_offdiagonals(i,offdiag);
         set_and_save_scale_factor(i,scale_factor);
 
-        if (_get_state(prio).external && _rotate_auto >= 2) {
+        if (cal_report.check_orientation && _get_state(prio).external && _rotate_auto >= 2) {
             set_and_save_orientation(i, cal_report.orientation);
         }
 
@@ -428,7 +431,7 @@ MAV_RESULT Compass::handle_mag_cal_command(const mavlink_command_long_t &packet)
   get mag field with the effects of offsets, diagonals and
   off-diagonals removed
  */
-bool Compass::get_uncorrected_field(uint8_t instance, Vector3f &field)
+bool Compass::get_uncorrected_field(uint8_t instance, Vector3f &field) const
 {
     // form eliptical correction matrix and invert it. This is
     // needed to remove the effects of the eliptical correction

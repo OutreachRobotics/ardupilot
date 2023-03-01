@@ -80,6 +80,7 @@ static const struct {
     { "INS_ACCSCAL_X",     1.001 },
     { "INS_ACCSCAL_Y",     1.001 },
     { "INS_ACCSCAL_Z",     1.001 },
+    { "RPM_TYPE", 10 },
 };
 
 
@@ -155,9 +156,8 @@ bool FlightAxis::soap_request_start(const char *action, const char *fmt, ...)
     va_end(ap);
 
     // open SOAP socket to FlightAxis
-    if (sock) {
-        delete sock;
-    }
+    delete sock;
+
     sock = new SocketAPM(false);
     if (!sock->connect(controller_ip, controller_port)) {
         ::printf("connect failed\n");
@@ -296,12 +296,13 @@ void FlightAxis::exchange_data(const struct sitl_input &input)
         scaled_servos[1] = constrain_float(pitch_rate + 0.5, 0, 1);
     }
 
+    const uint16_t channels = hal.scheduler->is_system_initialized()?4095:0;
     if (!sock) {
         soap_request_start("ExchangeData", R"(<?xml version='1.0' encoding='UTF-8'?><soap:Envelope xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/' xmlns:xsd='http://www.w3.org/2001/XMLSchema' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>
 <soap:Body>
 <ExchangeData>
 <pControlInputs>
-<m-selectedChannels>4095</m-selectedChannels>
+<m-selectedChannels>%u</m-selectedChannels>
 <m-channelValues-0to1>
 <item>%.4f</item>
 <item>%.4f</item>
@@ -320,18 +321,19 @@ void FlightAxis::exchange_data(const struct sitl_input &input)
 </ExchangeData>
 </soap:Body>
 </soap:Envelope>)",
-                               scaled_servos[0],
-                               scaled_servos[1],
-                               scaled_servos[2],
-                               scaled_servos[3],
-                               scaled_servos[4],
-                               scaled_servos[5],
-                               scaled_servos[6],
-                               scaled_servos[7],
-                               scaled_servos[8],
-                               scaled_servos[9],
-                               scaled_servos[10],
-                               scaled_servos[11]);
+                           channels,
+                           scaled_servos[0],
+                           scaled_servos[1],
+                           scaled_servos[2],
+                           scaled_servos[3],
+                           scaled_servos[4],
+                           scaled_servos[5],
+                           scaled_servos[6],
+                           scaled_servos[7],
+                           scaled_servos[8],
+                           scaled_servos[9],
+                           scaled_servos[10],
+                           scaled_servos[11]);
     }
 
     char *reply = nullptr;
@@ -412,9 +414,10 @@ void FlightAxis::update(const struct sitl_input &input)
     velocity_ef = Vector3f(state.m_velocityWorldU_MPS,
                              state.m_velocityWorldV_MPS,
                              state.m_velocityWorldW_MPS);
-    position = Vector3f(state.m_aircraftPositionY_MTR,
+    position = Vector3d(state.m_aircraftPositionY_MTR,
                         state.m_aircraftPositionX_MTR,
                         -state.m_altitudeASL_MTR - home.alt*0.01);
+    position.xy() += origin.get_distance_NE_double(home);
 
     accel_body = {
         float(state.m_accelerationBodyAX_MPS2),
@@ -466,8 +469,8 @@ void FlightAxis::update(const struct sitl_input &input)
            airspeed3d.z);
 #endif
 
-    battery_voltage = state.m_batteryVoltage_VOLTS;
-    battery_current = state.m_batteryCurrentDraw_AMPS;
+    battery_voltage = MAX(state.m_batteryVoltage_VOLTS, 0);
+    battery_current = MAX(state.m_batteryCurrentDraw_AMPS, 0);
     rpm[0] = state.m_heliMainRotorRPM;
     rpm[1] = state.m_propRPM;
 

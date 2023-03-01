@@ -66,7 +66,7 @@ void Sub::read_rangefinder()
 }
 
 // return true if rangefinder_alt can be used
-bool Sub::rangefinder_alt_ok()
+bool Sub::rangefinder_alt_ok() const
 {
     return (rangefinder_state.enabled && rangefinder_state.alt_healthy);
 }
@@ -85,15 +85,6 @@ void Sub::rpm_update(void)
     }
 }
 #endif
-
-// initialise optical flow sensor
-#if OPTFLOW == ENABLED
-void Sub::init_optflow()
-{
-    // initialise optical flow sensor
-    optflow.init(MASK_LOG_OPTFLOW);
-}
-#endif      // OPTFLOW == ENABLED
 
 void Sub::accel_cal_update()
 {

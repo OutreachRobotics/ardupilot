@@ -9,6 +9,7 @@
 enum ap_message : uint8_t {
     MSG_HEARTBEAT,
     MSG_ATTITUDE,
+    MSG_ATTITUDE_QUATERNION,
     MSG_LOCATION,
     MSG_SYS_STATUS,
     MSG_POWER_STATUS,
@@ -40,6 +41,7 @@ enum ap_message : uint8_t {
     MSG_FENCE_STATUS,
     MSG_AHRS,
     MSG_SIMSTATE,
+    MSG_SIM_STATE,
     MSG_AHRS2,
     MSG_HWSTATUS,
     MSG_WIND,
@@ -75,5 +77,6 @@ enum ap_message : uint8_t {
     MSG_EFI_STATUS,
     MSG_GENERATOR_STATUS,
     MSG_WINCH_STATUS,
+    MSG_WATER_DEPTH,
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };

@@ -154,12 +154,15 @@ private:
     // have we forced the safety off?
     bool safety_forced_off;
 
+    // was safety off on last status?
+    bool last_safety_off;
+
     void send_servo_out(void);
     void read_rc_input(void);
     void read_servo(void);
     void read_status(void);
     void discard_input(void);
-    void event_failed(uint8_t event);
+    void event_failed(uint32_t event_mask);
     void update_safety_options(void);
     void send_rc_protocols(void);
 
@@ -201,6 +204,8 @@ private:
         uint16_t chmask;
         uint16_t default_freq = 50;
         uint16_t sbus_rate_hz;
+        bool oneshot_enabled;
+        bool brushed_enabled;
     } rate;
 
     // IMU heater duty cycle

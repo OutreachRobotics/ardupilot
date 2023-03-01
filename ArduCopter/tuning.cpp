@@ -72,7 +72,7 @@ void Copter::tuning()
         break;
 
     case TUNING_THROTTLE_RATE_KP:
-        pos_control->get_vel_z_p().kP(tuning_value);
+        pos_control->get_vel_z_pid().kP(tuning_value);
         break;
 
     case TUNING_ACCEL_Z_KP:
@@ -139,13 +139,6 @@ void Copter::tuning()
 #if MODE_CIRCLE_ENABLED == ENABLED
     case TUNING_CIRCLE_RATE:
         circle_nav->set_rate(tuning_value);
-        break;
-#endif
-
-#if RANGEFINDER_ENABLED == ENABLED
-    case TUNING_RANGEFINDER_GAIN:
-        // set rangefinder gain
-        g.rangefinder_gain.set(tuning_value);
         break;
 #endif
 

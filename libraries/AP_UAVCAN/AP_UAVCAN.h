@@ -27,6 +27,7 @@
 #include <AP_CANManager/AP_CANDriver.h>
 #include <AP_HAL/Semaphores.h>
 #include <AP_Param/AP_Param.h>
+#include <AP_ESC_Telem/AP_ESC_Telem_Backend.h>
 
 #include <uavcan/helpers/heap_based_pool_allocator.hpp>
 
@@ -71,7 +72,7 @@ class DebugCb;
 
 /*
     Frontend Backend-Registry Binder: Whenever a message of said DataType_ from new node is received,
-    the Callback will invoke registery to register the node as separate backend.
+    the Callback will invoke registry to register the node as separate backend.
 */
 #define UC_REGISTRY_BINDER(ClassName_, DataType_) \
     class ClassName_ : public AP_UAVCAN::RegistryBinder<DataType_> { \
@@ -84,7 +85,7 @@ class DebugCb;
             DISABLE_W_CAST_FUNCTION_TYPE_POP \
     }
 
-class AP_UAVCAN : public AP_CANDriver {
+class AP_UAVCAN : public AP_CANDriver, public AP_ESC_Telem_Backend {
 public:
     AP_UAVCAN();
     ~AP_UAVCAN();
@@ -96,12 +97,9 @@ public:
 
     void init(uint8_t driver_index, bool enable_filters) override;
     bool add_interface(AP_HAL::CANIface* can_iface) override;
-
-    // send ESC telemetry messages over MAVLink
-    void send_esc_telemetry_mavlink(uint8_t mav_chan);
     
     uavcan::Node<0>* get_node() { return _node; }
-    uint8_t get_driver_index() { return _driver_index; }
+    uint8_t get_driver_index() const { return _driver_index; }
 
 
     ///// SRV output /////
@@ -125,7 +123,7 @@ public:
 
     public:
         RegistryBinder() :
-        	_uc(),
+            _uc(),
             _ffunc(),
             msg() {}
 
@@ -141,6 +139,21 @@ public:
 
         const uavcan::ReceivedDataStructure<DataType_> *msg;
     };
+
+    // options bitmask
+    enum class Options : uint16_t {
+        DNA_CLEAR_DATABASE        = (1U<<0),
+        DNA_IGNORE_DUPLICATE_NODE = (1U<<1),
+    };
+
+    // check if a option is set
+    bool option_is_set(Options option) const {
+        return (uint16_t(_options.get()) & uint16_t(option)) != 0;
+    }
+
+    // check if a option is set and if it is then reset it to
+    // 0. return true if it was set
+    bool check_and_reset_option(Options option);
 
 private:
     // This will be needed to implement if UAVCAN is used with multithreading
@@ -172,6 +185,7 @@ private:
     AP_Int32 _servo_bm;
     AP_Int32 _esc_bm;
     AP_Int16 _servo_rate_hz;
+    AP_Int16 _options;
 
     uavcan::Node<0> *_node;
 
@@ -226,19 +240,6 @@ private:
 
     static HAL_Semaphore _telem_sem;
 
-    struct esc_data {
-        uint8_t temp;
-        uint16_t voltage;
-        uint16_t current;
-        uint16_t total_current;
-        uint16_t rpm;
-        uint16_t count; //count of telemetry packets received (wraps at 65535).
-        bool available;
-    };
-
-    static esc_data _escs_data[UAVCAN_SRV_NUMBER];
-
-    
     // safety status send state
     uint32_t _last_safety_state_ms;
 

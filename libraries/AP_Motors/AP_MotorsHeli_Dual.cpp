@@ -362,7 +362,7 @@ void AP_MotorsHeli_Dual::calculate_armed_scalars()
     // allow use of external governor autorotation bailout window on main rotor
     if (_main_rotor._ext_gov_arot_pct.get() > 0  &&  (_main_rotor._rsc_mode.get() == ROTOR_CONTROL_MODE_SPEED_SETPOINT  ||  _main_rotor._rsc_mode.get() == ROTOR_CONTROL_MODE_SPEED_PASSTHROUGH)){
         // RSC only needs to know that the vehicle is in an autorotation if using the bailout window on an external governor
-        _main_rotor.set_autorotaion_flag(_heliflags.in_autorotation);
+        _main_rotor.set_autorotation_flag(_heliflags.in_autorotation);
     }
 }
 
@@ -514,6 +514,8 @@ void AP_MotorsHeli_Dual::update_motor_control(RotorControlState state)
 
     // Check if rotors are run-up
     _heliflags.rotor_runup_complete = _main_rotor.is_runup_complete();
+    // Check if rotors are spooled down
+    _heliflags.rotor_spooldown_complete = _main_rotor.is_spooldown_complete();
 }
 
 //

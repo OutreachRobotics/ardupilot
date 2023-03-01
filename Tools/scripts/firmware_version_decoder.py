@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import enum
 import io
 import sys
@@ -62,7 +64,8 @@ class BoardSubType(enum.Enum):
     LINUX_RST_ZYNQ = 1021
     LINUX_POCKET = 1022
     LINUX_NAVIGATOR = 1023
-
+    LINUX_VNAV = 1024
+    LINUX_OBAL = 1025
     CHIBIOS_SKYVIPER_F412 = 5000
     CHIBIOS_FMUV3 = 5001
     CHIBIOS_FMUV4 = 5002

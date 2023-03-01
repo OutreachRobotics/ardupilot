@@ -19,11 +19,12 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_Math/AP_Math.h>
-#include <AP_BLHeli/AP_BLHeli.h>
+#include <AP_ESC_Telem/AP_ESC_Telem.h>
 #include <RC_Channel/RC_Channel.h>
 #include <AP_Param/AP_Param.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_OLC/AP_OLC.h>
+
 
 #ifndef OSD_ENABLED
 #define OSD_ENABLED !HAL_MINIMIZE_FEATURES
@@ -136,6 +137,8 @@ private:
     AP_OSD_Setting altitude{true, 23, 8};
     AP_OSD_Setting bat_volt{true, 24, 1};
     AP_OSD_Setting rssi{true, 1, 1};
+    AP_OSD_Setting restvolt{false, 24, 2};
+    AP_OSD_Setting avgcellvolt{false, 24, 3};
     AP_OSD_Setting current{true, 25, 2};
     AP_OSD_Setting batused{true, 23, 3};
     AP_OSD_Setting sats{true, 1, 3};
@@ -152,13 +155,11 @@ private:
     AP_OSD_Setting aspd1{false, 0, 0};
     AP_OSD_Setting aspd2{false, 0, 0};
     AP_OSD_Setting vspeed{true, 24, 9};
-
-#ifdef HAVE_AP_BLHELI_SUPPORT
+#if HAL_WITH_ESC_TELEM
     AP_OSD_Setting blh_temp {false, 24, 13};
     AP_OSD_Setting blh_rpm{false, 22, 12};
     AP_OSD_Setting blh_amps{false, 24, 14};
 #endif
-
     AP_OSD_Setting gps_latitude{true, 9, 13};
     AP_OSD_Setting gps_longitude{true, 9, 14};
     AP_OSD_Setting roll_angle{false, 0, 0};
@@ -178,6 +179,11 @@ private:
     AP_OSD_Setting bat2used{false, 0, 0};
     AP_OSD_Setting current2{false, 0, 0};
     AP_OSD_Setting clk{false, 0, 0};
+    AP_OSD_Setting callsign{false, 0, 0};
+    AP_OSD_Setting vtx_power{false, 0, 0};
+    AP_OSD_Setting hgt_abvterr{false, 23, 7};
+    AP_OSD_Setting fence{false, 14, 9};
+    AP_OSD_Setting rngf{false, 0, 0};
 #if HAL_PLUSCODE_ENABLE
     AP_OSD_Setting pluscode{false, 0, 0};
 #endif
@@ -191,10 +197,11 @@ private:
     AP_OSD_Setting cell_volt{true, 1, 1};
     AP_OSD_Setting batt_bar{true, 1, 1};
     AP_OSD_Setting arming{true, 1, 1};
-    AP_OSD_Setting callsign{false, 0, 0};
 
     void draw_altitude(uint8_t x, uint8_t y);
     void draw_bat_volt(uint8_t x, uint8_t y);
+    void draw_avgcellvolt(uint8_t x, uint8_t y);
+    void draw_restvolt(uint8_t x, uint8_t y);
     void draw_rssi(uint8_t x, uint8_t y);
     void draw_current(uint8_t x, uint8_t y);
     void draw_current(uint8_t instance, uint8_t x, uint8_t y);
@@ -217,17 +224,14 @@ private:
 #if HAL_PLUSCODE_ENABLE
     void draw_pluscode(uint8_t x, uint8_t y);
 #endif
-
     //helper functions
     void draw_speed(uint8_t x, uint8_t y, float angle_rad, float magnitude);
     void draw_distance(uint8_t x, uint8_t y, float distance);
-
-#ifdef HAVE_AP_BLHELI_SUPPORT
+#if HAL_WITH_ESC_TELEM
     void draw_blh_temp(uint8_t x, uint8_t y);
     void draw_blh_rpm(uint8_t x, uint8_t y);
     void draw_blh_amps(uint8_t x, uint8_t y);
 #endif
-
     void draw_gps_latitude(uint8_t x, uint8_t y);
     void draw_gps_longitude(uint8_t x, uint8_t y);
     void draw_roll_angle(uint8_t x, uint8_t y);
@@ -248,6 +252,11 @@ private:
     void draw_clk(uint8_t x, uint8_t y);
     void draw_callsign(uint8_t x, uint8_t y);
     void draw_current2(uint8_t x, uint8_t y);
+    void draw_vtx_power(uint8_t x, uint8_t y);
+    void draw_hgt_abvterr(uint8_t x, uint8_t y);
+    void draw_fence(uint8_t x, uint8_t y);
+    void draw_rngf(uint8_t x, uint8_t y);
+
 
     struct {
         bool load_attempted;
@@ -304,12 +313,12 @@ public:
     // initialize the setting from the configured information
     void update();
     // grab the parameter name
-    void copy_name(char* name, size_t len) {
+    void copy_name(char* name, size_t len) const {
         _param->copy_name_token(_current_token, name, len);
         if (len > 16) name[16] = 0;
     }
     // copy the name converting FOO_BAR_BAZ to FooBarBaz
-    void copy_name_camel_case(char* name, size_t len);
+    void copy_name_camel_case(char* name, size_t len) const;
     // set the ranges from static metadata
     bool set_from_metadata();
     bool set_by_name(const char* name, uint8_t config_type, float pmin=0, float pmax=0, float pincr=0);
@@ -446,6 +455,11 @@ public:
 
     AP_Int8 warn_rssi;
     AP_Int8 warn_nsat;
+    AP_Int32 warn_terr;
+    AP_Float warn_avgcellvolt;
+    AP_Float max_battery_voltage;
+    AP_Int8 cell_count;
+    AP_Float warn_restvolt;
     AP_Float warn_batvolt;
     AP_Float warn_bat2volt;
     AP_Int8 msgtime_s;

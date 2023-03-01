@@ -28,9 +28,13 @@ extern const AP_HAL::HAL& hal;
 */
 AP_RangeFinder_Backend_Serial::AP_RangeFinder_Backend_Serial(
     RangeFinder::RangeFinder_State &_state,
-    AP_RangeFinder_Params &_params,
-    uint8_t serial_instance) :
+    AP_RangeFinder_Params &_params) :
     AP_RangeFinder_Backend(_state, _params)
+{
+
+}
+
+void AP_RangeFinder_Backend_Serial::init_serial(uint8_t serial_instance)
 {
     uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_Rangefinder, serial_instance);
     if (uart != nullptr) {
@@ -49,7 +53,7 @@ uint32_t AP_RangeFinder_Backend_Serial::initial_baudrate(const uint8_t serial_in
 */
 bool AP_RangeFinder_Backend_Serial::detect(uint8_t serial_instance)
 {
-    return AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_Rangefinder, serial_instance) != nullptr;
+    return AP::serialmanager().have_serial(AP_SerialManager::SerialProtocol_Rangefinder, serial_instance);
 }
 
 

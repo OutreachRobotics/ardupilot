@@ -78,6 +78,7 @@ class AP_GPS
     friend class AP_GPS_SIRF;
     friend class AP_GPS_UBLOX;
     friend class AP_GPS_Backend;
+    friend class AP_GPS_UAVCAN;
 
 public:
     AP_GPS();
@@ -145,10 +146,6 @@ public:
         GPS_ENGINE_AIRBORNE_4G = 8
     };
 
-    enum GPS_Config {
-       GPS_ALL_CONFIGURED = 255
-    };
-
     // role for auto-config
     enum GPS_Role {
         GPS_ROLE_NORMAL,
@@ -171,6 +168,7 @@ public:
         float ground_speed;                 ///< ground speed in m/sec
         float ground_course;                ///< ground course in degrees
         float gps_yaw;                      ///< GPS derived yaw information, if available (degrees)
+        uint32_t gps_yaw_time_ms;           ///< timestamp of last GPS yaw reading
         bool  gps_yaw_configured;           ///< GPS is configured to provide yaw
         uint16_t hdop;                      ///< horizontal dilution of precision in cm
         uint16_t vdop;                      ///< vertical dilution of precision in cm
@@ -244,6 +242,29 @@ public:
         return status(primary_instance);
     }
 
+    // return a single human-presentable character representing the
+    // fix type.  For space-constrained human-readable displays
+    char status_onechar(void) const {
+        switch (status()) {
+        case AP_GPS::NO_GPS:
+            return ' ';
+        case AP_GPS::NO_FIX:
+            return '-';
+        case AP_GPS::GPS_OK_FIX_2D:
+            return '2';
+        case AP_GPS::GPS_OK_FIX_3D:
+            return '3';
+        case AP_GPS::GPS_OK_FIX_3D_DGPS:
+            return '4';
+        case AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT:
+            return '5';
+        case AP_GPS::GPS_OK_FIX_3D_RTK_FIXED:
+            return '6';
+        }
+        // should never reach here; compiler flags guarantees this.
+        return '?';
+    }
+
     // Query the highest status this GPS supports (always reports GPS_OK_FIX_3D for the blended GPS)
     GPS_Status highest_supported_status(uint8_t instance) const;
 
@@ -288,7 +309,7 @@ public:
     }
 
     // ground speed in cm/s
-    uint32_t ground_speed_cm(void) {
+    uint32_t ground_speed_cm(void) const {
         return ground_speed() * 100;
     }
 
@@ -308,21 +329,9 @@ public:
     }
 
     // yaw in degrees if available
-    bool gps_yaw_deg(uint8_t instance, float &yaw_deg, float &accuracy_deg) const {
-        if (!have_gps_yaw(instance)) {
-            return false;
-        }
-        yaw_deg = state[instance].gps_yaw;
-        if (state[instance].have_gps_yaw_accuracy) {
-            accuracy_deg = state[instance].gps_yaw_accuracy;
-        } else {
-            // fall back to 10 degrees as a generic default
-            accuracy_deg = 10;
-        }
-        return true;
-    }
-    bool gps_yaw_deg(float &yaw_deg, float &accuracy_deg) const {
-        return gps_yaw_deg(primary_instance, yaw_deg, accuracy_deg);
+    bool gps_yaw_deg(uint8_t instance, float &yaw_deg, float &accuracy_deg, uint32_t &time_ms) const;
+    bool gps_yaw_deg(float &yaw_deg, float &accuracy_deg, uint32_t &time_ms) const {
+        return gps_yaw_deg(primary_instance, yaw_deg, accuracy_deg, time_ms);
     }
 
     // number of locked satellites
@@ -424,14 +433,6 @@ public:
     // return a 3D vector defining the offset of the GPS antenna in meters relative to the body frame origin
     const Vector3f &get_antenna_offset(uint8_t instance) const;
 
-    // set position for HIL
-    void setHIL(uint8_t instance, GPS_Status status, uint64_t time_epoch_ms,
-                const Location &location, const Vector3f &velocity, uint8_t num_sats,
-                uint16_t hdop);
-
-    // set accuracy for HIL
-    void setHIL_Accuracy(uint8_t instance, float vdop, float hacc, float vacc, float sacc, bool _have_vertical_velocity, uint32_t sample_ms);
-
     // lock out a GPS port, allowing another application to use the port
     void lock_port(uint8_t instance, bool locked);
 
@@ -479,6 +480,10 @@ public:
     // returns true if all GPS instances have passed all final arming checks/state changes
     bool prepare_for_arming(void);
 
+    // returns true if all GPS backend drivers haven't seen any failure
+    // this is for backends to be able to spout pre arm error messages
+    bool backends_healthy(char failure_msg[], uint16_t failure_msg_len);
+
     // returns false if any GPS drivers are not performing their logging appropriately
     bool logging_failed(void) const;
 
@@ -506,6 +511,15 @@ public:
     // get iTOW, if supported, zero otherwie
     uint32_t get_itow(uint8_t instance) const;
 
+    bool get_error_codes(uint8_t instance, uint32_t &error_codes) const;
+    bool get_error_codes(uint32_t &error_codes) const { return get_error_codes(primary_instance, error_codes); }
+
+    enum class SBAS_Mode : int8_t {
+        Disabled = 0,
+        Enabled = 1,
+        DoNotChange = 2,
+    };
+
 protected:
 
     // configuration parameters
@@ -516,7 +530,7 @@ protected:
     AP_Int16 _sbp_logmask;
     AP_Int8 _inject_to;
     uint32_t _last_instance_swap_ms;
-    AP_Int8 _sbas_mode;
+    AP_Enum<SBAS_Mode> _sbas_mode;
     AP_Int8 _min_elevation;
     AP_Int8 _raw_data;
     AP_Int8 _gnss_mode[GPS_MAX_RECEIVERS];
@@ -530,7 +544,10 @@ protected:
     AP_Float _blend_tc;
     AP_Int16 _driver_options;
     AP_Int8 _primary;
-
+#if GPS_MAX_RECEIVERS > 1 && HAL_ENABLE_LIBUAVCAN_DRIVERS
+    AP_Int32 _node_id[GPS_MAX_RECEIVERS];
+    AP_Int32 _override_node_id[GPS_MAX_RECEIVERS];
+#endif
 #if GPS_MOVING_BASELINE
     MovingBase mb_params[GPS_MAX_RECEIVERS];
 #endif // GPS_MOVING_BASELINE
@@ -676,6 +693,10 @@ private:
 
     // used for flight testing with GPS yaw loss
     bool _force_disable_gps_yaw;
+
+    // logging support
+    void Write_GPS(uint8_t instance);
+
 };
 
 namespace AP {

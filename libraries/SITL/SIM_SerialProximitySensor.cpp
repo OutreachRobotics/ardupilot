@@ -60,7 +60,7 @@ float SerialProximitySensor::measure_distance_at_angle_bf(const Location &locati
     count++;
 
     // the 1000 here is so the files don't grow unbounded
-    const bool write_debug_files = true && count < 1000;
+    const bool write_debug_files = count < 1000;
 
     FILE *rayfile = nullptr;
     if (write_debug_files) {
@@ -111,8 +111,8 @@ float SerialProximitySensor::measure_distance_at_angle_bf(const Location &locati
                 float dist_cm = (intersection_point_cm-vehicle_pos_cm).length();
                 if (intersectionsfile != nullptr) {
                     Location intersection_point = location;
-                    intersection_point.offset(intersection_point_cm.x/100.0f,
-                                              intersection_point_cm.y/100.0f);
+                    intersection_point.offset(intersection_point_cm.x/100.0,
+                                              intersection_point_cm.y/100.0);
                     ::fprintf(intersectionsfile,
                               "map icon %f %f barrell\n",
                               intersection_point.lat*1e-7,

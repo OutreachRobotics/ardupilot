@@ -4,7 +4,8 @@
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BH || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_DARK || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI || \
-    CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIGATOR
+    CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIGATOR || \
+    CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
 
 #include <assert.h>
 #include <errno.h>
@@ -198,7 +199,6 @@ void GPIO_RPI::pinMode(uint8_t pin, uint8_t output)
 
 void GPIO_RPI::pinMode(uint8_t pin, uint8_t output, uint8_t alt)
 {
-    assert(alt < 6);
     if (output == HAL_GPIO_INPUT) {
         set_gpio_mode_in(pin);
     } else if (output == HAL_GPIO_ALT) {

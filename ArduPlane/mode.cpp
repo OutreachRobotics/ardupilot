@@ -23,6 +23,7 @@ bool Mode::enter()
 
     // zero locked course
     plane.steer_state.locked_course_err = 0;
+    plane.steer_state.locked_course = false;
 
     // reset crash detection
     plane.crash_state.is_crashed = false;
@@ -63,6 +64,9 @@ bool Mode::enter()
     // assume non-VTOL mode
     plane.auto_state.vtol_mode = false;
     plane.auto_state.vtol_loiter = false;
+
+    // initialize speed variable used in AUTO and GUIDED for DO_CHANGE_SPEED commands
+    plane.new_airspeed_cm = -1;
 
     bool enter_result = _enter();
 

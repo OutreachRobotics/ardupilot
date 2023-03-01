@@ -6,6 +6,9 @@
 #include <AP_Frsky_Telem/AP_Frsky_Parameters.h>
 #include <AP_Mission/AP_Mission.h>
 #include <AP_OSD/AP_OSD.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+#include <AP_HAL_ChibiOS/sdcard.h>
+#endif
 
 #define SCHED_TASK(func, rate_hz, max_time_micros) SCHED_TASK_CLASS(AP_Vehicle, &vehicle, func, rate_hz, max_time_micros)
 
@@ -31,7 +34,7 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(visual_odom, "VISO",  3, AP_Vehicle, AP_VisualOdom),
 #endif
     // @Group: VTX_
-    // @Path: ../AP_RCTelemetry/AP_VideoTX.cpp
+    // @Path: ../AP_VideoTX/AP_VideoTX.cpp
     AP_SUBGROUPINFO(vtx, "VTX_",  4, AP_Vehicle, AP_VideoTX),
 
 #if HAL_MSP_ENABLED
@@ -57,7 +60,7 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     // @Path: ../AP_ExternalAHRS/AP_ExternalAHRS.cpp
     AP_SUBGROUPINFO(externalAHRS, "EAHRS", 8, AP_Vehicle, AP_ExternalAHRS),
 #endif
-    
+
     AP_GROUPEND
 };
 
@@ -85,6 +88,14 @@ void AP_Vehicle::setup()
                         (unsigned)hal.util->available_memory());
 
     load_parameters();
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+    if (AP_BoardConfig::get_sdcard_slowdown() != 0) {
+        // user wants the SDcard slower, we need to remount
+        sdcard_stop();
+        sdcard_retry();
+    }
+#endif
 
     // initialise the main loop scheduler
     const AP_Scheduler::Task *tasks;
@@ -125,10 +136,13 @@ void AP_Vehicle::setup()
     // call externalAHRS init before init_ardupilot to allow for external sensors
     externalAHRS.init();
 #endif
-    
+
     // init_ardupilot is where the vehicle does most of its initialisation.
     init_ardupilot();
-    gcs().send_text(MAV_SEVERITY_INFO, "ArduPilot Ready");
+
+#if !APM_BUILD_TYPE(APM_BUILD_Replay)
+    SRV_Channels::init();
+#endif
 
     // gyro FFT needs to be initialized really late
 #if HAL_GYROFFT_ENABLED
@@ -144,7 +158,12 @@ void AP_Vehicle::setup()
     // init library used for visual position estimation
     visual_odom.init();
 #endif
+
     vtx.init();
+
+#if HAL_SMARTAUDIO_ENABLED
+    smartaudio.init();
+#endif
 
 #if AP_PARAM_KEY_DUMP
     AP_Param::show_all(hal.console, true);
@@ -155,6 +174,7 @@ void AP_Vehicle::setup()
 #if GENERATOR_ENABLED
     generator.init();
 #endif
+    gcs().send_text(MAV_SEVERITY_INFO, "ArduPilot Ready");
 }
 
 void AP_Vehicle::loop()
@@ -172,6 +192,12 @@ void AP_Vehicle::loop()
         */
         done_safety_init = true;
         BoardConfig.init_safety();
+
+        // send RC output mode info if available
+        char banner_msg[50];
+        if (hal.rcout->get_output_mode_banner(banner_msg, sizeof(banner_msg))) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "%s", banner_msg);
+        }
     }
 }
 
@@ -198,9 +224,12 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_GyroFFT,   &vehicle.gyro_fft,       update,                  400, 50),
     SCHED_TASK_CLASS(AP_GyroFFT,   &vehicle.gyro_fft,       update_parameters,         1, 50),
 #endif
-    SCHED_TASK(update_dynamic_notch,                   200,    200),
+    SCHED_TASK(update_dynamic_notch_at_specified_rate,             LOOP_RATE,    200),
     SCHED_TASK_CLASS(AP_VideoTX,   &vehicle.vtx,            update,                    2, 100),
     SCHED_TASK(send_watchdog_reset_statustext,         0.1,     20),
+#if HAL_WITH_ESC_TELEM
+    SCHED_TASK_CLASS(AP_ESC_Telem, &vehicle.esc_telem,      update,                   10,  50),
+#endif
 #if GENERATOR_ENABLED
     SCHED_TASK_CLASS(AP_Generator, &vehicle.generator,      update,                   10,  50),
 #endif
@@ -308,6 +337,23 @@ void AP_Vehicle::write_notch_log_messages() const
             notches[0], notches[1], notches[2], notches[3]);
 }
 
+// run notch update at either loop rate or 200Hz
+void AP_Vehicle::update_dynamic_notch_at_specified_rate()
+{
+    if (ins.has_harmonic_option(HarmonicNotchFilterParams::Options::LoopRateUpdate)) {
+        update_dynamic_notch();
+        return;
+    }
+
+    // decimated update at 200Hz
+    const uint32_t now = AP_HAL::millis();
+
+    if (now - _last_notch_update_ms > 5) {
+        _last_notch_update_ms = now;
+        update_dynamic_notch();
+    }
+}
+
 // reboot the vehicle in an orderly manner, doing various cleanups and
 // flashing LEDs as appropriate
 void AP_Vehicle::reboot(bool hold_in_bootloader)
@@ -328,6 +374,11 @@ void AP_Vehicle::reboot(bool hold_in_bootloader)
 
     // do not process incoming mavlink messages while we delay:
     hal.scheduler->register_delay_callback(nullptr, 5);
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    // need to ensure the ack goes out:
+    hal.serial(0)->flush();
+#endif
 
     // delay to give the ACK a chance to get out, the LEDs to flash,
     // the IO board safety to be forced on, the parameters to flush, ...

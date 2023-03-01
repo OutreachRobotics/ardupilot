@@ -47,6 +47,10 @@ public:
         MOTOR_FRAME_DECA = 14,
         MOTOR_FRAME_MAMBA = 15,
     };
+
+    // return string corresponding to frame_class
+    virtual const char* get_frame_string() const = 0;
+
     enum motor_frame_type {
         MOTOR_FRAME_TYPE_PLUS = 0,
         MOTOR_FRAME_TYPE_X = 1,
@@ -66,6 +70,12 @@ public:
         MOTOR_FRAME_TYPE_BF_X_REV = 18, // X frame, betaflight ordering, reversed motors
         MOTOR_FRAME_TYPE_PROTO1 = 19,
     };
+
+    // return string corresponding to frame_type
+    virtual const char* get_type_string() const { return ""; }
+
+    // returns a formatted string into buffer, e.g. "QUAD/X"
+    void get_frame_and_type_string(char *buffer, uint8_t buflen) const;
 
     // Constructor
     AP_Motors(uint16_t loop_rate, uint16_t speed_hz = AP_MOTORS_SPEED_DEFAULT);
@@ -100,11 +110,17 @@ public:
     void                set_throttle_avg_max(float throttle_avg_max) { _throttle_avg_max = constrain_float(throttle_avg_max, 0.0f, 1.0f); };   // range 0 ~ 1
     void                set_throttle_filter_cutoff(float filt_hz) { _throttle_filter.set_cutoff_frequency(filt_hz); }
 
+    // for 6DoF vehicles, sets the roll and pitch offset, this rotates the thrust vector in body frame
+    virtual void        set_roll_pitch(float roll_deg, float pitch_deg) {};
+
     // accessors for roll, pitch, yaw and throttle inputs to motors
     float               get_roll() const { return _roll_in; }
     float               get_lateral() const { return _lateral_in; }
+    float               get_roll_ff() const { return _roll_in_ff; }
     float               get_pitch() const { return _pitch_in; }
+    float               get_pitch_ff() const { return _pitch_in_ff; }
     float               get_yaw() const { return _yaw_in; }
+    float               get_yaw_ff() const { return _yaw_in_ff; }
     float               get_throttle_out() const { return _throttle_out; }
     float               get_throttle() const { return constrain_float(_throttle_filter.get(), 0.0f, 1.0f); }
     float               get_throttle_bidirectional() const { return constrain_float(2 * (_throttle_filter.get() - 0.5f), -1.0f, 1.0f); }
@@ -206,6 +222,8 @@ public:
                     PWM_TYPE_DSHOT1200  = 7};
     pwm_type            get_pwm_type(void) const { return (pwm_type)_pwm_type.get(); }
 
+    MAV_TYPE get_frame_mav_type() const { return _mav_type; }
+
 protected:
     // output functions that should be overloaded by child classes
     virtual void        output_armed_stabilizing() = 0;
@@ -267,6 +285,8 @@ protected:
     bool                _thrust_balanced;       // true when output thrust is well balanced
     float               _thrust_boost_ratio;    // choice between highest and second highest motor output for output mixing (0 ~ 1). Zero is normal operation
 
+    MAV_TYPE _mav_type; // MAV_TYPE_GENERIC = 0;
+
 private:
 
     bool _armed;             // 0 if disarmed, 1 if armed
@@ -274,7 +294,6 @@ private:
     bool _initialised_ok;    // 1 if initialisation was successful
 
     static AP_Motors *_singleton;
-
 };
 
 namespace AP {

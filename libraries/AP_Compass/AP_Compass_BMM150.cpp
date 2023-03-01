@@ -223,8 +223,6 @@ bool AP_Compass_BMM150::init()
         set_external(_compass_instance, true);
     }
 
-    _perf_err = hal.util->perf_alloc(AP_HAL::Util::PC_COUNT, "BMM150_err");
-
     // 2 retries for run
     _dev->set_retries(2);
     
@@ -236,7 +234,6 @@ bool AP_Compass_BMM150::init()
     return true;
 
 bus_error:
-    hal.console->printf("BMM150: Bus communication error\n");
     _dev->get_semaphore()->give();
     return false;
 }
@@ -245,7 +242,7 @@ bus_error:
  * Compensation algorithm got from https://github.com/BoschSensortec/BMM050_driver
  * this is not explained in datasheet.
  */
-int16_t AP_Compass_BMM150::_compensate_xy(int16_t xy, uint32_t rhall, int32_t txy1, int32_t txy2)
+int16_t AP_Compass_BMM150::_compensate_xy(int16_t xy, uint32_t rhall, int32_t txy1, int32_t txy2) const
 {
     int32_t inter = ((int32_t)_dig.xyz1) << 14;
     inter /= rhall;
@@ -264,7 +261,7 @@ int16_t AP_Compass_BMM150::_compensate_xy(int16_t xy, uint32_t rhall, int32_t tx
     return val;
 }
 
-int16_t AP_Compass_BMM150::_compensate_z(int16_t z, uint32_t rhall)
+int16_t AP_Compass_BMM150::_compensate_z(int16_t z, uint32_t rhall) const
 {
     int32_t dividend = int32_t(z - _dig.z4) << 15;
     int32_t dividend2 = dividend - ((_dig.z3 * (int32_t(rhall) - int32_t(_dig.xyz1))) >> 2);
@@ -299,7 +296,6 @@ void AP_Compass_BMM150::_update()
             _last_read_ms = now;
             _dev->write_register(POWER_AND_OPERATIONS_REG, SOFT_RESET);
             _dev->write_register(POWER_AND_OPERATIONS_REG, POWER_CONTROL_VAL, true);
-            hal.util->perf_count(_perf_err);
         }
         return;
     }

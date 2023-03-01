@@ -19,9 +19,9 @@ export CHIBIOS_GIT_VERSION="ci_test"
 export CCACHE_SLOPPINESS="include_file_ctime,include_file_mtime"
 autotest_args=""
 
-# If CI_BUILD_TARGET is not set, build 3 different ones
+# If CI_BUILD_TARGET is not set, build 4 different ones
 if [ -z "$CI_BUILD_TARGET" ]; then
-    CI_BUILD_TARGET="sitl linux fmuv3"
+    CI_BUILD_TARGET="sitl linux fmuv3 omnibusf4pro-one"
 fi
 
 waf=modules/waf/waf-light
@@ -70,6 +70,9 @@ function run_autotest() {
     fi
     if [ "x$CI_BUILD_DEBUG" != "x" ]; then
         w="$w --debug"
+    fi
+    if [ $NAME == "Examples" ]; then
+        w="$w --speedup=5 --timeout=14400 --debug --no-clean"
     fi
     Tools/autotest/autotest.py --show-test-timings --waf-configure-args="$w" "$BVEHICLE" "$RVEHICLE"
     ccache -s && ccache -z
@@ -159,6 +162,13 @@ for t in $CI_BUILD_TARGET; do
         continue
     fi
 
+    if [ "$t" == "examples" ]; then
+        ./waf configure --board=linux --debug
+        ./waf examples
+        run_autotest "Examples" "--no-clean" "run.examples"
+        continue
+    fi
+
     if [ "$t" == "revo-bootloader" ]; then
         echo "Building revo bootloader"
         $waf configure --board revo-mini --bootloader
@@ -182,6 +192,18 @@ for t in $CI_BUILD_TARGET; do
         $waf bootloader
         echo "Building f303 peripheral fw"
         $waf configure --board f303-Universal
+        $waf clean
+        $waf AP_Periph
+        echo "Building CubeOrange peripheral fw"
+        $waf configure --board CubeOrange-periph
+        $waf clean
+        $waf AP_Periph
+        echo "Building G4-ESC peripheral fw"
+        $waf configure --board G4-ESC
+        $waf clean
+        $waf AP_Periph
+        echo "Building FreeflyRTK peripheral fw"
+        $waf configure --board FreeflyRTK
         $waf clean
         $waf AP_Periph
         continue
@@ -252,6 +274,12 @@ for t in $CI_BUILD_TARGET; do
         $waf configure --board sitl --debug --disable-scripting --no-gcs
         $waf --target tools/AP_DAL_Standalone
         $waf clean
+        continue
+    fi
+
+    if [ "$t" == "python-cleanliness" ]; then
+        echo "Checking Python code cleanliness"
+        ./Tools/scripts/run_flake8.py
         continue
     fi
 

@@ -30,6 +30,16 @@
 #define HAL_WATCHDOG_ENABLED_DEFAULT false
 #endif
 
+#if HAL_HAVE_IMU_HEATER
+#ifndef HAL_IMUHEAT_P_DEFAULT
+#define HAL_IMUHEAT_P_DEFAULT 200
+#endif
+#ifndef HAL_IMUHEAT_I_DEFAULT
+#define HAL_IMUHEAT_I_DEFAULT 0.3
+#endif
+#endif
+
+
 extern "C" typedef int (*main_fn_t)(int argc, char **);
 
 class AP_BoardConfig {
@@ -129,7 +139,7 @@ public:
     };
 
     // return safety button options. Bits are in enum board_safety_button_option
-    uint16_t get_safety_button_options(void) {
+    uint16_t get_safety_button_options(void) const {
         return uint16_t(state.safety_option.get());
     }
 
@@ -166,6 +176,7 @@ public:
         BOARD_OPTION_WATCHDOG = (1 << 0),
         DISABLE_FTP = (1<<1),
         ALLOW_SET_INTERNAL_PARM = (1<<2),
+        BOARD_OPTION_DEBUG_ENABLE = (1<<3),
     };
 
     // return true if ftp is disabled
@@ -189,6 +200,11 @@ public:
 
 #if HAL_HAVE_IMU_HEATER
     void set_imu_temp(float current_temp_c);
+
+    // heater duty cycle is as a percentage (0 to 100)
+    float get_heater_duty_cycle(void) const {
+        return heater.output;
+    }
 #endif
 
 private:
@@ -222,6 +238,7 @@ private:
 #endif // AP_FEATURE_BOARD_DETECT
 
     void board_init_safety(void);
+    void board_init_debug(void);
 
     void board_setup_uart(void);
     void board_setup_sbus(void);
@@ -233,7 +250,7 @@ private:
     struct {
         AP_Int8 imu_target_temperature;
         uint32_t last_update_ms;
-        AC_PI pi_controller{200, 0.3, 70};
+        AC_PI pi_controller{HAL_IMUHEAT_P_DEFAULT, HAL_IMUHEAT_I_DEFAULT, 70};
         uint16_t count;
         float sum;
         float output;

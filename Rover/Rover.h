@@ -68,6 +68,7 @@
 #include <AP_Follow/AP_Follow.h>
 #include <AP_OSD/AP_OSD.h>
 #include <AP_WindVane/AP_WindVane.h>
+#include <AP_Motors/AP_MotorsUGV.h>
 
 #ifdef ENABLE_SCRIPTING
 #include <AP_Scripting/AP_Scripting.h>
@@ -78,7 +79,6 @@
 #endif
 
 // Local modules
-#include "AP_MotorsUGV.h"
 #include "mode.h"
 #include "AP_Arming.h"
 #include "sailboat.h"
@@ -199,7 +199,6 @@ private:
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, AUTO, ...
     Mode *control_mode;
-    ModeReason control_mode_reason = ModeReason::UNKNOWN;
 
     // Used to maintain the state of the previous control switch position
     // This is set to -1 when we need to re-read the switch
@@ -211,7 +210,6 @@ private:
         uint32_t start_time;        // start time of the earliest failsafe
         uint8_t triggered;          // bit flags of failsafes that have triggered an action
         uint32_t last_valid_rc_ms;  // system time of most recent RC input from pilot
-        uint32_t last_heartbeat_ms; // system time of most recent heartbeat from ground station
         bool ekf;
     } failsafe;
 
@@ -266,8 +264,8 @@ private:
 
     // cruise throttle and speed learning
     typedef struct {
-        LowPassFilterFloat speed_filt = LowPassFilterFloat(2.0f);
-        LowPassFilterFloat throttle_filt = LowPassFilterFloat(2.0f);
+        LowPassFilterFloat speed_filt{2.0f};
+        LowPassFilterFloat throttle_filt{2.0f};
         uint32_t learn_start_ms;
         uint32_t log_count;
     } cruise_learn_t;
@@ -276,10 +274,12 @@ private:
 private:
 
     // Rover.cpp
+#ifdef ENABLE_SCRIPTING
     bool set_target_location(const Location& target_loc) override;
     bool set_target_velocity_NED(const Vector3f& vel_ned) override;
     bool set_steering_and_throttle(float steering, float throttle) override;
     bool get_control_output(AP_Vehicle::ControlOutput control_output, float &control_value) override;
+#endif // ENABLE_SCRIPTING
     void stats_update();
     void ahrs_update();
     void gcs_failsafe_check(void);
@@ -298,9 +298,6 @@ private:
     bool set_home(const Location& loc, bool lock) WARN_IF_UNUSED;
     void update_home();
 
-    // compat.cpp
-    void delay(uint32_t ms);
-
     // crash_check.cpp
     void crash_check();
 
@@ -308,7 +305,7 @@ private:
     void cruise_learn_start();
     void cruise_learn_update();
     void cruise_learn_complete();
-    void log_write_cruise_learn();
+    void log_write_cruise_learn() const;
 
     // ekf_check.cpp
     void ekf_check();
@@ -430,7 +427,7 @@ public:
     void motor_test_stop();
 
     // frame type
-    uint8_t get_frame_type() { return g2.frame_type.get(); }
+    uint8_t get_frame_type() const { return g2.frame_type.get(); }
     AP_WheelRateControl& get_wheel_rate_control() { return g2.wheel_rate_control; }
 
     // Simple mode

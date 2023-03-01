@@ -367,6 +367,9 @@ int SITL_State::sim_fd(const char *name, const char *arg)
     } else if (streq(name, "richenpower")) {
         sitl_model->set_richenpower(&_sitl->richenpower_sim);
         return _sitl->richenpower_sim.fd();
+    } else if (streq(name, "fetteconewireesc")) {
+        sitl_model->set_fetteconewireesc(&_sitl->fetteconewireesc_sim);
+        return _sitl->fetteconewireesc_sim.fd();
     } else if (streq(name, "ie24")) {
         sitl_model->set_ie24(&_sitl->ie24_sim);
         return _sitl->ie24_sim.fd();
@@ -490,6 +493,8 @@ int SITL_State::sim_fd_write(const char *name)
         return sf45b->write_fd();
     } else if (streq(name, "richenpower")) {
         return _sitl->richenpower_sim.write_fd();
+    } else if (streq(name, "fetteconewireesc")) {
+        return _sitl->fetteconewireesc_sim.write_fd();
     } else if (streq(name, "ie24")) {
         return _sitl->ie24_sim.write_fd();
     } else if (streq(name, "gyus42v2")) {
@@ -606,7 +611,9 @@ void SITL_State::_fdm_input_local(void)
     struct sitl_input input;
 
     // check for direct RC input
-    _check_rc_input();
+    if (_sitl != nullptr) {
+        _check_rc_input();
+    }
 
     // construct servos structure for FDM
     _simulator_servos(input);
@@ -636,7 +643,7 @@ void SITL_State::_fdm_input_local(void)
         Quaternion attitude;
         sitl_model->get_attitude(attitude);
         vicon->update(sitl_model->get_location(),
-                      sitl_model->get_position(),
+                      sitl_model->get_position_relhome(),
                       sitl_model->get_velocity_ef(),
                       attitude);
     }
@@ -747,10 +754,9 @@ void SITL_State::_simulator_servos(struct sitl_input &input)
     /* this maps the registers used for PWM outputs. The RC
      * driver updates these whenever it wants the channel output
      * to change */
-    uint8_t i;
 
     if (last_update_usec == 0 || !output_ready) {
-        for (i=0; i<SITL_NUM_CHANNELS; i++) {
+        for (uint8_t i=0; i<SITL_NUM_CHANNELS; i++) {
             pwm_output[i] = 1000;
         }
         if (_vehicle == ArduPlane) {
@@ -805,11 +811,28 @@ void SITL_State::_simulator_servos(struct sitl_input &input)
     input.wind.turbulence = _sitl?_sitl->wind_turbulance:0;
     input.wind.dir_z = wind_dir_z;
 
-    for (i=0; i<SITL_NUM_CHANNELS; i++) {
+    for (uint8_t i=0; i<SITL_NUM_CHANNELS; i++) {
         if (pwm_output[i] == 0xFFFF) {
             input.servos[i] = 0;
         } else {
             input.servos[i] = pwm_output[i];
+        }
+    }
+
+    if (_sitl != nullptr) {
+        // FETtec ESC simulation support.  Input signals of 1000-2000
+        // are positive thrust, 0 to 1000 are negative thrust.  Deeper
+        // changes required to support negative thrust - potentially
+        // adding a field to input.
+        if (_sitl != nullptr) {
+            if (_sitl->fetteconewireesc_sim.enabled()) {
+                _sitl->fetteconewireesc_sim.update_sitl_input_pwm(input);
+                for (uint8_t i=0; i<ARRAY_SIZE(input.servos); i++) {
+                    if (input.servos[i] != 0 && input.servos[i] < 1000) {
+                        AP_HAL::panic("Bad input servo value (%u)", input.servos[i]);
+                    }
+                }
+            }
         }
     }
 
@@ -832,7 +855,7 @@ void SITL_State::_simulator_servos(struct sitl_input &input)
         // do a little quadplane dance
         float hover_throttle = 0.0f;
         uint8_t running_motors = 0;
-        for (i=0; i < sitl_model->get_num_motors() - 1; i++) {
+        for (uint8_t i=0; i < sitl_model->get_num_motors() - 1; i++) {
             float motor_throttle = constrain_float((input.servos[sitl_model->get_motors_offset() + i] - 1000) / 1000.0f, 0.0f, 1.0f);
             // update motor_on flag
             if (!is_zero(motor_throttle)) {
@@ -855,7 +878,7 @@ void SITL_State::_simulator_servos(struct sitl_input &input)
     } else {
         // run checks on each motor
         uint8_t running_motors = 0;
-        for (i=0; i < sitl_model->get_num_motors(); i++) {
+        for (uint8_t i=0; i < sitl_model->get_num_motors(); i++) {
             float motor_throttle = constrain_float((input.servos[i] - 1000) / 1000.0f, 0.0f, 1.0f);
             // update motor_on flag
             if (!is_zero(motor_throttle)) {
@@ -878,7 +901,7 @@ void SITL_State::_simulator_servos(struct sitl_input &input)
         if (_sitl->state.battery_voltage <= 0) {
             if (_vehicle == ArduSub) {
                 voltage = _sitl->batt_voltage;
-                for (i = 0; i < 6; i++) {
+                for (uint8_t i=0; i<6; i++) {
                     float pwm = input.servos[i];
                     //printf("i: %d, pwm: %.2f\n", i, pwm);
                     float fraction = fabsf((pwm - 1500) / 500.0f);

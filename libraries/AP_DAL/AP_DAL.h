@@ -37,10 +37,10 @@ public:
         resetGyroBias             =  0,
         resetHeightDatum          =  1,
         //setInhibitGPS           =  2, // removed
-        setTakeoffExpected        =  3,
-        unsetTakeoffExpected      =  4,
-        setTouchdownExpected      =  5,
-        unsetTouchdownExpected    =  6,
+        //setTakeoffExpected        =  3, // removed
+        //unsetTakeoffExpected      =  4, // removed
+        //setTouchdownExpected      =  5, // removed
+        //unsetTouchdownExpected    =  6, // removed
         //setInhibitGpsVertVelUse   =  7, // removed
         //unsetInhibitGpsVertVelUse =  8, // removed
         setTerrainHgtStable       =  9,
@@ -75,11 +75,11 @@ public:
 
     void log_event2(Event event);
     void log_SetOriginLLH2(const Location &loc);
-    void log_writeDefaultAirSpeed2(float aspeed);
+    void log_writeDefaultAirSpeed2(const float aspeed, const float uncertainty);
 
     void log_event3(Event event);
     void log_SetOriginLLH3(const Location &loc);
-    void log_writeDefaultAirSpeed3(float aspeed);
+    void log_writeDefaultAirSpeed3(const float aspeed, const float uncertainty);
     void log_writeEulerYawAngle(float yawAngle, float yawAngleErr, uint32_t timeStamp_ms, uint8_t type);
 
     enum class StateMask {
@@ -103,7 +103,11 @@ public:
     // ramifications of being out of memory are that you don't start
     // the EKF, so the simplicity of having one value for the entire
     // frame is worthwhile.
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    uint32_t available_memory() const { return _RFRN.available_memory + 10240; }
+#else
     uint32_t available_memory() const { return _RFRN.available_memory; }
+#endif
 
     int8_t get_ekf_type(void) const {
         return _RFRN.ekf_type;
@@ -168,6 +172,17 @@ public:
     bool get_fly_forward(void) const {
         return _RFRN.fly_forward;
     }
+
+    bool get_takeoff_expected(void) const {
+        return _RFRN.takeoff_expected;
+    }
+
+    bool get_touchdown_expected(void) const {
+        return _RFRN.touchdown_expected;
+    }
+
+    // for EKF usage to enable takeoff expected to true
+    void set_takeoff_expected();
 
     // get ahrs trim
     const Vector3f &get_trim() const {

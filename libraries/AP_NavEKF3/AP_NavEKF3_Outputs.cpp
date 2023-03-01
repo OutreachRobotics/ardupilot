@@ -23,7 +23,7 @@ bool NavEKF3_core::healthy(void) const
     }
     // position and height innovations must be within limits when on-ground and in a static mode of operation
     float horizErrSq = sq(innovVelPos[3]) + sq(innovVelPos[4]);
-    if (onGround && (PV_AidingMode == AID_NONE) && ((horizErrSq > 1.0f) || (fabsf(hgtInnovFiltState) > 1.0f))) {
+    if (onGround && (PV_AidingMode == AID_NONE) && ((horizErrSq > 1.0f) || (fabsF(hgtInnovFiltState) > 1.0f))) {
         return false;
     }
 
@@ -57,18 +57,6 @@ float NavEKF3_core::errorScore() const
         }
     }
     return score;
-}
-
-// return data for debugging body frame odometry fusion
-uint32_t NavEKF3_core::getBodyFrameOdomDebug(Vector3f &velInnov, Vector3f &velInnovVar)
-{
-    velInnov.x = innovBodyVel[0];
-    velInnov.y = innovBodyVel[1];
-    velInnov.z = innovBodyVel[2];
-    velInnovVar.x = varInnovBodyVel[0];
-    velInnovVar.y = varInnovBodyVel[1];
-    velInnovVar.z = varInnovBodyVel[2];
-    return MAX(bodyOdmDataDelayed.time_ms,wheelOdmDataDelayed.time_ms);
 }
 
 // provides the height limit to be observed by the control loops
@@ -110,7 +98,7 @@ void NavEKF3_core::getGyroBias(Vector3f &gyroBias) const
         gyroBias.zero();
         return;
     }
-    gyroBias = stateStruct.gyro_bias / dtEkfAvg;
+    gyroBias = (stateStruct.gyro_bias / dtEkfAvg).tofloat();
 }
 
 // return accelerometer bias in m/s/s
@@ -120,13 +108,7 @@ void NavEKF3_core::getAccelBias(Vector3f &accelBias) const
         accelBias.zero();
         return;
     }
-    accelBias = stateStruct.accel_bias / dtEkfAvg;
-}
-
-// return estimated 1-sigma tilt error in radians
-void NavEKF3_core::getTiltError(float &ang) const
-{
-    ang = sqrtf(MAX(tiltErrorVariance,0.0f));
+    accelBias = (stateStruct.accel_bias / dtEkfAvg).tofloat();
 }
 
 // return the transformation matrix from XYZ (body) to NED axes
@@ -139,7 +121,7 @@ void NavEKF3_core::getRotationBodyToNED(Matrix3f &mat) const
 // return the quaternions defining the rotation from NED to XYZ (body) axes
 void NavEKF3_core::getQuaternion(Quaternion& ret) const
 {
-    ret = outputDataNew.quat;
+    ret = outputDataNew.quat.tofloat();
 }
 
 // return the amount of yaw angle change due to the last yaw angle reset in radians
@@ -154,7 +136,7 @@ uint32_t NavEKF3_core::getLastYawResetAngle(float &yawAng) const
 // returns the time of the last reset or 0 if no reset has ever occurred
 uint32_t NavEKF3_core::getLastPosNorthEastReset(Vector2f &pos) const
 {
-    pos = posResetNE;
+    pos = posResetNE.tofloat();
     return lastPosReset_ms;
 }
 
@@ -170,25 +152,26 @@ uint32_t NavEKF3_core::getLastPosDownReset(float &posD) const
 // returns the time of the last reset or 0 if no reset has ever occurred
 uint32_t NavEKF3_core::getLastVelNorthEastReset(Vector2f &vel) const
 {
-    vel = velResetNE;
+    vel = velResetNE.tofloat();
     return lastVelReset_ms;
 }
 
 // return the NED wind speed estimates in m/s (positive is air moving in the direction of the axis)
-void NavEKF3_core::getWind(Vector3f &wind) const
+// returns true if wind state estimation is active
+bool NavEKF3_core::getWind(Vector3f &wind) const
 {
     wind.x = stateStruct.wind_vel.x;
     wind.y = stateStruct.wind_vel.y;
     wind.z = 0.0f; // currently don't estimate this
+    return !inhibitWindStates;
 }
-
 
 // return the NED velocity of the body frame origin in m/s
 //
 void NavEKF3_core::getVelNED(Vector3f &vel) const
 {
     // correct for the IMU position offset (EKF calculations are at the IMU)
-    vel = outputDataNew.velocity + velOffsetNED;
+    vel = (outputDataNew.velocity + velOffsetNED).tofloat();
 }
 
 // return estimate of true airspeed vector in body frame in m/s
@@ -198,7 +181,7 @@ bool NavEKF3_core::getAirSpdVec(Vector3f &vel) const
     if (inhibitWindStates || PV_AidingMode == AID_NONE) {
         return false;
     }
-    vel = outputDataNew.velocity + velOffsetNED;
+    vel = (outputDataNew.velocity + velOffsetNED).tofloat();
     vel.x -= stateStruct.wind_vel.x;
     vel.y -= stateStruct.wind_vel.y;
     Matrix3f Tnb; // rotation from nav to body frame
@@ -216,12 +199,6 @@ float NavEKF3_core::getPosDownDerivative(void) const
     return vertCompFiltState.vel + velOffsetNED.z;
 }
 
-// This returns the specific forces in the NED frame
-void NavEKF3_core::getAccelNED(Vector3f &accelNED) const {
-    accelNED = velDotNED;
-    accelNED.z -= GRAVITY_MSS;
-}
-
 // Write the last estimated NE position of the body frame origin relative to the reference point (m).
 // Return true if the estimate is valid
 bool NavEKF3_core::getPosNE(Vector2f &posNE) const
@@ -230,8 +207,7 @@ bool NavEKF3_core::getPosNE(Vector2f &posNE) const
     if (PV_AidingMode != AID_NONE) {
         // This is the normal mode of operation where we can use the EKF position states
         // correct for the IMU offset (EKF calculations are at the IMU)
-        posNE.x = outputDataNew.position.x + posOffsetNED.x;
-        posNE.y = outputDataNew.position.y + posOffsetNED.y;
+        posNE = (outputDataNew.position.xy() + posOffsetNED.xy() + public_origin.get_distance_NE_ftype(EKF_origin)).tofloat();
         return true;
 
     } else {
@@ -241,9 +217,7 @@ bool NavEKF3_core::getPosNE(Vector2f &posNE) const
             if ((gps.status(selected_gps) >= AP_DAL_GPS::GPS_OK_FIX_2D)) {
                 // If the origin has been set and we have GPS, then return the GPS position relative to the origin
                 const struct Location &gpsloc = gps.location(selected_gps);
-                const Vector2f tempPosNE = EKF_origin.get_distance_NE(gpsloc);
-                posNE.x = tempPosNE.x;
-                posNE.y = tempPosNE.y;
+                posNE = public_origin.get_distance_NE_ftype(gpsloc).tofloat();
                 return false;
             } else if (rngBcnAlignmentStarted) {
                 // If we are attempting alignment using range beacon data, then report the position
@@ -252,14 +226,12 @@ bool NavEKF3_core::getPosNE(Vector2f &posNE) const
                 return false;
             } else {
                 // If no GPS fix is available, all we can do is provide the last known position
-                posNE.x = outputDataNew.position.x;
-                posNE.y = outputDataNew.position.y;
+                posNE = outputDataNew.position.xy().tofloat();
                 return false;
             }
         } else {
             // If the origin has not been set, then we have no means of providing a relative position
-            posNE.x = 0.0f;
-            posNE.y = 0.0f;
+            posNE.zero();
             return false;
         }
     }
@@ -301,57 +273,61 @@ bool NavEKF3_core::getHAGL(float &HAGL) const
 // The getFilterStatus() function provides a more detailed description of data health and must be checked if data is to be used for flight control
 bool NavEKF3_core::getLLH(struct Location &loc) const
 {
-    const auto &gps = dal.gps();
-
     Location origin;
-    float posD;
-
-    if(getPosD(posD) && getOriginLLH(origin)) {
-        // Altitude returned is an absolute altitude relative to the WGS-84 spherioid
-        loc.alt = origin.alt - posD*100;
-        loc.relative_alt = 0;
-        loc.terrain_alt = 0;
-
-        // there are three modes of operation, absolute position (GPS fusion), relative position (optical flow fusion) and constant position (no aiding)
-        if (filterStatus.flags.horiz_pos_abs || filterStatus.flags.horiz_pos_rel) {
-            loc.lat = EKF_origin.lat;
-            loc.lng = EKF_origin.lng;
-            loc.offset(outputDataNew.position.x, outputDataNew.position.y);
-            return true;
-        } else {
-            // we could be in constant position mode because the vehicle has taken off without GPS, or has lost GPS
-            // in this mode we cannot use the EKF states to estimate position so will return the best available data
-            if ((gps.status(selected_gps) >= AP_DAL_GPS::GPS_OK_FIX_2D)) {
-                // we have a GPS position fix to return
-                const struct Location &gpsloc = gps.location(selected_gps);
-                loc.lat = gpsloc.lat;
-                loc.lng = gpsloc.lng;
-                return true;
-            } else {
-                // if no GPS fix, provide last known position before entering the mode
+    if (getOriginLLH(origin)) {
+        float posD;
+        if(getPosD(posD) && PV_AidingMode != AID_NONE) {
+            // Altitude returned is an absolute altitude relative to the WGS-84 spherioid
+            loc.alt = origin.alt - posD*100;
+            loc.relative_alt = 0;
+            loc.terrain_alt = 0;
+            if (filterStatus.flags.horiz_pos_abs || filterStatus.flags.horiz_pos_rel) {
+                // The EKF is able to provide a position estimate
                 loc.lat = EKF_origin.lat;
                 loc.lng = EKF_origin.lng;
-                if (PV_AidingMode == AID_NONE) {
-                    loc.offset(lastKnownPositionNE.x, lastKnownPositionNE.y);
+                loc.offset(outputDataNew.position.x + posOffsetNED.x,
+                           outputDataNew.position.y + posOffsetNED.y);
+                return true;
+            } else {
+                // We have been be doing inertial dead reckoning for too long so use raw GPS if available
+                if (getGPSLLH(loc)) {
+                    return true;
                 } else {
-                    loc.offset(outputDataNew.position.x, outputDataNew.position.y);
+                    // Return the EKF estimate but mark it as invalid
+                    loc.lat = EKF_origin.lat;
+                    loc.lng = EKF_origin.lng;
+                    loc.offset(outputDataNew.position.x + posOffsetNED.x,
+                               outputDataNew.position.y + posOffsetNED.y);
+                    return false;
                 }
+            }
+        } else {
+            // Return a raw GPS reading if available and the last recorded positon if not
+            if (getGPSLLH(loc)) {
+                return true;
+            } else {
+                loc.lat = EKF_origin.lat;
+                loc.lng = EKF_origin.lng;
+                loc.offset(lastKnownPositionNE.x + posOffsetNED.x,
+                           lastKnownPositionNE.y + posOffsetNED.y);
                 return false;
             }
         }
     } else {
-        // If no origin has been defined for the EKF, then we cannot use its position states so return a raw
-        // GPS reading if available and return false
-        if ((gps.status(selected_gps) >= AP_DAL_GPS::GPS_OK_FIX_3D)) {
-            const struct Location &gpsloc = gps.location(selected_gps);
-            loc = gpsloc;
-            loc.relative_alt = 0;
-            loc.terrain_alt = 0;
-        }
-        return false;
+        // The EKF is not navigating so use raw GPS if available
+        return getGPSLLH(loc);
     }
 }
 
+bool NavEKF3_core::getGPSLLH(struct Location &loc) const
+{
+    const auto &gps = dal.gps();
+    if ((gps.status(selected_gps) >= AP_DAL_GPS::GPS_OK_FIX_3D)) {
+        loc = gps.location(selected_gps);
+        return true;
+    }
+    return false;
+}
 
 // return the horizontal speed limit in m/s set by optical flow sensor limits
 // return the scale factor to be applied to navigation velocity gains to compensate for increase in velocity noise with height when using optical flow
@@ -379,7 +355,7 @@ void NavEKF3_core::getEkfControlLimits(float &ekfGndSpdLimit, float &ekfNavVelGa
 bool NavEKF3_core::getOriginLLH(struct Location &loc) const
 {
     if (validOrigin) {
-        loc = EKF_origin;
+        loc = public_origin;
         // report internally corrected reference height if enabled
         if ((frontend->_originHgtMode & (1<<2)) == 0) {
             loc.alt = (int32_t)(100.0f * (float)ekfGpsRefHgt);
@@ -391,13 +367,13 @@ bool NavEKF3_core::getOriginLLH(struct Location &loc) const
 // return earth magnetic field estimates in measurement units / 1000
 void NavEKF3_core::getMagNED(Vector3f &magNED) const
 {
-    magNED = stateStruct.earth_magfield * 1000.0f;
+    magNED = (stateStruct.earth_magfield * 1000.0f).tofloat();
 }
 
 // return body magnetic field estimates in measurement units / 1000
 void NavEKF3_core::getMagXYZ(Vector3f &magXYZ) const
 {
-    magXYZ = stateStruct.body_magfield*1000.0f;
+    magXYZ = (stateStruct.body_magfield*1000.0f).tofloat();
 }
 
 // return magnetometer offsets
@@ -416,7 +392,7 @@ bool NavEKF3_core::getMagOffsets(uint8_t mag_idx, Vector3f &magOffsets) const
             !inhibitMagStates &&
             dal.get_compass()->healthy(magSelectIndex) &&
             variancesConverged) {
-        magOffsets = dal.get_compass()->get_offsets(magSelectIndex) - stateStruct.body_magfield*1000.0f;
+        magOffsets = dal.get_compass()->get_offsets(magSelectIndex) - stateStruct.body_magfield.tofloat()*1000.0;
         return true;
     } else {
         magOffsets = dal.get_compass()->get_offsets(magSelectIndex);
@@ -432,7 +408,7 @@ uint8_t NavEKF3_core::getActiveAirspeed() const
 }
 
 // return the innovations for the NED Pos, NED Vel, XYZ Mag and Vtas measurements
-void  NavEKF3_core::getInnovations(Vector3f &velInnov, Vector3f &posInnov, Vector3f &magInnov, float &tasInnov, float &yawInnov) const
+bool NavEKF3_core::getInnovations(Vector3f &velInnov, Vector3f &posInnov, Vector3f &magInnov, float &tasInnov, float &yawInnov) const
 {
     velInnov.x = innovVelPos[0];
     velInnov.y = innovVelPos[1];
@@ -445,30 +421,35 @@ void  NavEKF3_core::getInnovations(Vector3f &velInnov, Vector3f &posInnov, Vecto
     magInnov.z = 1e3f*innovMag[2]; // Convert back to sensor units
     tasInnov   = innovVtas;
     yawInnov   = innovYaw;
+    return true;
 }
 
 // return the synthetic air data drag and sideslip innovations
 void NavEKF3_core::getSynthAirDataInnovations(Vector2f &dragInnov, float &betaInnov) const
 {
+#if EK3_FEATURE_DRAG_FUSION
     dragInnov.x = innovDrag[0];
     dragInnov.y = innovDrag[1];
     betaInnov   = innovBeta;
+#endif
 }
 
 // return the innovation consistency test ratios for the velocity, position, magnetometer and true airspeed measurements
 // this indicates the amount of margin available when tuning the various error traps
 // also return the delta in position due to the last position reset
-void  NavEKF3_core::getVariances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar, Vector2f &offset) const
+bool NavEKF3_core::getVariances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar, Vector2f &offset) const
 {
-    velVar   = sqrtf(velTestRatio);
-    posVar   = sqrtf(posTestRatio);
-    hgtVar   = sqrtf(hgtTestRatio);
+    velVar   = sqrtF(velTestRatio);
+    posVar   = sqrtF(posTestRatio);
+    hgtVar   = sqrtF(hgtTestRatio);
     // If we are using simple compass yaw fusion, populate all three components with the yaw test ratio to provide an equivalent output
-    magVar.x = sqrtf(MAX(magTestRatio.x,yawTestRatio));
-    magVar.y = sqrtf(MAX(magTestRatio.y,yawTestRatio));
-    magVar.z = sqrtf(MAX(magTestRatio.z,yawTestRatio));
-    tasVar   = sqrtf(tasTestRatio);
-    offset   = posResetNE;
+    magVar.x = sqrtF(MAX(magTestRatio.x,yawTestRatio));
+    magVar.y = sqrtF(MAX(magTestRatio.y,yawTestRatio));
+    magVar.z = sqrtF(MAX(magTestRatio.z,yawTestRatio));
+    tasVar   = sqrtF(tasTestRatio);
+    offset   = posResetNE.tofloat();
+
+    return true;
 }
 
 // get a particular source's velocity innovations
@@ -481,17 +462,19 @@ bool NavEKF3_core::getVelInnovationsAndVariancesForSource(AP_NavEKF_Source::Sour
         if (AP_HAL::millis() - gpsVelInnovTime_ms > 500) {
             return false;
         }
-        innovations = gpsVelInnov;
-        variances = gpsVelVarInnov;
+        innovations = gpsVelInnov.tofloat();
+        variances = gpsVelVarInnov.tofloat();
         return true;
+#if EK3_FEATURE_EXTERNAL_NAV
     case AP_NavEKF_Source::SourceXY::EXTNAV:
         // check for timeouts
         if (AP_HAL::millis() - extNavVelInnovTime_ms > 500) {
             return false;
         }
-        innovations = extNavVelInnov;
-        variances = extNavVelVarInnov;
+        innovations = extNavVelInnov.tofloat();
+        variances = extNavVelVarInnov.tofloat();
         return true;
+#endif // EK3_FEATURE_EXTERNAL_NAV
     default:
         // variances are not available for this source
         return false;
@@ -524,51 +507,10 @@ void  NavEKF3_core::getFilterFaults(uint16_t &faults) const
               !statesInitialised<<7);
 }
 
-/*
-return filter timeout status as a bitmasked integer
- 0 = position measurement timeout
- 1 = velocity measurement timeout
- 2 = height measurement timeout
- 3 = magnetometer measurement timeout
- 4 = true airspeed measurement timeout
- 5 = unassigned
- 6 = unassigned
- 7 = unassigned
-*/
-void  NavEKF3_core::getFilterTimeouts(uint8_t &timeouts) const
-{
-    timeouts = (posTimeout<<0 |
-                velTimeout<<1 |
-                hgtTimeout<<2 |
-                magTimeout<<3 |
-                tasTimeout<<4);
-}
-
 // Return the navigation filter status message
 void  NavEKF3_core::getFilterStatus(nav_filter_status &status) const
 {
     status = filterStatus;
-}
-
-/*
-return filter gps quality check status
-*/
-void  NavEKF3_core::getFilterGpsStatus(nav_gps_status &faults) const
-{
-    // init return value
-    faults.value = 0;
-
-    // set individual flags
-    faults.flags.bad_sAcc           = gpsCheckStatus.bad_sAcc; // reported speed accuracy is insufficient
-    faults.flags.bad_hAcc           = gpsCheckStatus.bad_hAcc; // reported horizontal position accuracy is insufficient
-    faults.flags.bad_vAcc           = gpsCheckStatus.bad_vAcc; // reported vertical position accuracy is insufficient
-    faults.flags.bad_yaw            = gpsCheckStatus.bad_yaw; // EKF heading accuracy is too large for GPS use
-    faults.flags.bad_sats           = gpsCheckStatus.bad_sats; // reported number of satellites is insufficient
-    faults.flags.bad_horiz_drift    = gpsCheckStatus.bad_horiz_drift; // GPS horizontal drift is too large to start using GPS (check assumes vehicle is static)
-    faults.flags.bad_hdop           = gpsCheckStatus.bad_hdop; // reported HDoP is too large to start using GPS
-    faults.flags.bad_vert_vel       = gpsCheckStatus.bad_vert_vel; // GPS vertical speed is too large to start using GPS (check assumes vehicle is static)
-    faults.flags.bad_fix            = gpsCheckStatus.bad_fix; // The GPS cannot provide the 3D fix required
-    faults.flags.bad_horiz_vel      = gpsCheckStatus.bad_horiz_vel; // The GPS horizontal speed is excessive (check assumes the vehicle is static)
 }
 
 // send an EKF_STATUS message to GCS
@@ -614,7 +556,7 @@ void NavEKF3_core::send_status_report(mavlink_channel_t chan) const
     }
 
     // get variances
-    float velVar, posVar, hgtVar, tasVar;
+    float velVar = 0, posVar = 0, hgtVar = 0, tasVar = 0;
     Vector3f magVar;
     Vector2f offset;
     getVariances(velVar, posVar, hgtVar, magVar, tasVar, offset);
@@ -624,11 +566,11 @@ void NavEKF3_core::send_status_report(mavlink_channel_t chan) const
     // range finder is fitted for other applications
     float temp;
     if (((frontend->_useRngSwHgt > 0) && activeHgtSource == AP_NavEKF_Source::SourceZ::RANGEFINDER) || (PV_AidingMode == AID_RELATIVE && flowDataValid)) {
-        temp = sqrtf(auxRngTestRatio);
+        temp = sqrtF(auxRngTestRatio);
     } else {
         temp = 0.0f;
     }
-    const float mag_max = fmaxf(fmaxf(magVar.x,magVar.y),magVar.z);
+    const float mag_max = fmaxF(fmaxF(magVar.x,magVar.y),magVar.z);
 
     // send message
     mavlink_msg_ekf_status_report_send(chan, flags, velVar, posVar, hgtVar, mag_max, temp, tasVar);

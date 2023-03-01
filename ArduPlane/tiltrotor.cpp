@@ -9,7 +9,7 @@
 /*
   calculate maximum tilt change as a proportion from 0 to 1 of tilt
  */
-float QuadPlane::tilt_max_change(bool up)
+float QuadPlane::tilt_max_change(bool up) const
 {
     float rate;
     if (up || tilt.max_rate_down_dps <= 0) {
@@ -144,8 +144,8 @@ void QuadPlane::tiltrotor_continuous_update(void)
         // Q_TILT_MAX. Anything above 50% throttle gets
         // Q_TILT_MAX. Below 50% throttle we decrease linearly. This
         // relies heavily on Q_VFWD_GAIN being set appropriately.
-        float settilt = constrain_float(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) / 50.0f, 0, 1);
-        tiltrotor_slew(settilt * tilt.max_angle_deg / 90.0f);
+       float settilt = constrain_float((SRV_Channels::get_output_scaled(SRV_Channel::k_throttle)-MAX(plane.aparm.throttle_min.get(),0)) / 50.0f, 0, 1);
+       tiltrotor_slew(settilt * tilt.max_angle_deg / 90.0f);
     }
 }
 
@@ -310,7 +310,7 @@ void QuadPlane::tilt_compensate(float *thrust, uint8_t num_motors)
 /*
   return true if the rotors are fully tilted forward
  */
-bool QuadPlane::tiltrotor_fully_fwd(void)
+bool QuadPlane::tiltrotor_fully_fwd(void) const
 {
     if (tilt.tilt_mask <= 0) {
         return false;
@@ -346,7 +346,6 @@ void QuadPlane::tiltrotor_vectoring(void)
 
     // calculate the basic tilt amount from current_tilt
     float base_output = zero_out + (tilt.current_tilt * (level_out - zero_out));
-
     // for testing when disarmed, apply vectored yaw in proportion to rudder stick
     // Wait TILT_DELAY_MS after disarming to allow props to spin down first.
     constexpr uint32_t TILT_DELAY_MS = 3000;

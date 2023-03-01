@@ -186,9 +186,16 @@ void Plane::read_radio()
 
     control_failsafe();
 
+#if AC_FENCE == ENABLED
+    const bool stickmixing = fence_stickmixing();
+#else
+    const bool stickmixing = true;
+#endif
     airspeed_nudge_cm = 0;
     throttle_nudge = 0;
-    if (g.throttle_nudge && channel_throttle->get_control_in() > 50 && geofence_stickmixing()) {
+    if (g.throttle_nudge
+        && channel_throttle->get_control_in() > 50
+        && stickmixing) {
         float nudge = (channel_throttle->get_control_in() - 50) * 0.02f;
         if (ahrs.airspeed_sensor_enabled()) {
             airspeed_nudge_cm = (aparm.airspeed_max * 100 - aparm.airspeed_cruise_cm) * nudge;
@@ -382,4 +389,31 @@ bool Plane::rc_failsafe_active(void) const
         return true;
     }
     return false;
+}
+
+/*
+  expo handling for MANUAL, ACRO and TRAINING modes
+ */
+static float channel_expo(RC_Channel *chan, int8_t expo, bool use_dz)
+{
+    if (chan == nullptr) {
+        return 0;
+    }
+    float rin = use_dz? chan->get_control_in() : chan->get_control_in_zero_dz();
+    return SERVO_MAX * expo_curve(constrain_float(expo*0.01, 0, 1), rin/SERVO_MAX);
+}
+
+float Plane::roll_in_expo(bool use_dz) const
+{
+    return channel_expo(channel_roll, g2.man_expo_roll, use_dz);
+}
+
+float Plane::pitch_in_expo(bool use_dz) const
+{
+    return channel_expo(channel_pitch, g2.man_expo_pitch, use_dz);
+}
+
+float Plane::rudder_in_expo(bool use_dz) const
+{
+    return channel_expo(channel_rudder, g2.man_expo_rudder, use_dz);
 }

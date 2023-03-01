@@ -121,6 +121,8 @@ public:
         DEVTYPE_INS_ICM40609 = 0x33,
         DEVTYPE_INS_ICM42688 = 0x34,
         DEVTYPE_INS_ICM42605 = 0x35,
+        DEVTYPE_INS_ICM40605 = 0x36,
+        DEVTYPE_INS_IIM42652 = 0x37,
     };
 
 protected:
@@ -329,6 +331,9 @@ protected:
     void notify_accel_fifo_reset(uint8_t instance);
     void notify_gyro_fifo_reset(uint8_t instance);
     
+    // log an unexpected change in a register for an IMU
+    void log_register_change(uint32_t bus_id, const AP_HAL::Device::checkreg &reg);
+
     // note that each backend is also expected to have a static detect()
     // function which instantiates an instance of the backend sensor
     // driver if the sensor is available
@@ -338,5 +343,9 @@ private:
     bool should_log_imu_raw() const;
     void log_accel_raw(uint8_t instance, const uint64_t sample_us, const Vector3f &accel);
     void log_gyro_raw(uint8_t instance, const uint64_t sample_us, const Vector3f &gryo);
+
+    // logging
+    void Write_ACC(const uint8_t instance, const uint64_t sample_us, const Vector3f &accel) const; // Write ACC data packet: raw accel data
+    void Write_GYR(const uint8_t instance, const uint64_t sample_us, const Vector3f &gyro) const;  // Write GYR data packet: raw gyro data
 
 };

@@ -128,7 +128,7 @@ const AP_Param::GroupInfo NavEKF2::var_info[] = {
     // @Values: 0:Disabled, 1:Enabled
     // @User: Advanced
     // @RebootRequired: True
-    AP_GROUPINFO_FLAGS("ENABLE", 0, NavEKF2, _enable, 1, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("ENABLE", 0, NavEKF2, _enable, 0, AP_PARAM_FLAG_ENABLE),
 
     // GPS measurement parameters
 
@@ -429,7 +429,7 @@ const AP_Param::GroupInfo NavEKF2::var_info[] = {
     // 36 was LOG_MASK, used for specifying which IMUs/cores to log
     // replay data for
 
-    // control of magentic yaw angle fusion
+    // control of magnetic yaw angle fusion
 
     // @Param: YAW_M_NSE
     // @DisplayName: Yaw measurement noise (rad)
@@ -584,15 +584,7 @@ const AP_Param::GroupInfo NavEKF2::var_info[] = {
     // @RebootRequired: True
     AP_GROUPINFO("GSF_USE_MASK", 55, NavEKF2, _gsfUseMask, 3),
 
-    // @Param: GSF_DELAY
-    // @DisplayName: Delay from loss of navigation to yaw reset
-    // @Description: If the inertial navigation calculation stops following the GPS and other positioning sensors for longer than EK2_GSF_DELAY milli-seconds, then the EKF2 code will generate a reset request internally and reset the yaw to the estimate from the EKF-GSF filter and reset the horizontal velocity and position to the GPS. This reset will not be performed unless the use of the EKF-GSF yaw estimate is enabled via the EK2_GSF_USE parameter.
-    // @Range: 500 5000
-    // @Increment: 100
-    // @Units: ms
-    // @User: Advanced
-    // @RebootRequired: True
-    AP_GROUPINFO("GSF_DELAY", 56, NavEKF2, _gsfResetDelay, 1000),
+    // 56 was GSF_DELAY which was never released in a stable version
 
     // @Param: GSF_RST_MAX
     // @DisplayName: Maximum number of resets to the EKF-GSF yaw estimate allowed
@@ -970,14 +962,6 @@ float NavEKF2::getPosDownDerivative(int8_t instance) const
     return 0.0f;
 }
 
-// This returns the specific forces in the NED frame
-void NavEKF2::getAccelNED(Vector3f &accelNED) const
-{
-    if (core) {
-        core[primary].getAccelNED(accelNED);
-    }
-}
-
 // return body axis gyro bias estimates in rad/sec
 void NavEKF2::getGyroBias(int8_t instance, Vector3f &gyroBias) const
 {
@@ -993,15 +977,6 @@ void NavEKF2::getGyroScaleErrorPercentage(int8_t instance, Vector3f &gyroScale) 
     if (instance < 0 || instance >= num_cores) instance = primary;
     if (core) {
         core[instance].getGyroScaleErrorPercentage(gyroScale);
-    }
-}
-
-// return tilt error convergence metric for the specified instance
-void NavEKF2::getTiltError(int8_t instance, float &ang) const
-{
-    if (instance < 0 || instance >= num_cores) instance = primary;
-    if (core) {
-        core[instance].getTiltError(ang);
     }
 }
 
@@ -1142,10 +1117,11 @@ bool NavEKF2::setOriginLLH(const Location &loc)
     if (!core) {
         return false;
     }
-    if (_fusionModeGPS != 3) {
-        // we don't allow setting of the EKF origin unless we are
-        // flying in non-GPS mode. This is to prevent accidental set
-        // of EKF origin with invalid position or height
+    if (_fusionModeGPS != 3 || common_origin_valid) {
+        // we don't allow setting of the EKF origin if using GPS
+        // or if the EKF origin has already been set.
+        // This is to prevent accidental setting of EKF origin with an
+        // invalid position or height or causing upsets from a shifting origin.
         GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "EKF2 refusing set origin");
         return false;
     }
@@ -1250,40 +1226,6 @@ void NavEKF2::writeOptFlowMeas(const uint8_t rawFlowQuality, const Vector2f &raw
     }
 }
 
-// called by vehicle code to specify that a takeoff is happening
-// causes the EKF to compensate for expected barometer errors due to ground effect
-void NavEKF2::setTakeoffExpected(bool val)
-{
-    if (val) {
-        AP::dal().log_event2(AP_DAL::Event::setTakeoffExpected);
-    } else {
-        AP::dal().log_event2(AP_DAL::Event::unsetTakeoffExpected);
-    }
-
-    if (core) {
-        for (uint8_t i=0; i<num_cores; i++) {
-            core[i].setTakeoffExpected(val);
-        }
-    }
-}
-
-// called by vehicle code to specify that a touchdown is expected to happen
-// causes the EKF to compensate for expected barometer errors due to ground effect
-void NavEKF2::setTouchdownExpected(bool val)
-{
-    if (val) {
-        AP::dal().log_event2(AP_DAL::Event::setTouchdownExpected);
-    } else {
-        AP::dal().log_event2(AP_DAL::Event::unsetTouchdownExpected);
-    }
-
-    if (core) {
-        for (uint8_t i=0; i<num_cores; i++) {
-            core[i].setTouchdownExpected(val);
-        }
-    }
-}
-
 // Set to true if the terrain underneath is stable enough to be used as a height reference
 // in combination with a range finder. Set to false if the terrain underneath the vehicle
 // cannot be used as a height reference. Use to prevent range finder operation otherwise
@@ -1321,27 +1263,6 @@ void NavEKF2::getFilterFaults(int8_t instance, uint16_t &faults) const
         core[instance].getFilterFaults(faults);
     } else {
         faults = 0;
-    }
-}
-
-/*
-  return filter timeout status as a bitmasked integer
-  0 = position measurement timeout
-  1 = velocity measurement timeout
-  2 = height measurement timeout
-  3 = magnetometer measurement timeout
-  4 = unassigned
-  5 = unassigned
-  6 = unassigned
-  7 = unassigned
-*/
-void NavEKF2::getFilterTimeouts(int8_t instance, uint8_t &timeouts) const
-{
-    if (instance < 0 || instance >= num_cores) instance = primary;
-    if (core) {
-        core[instance].getFilterTimeouts(timeouts);
-    } else {
-        timeouts = 0;
     }
 }
 
@@ -1408,7 +1329,7 @@ uint32_t NavEKF2::getLastYawResetAngle(float &yawAngDelta)
     uint32_t lastYawReset_ms = yaw_reset_data.last_primary_change;
 
     // There has been a change notification in the primary core that the controller has not consumed
-    // or this is a repeated acce
+    // or this is a repeated access
     if (yaw_reset_data.core_changed || yaw_reset_data.last_function_call == now_time_ms) {
         yawAngDelta = yaw_reset_data.core_delta;
         yaw_reset_data.core_changed = false;
@@ -1645,7 +1566,7 @@ void NavEKF2::requestYawReset(void)
 // Writes the default equivalent airspeed in m/s to be used in forward flight if a measured airspeed is required and not available.
 void NavEKF2::writeDefaultAirSpeed(float airspeed)
 {
-    AP::dal().log_writeDefaultAirSpeed2(airspeed);
+    AP::dal().log_writeDefaultAirSpeed2(airspeed,0.0f);
 
     if (core) {
         for (uint8_t i=0; i<num_cores; i++) {

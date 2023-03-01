@@ -105,6 +105,9 @@ public:
     // is_runup_complete
     bool        is_runup_complete() const { return _runup_complete; }
 
+    // is_spooldown_complete
+    bool        is_spooldown_complete() const { return _spooldown_complete; }
+
     // set_ramp_time
     void        set_ramp_time(int8_t ramp_time) { _ramp_time = ramp_time; }
 
@@ -121,7 +124,7 @@ public:
     void        use_bailout_ramp_time(bool enable) { _use_bailout_ramp = enable; }
 
     // use external governor autorotation window
-    void        set_autorotaion_flag(bool flag) { _in_autorotaion = flag; }
+    void        set_autorotation_flag(bool flag) { _in_autorotation = flag; }
 
     // set the throttle percentage to be sent to external governor to signal that autorotation bailout ramp should be used within this instance of Heli_RSC
     void        set_ext_gov_arot_bail(int16_t pct) { _rsc_arot_bailout_pct = pct; }
@@ -161,8 +164,9 @@ private:
     float           _governor_output;             // governor output for rotor speed control
     bool            _governor_engage;             // RSC governor status flag for soft-start
     bool            _use_bailout_ramp;            // true if allowing RSC to quickly ramp up engine
-    bool            _in_autorotaion;              // true if vehicle is currently in an autorotaion
+    bool            _in_autorotation;              // true if vehicle is currently in an autorotation
     int16_t         _rsc_arot_bailout_pct;        // the throttle percentage sent to the external governor to signal that autorotation bailout ramp should be used
+    bool            _spooldown_complete;          // flag for determining if spooldown is complete
 
     // update_rotor_ramp - slews rotor output scalar between 0 and 1, outputs float scalar to _rotor_ramp_output
     void            update_rotor_ramp(float rotor_ramp_input, float dt);
@@ -187,7 +191,7 @@ private:
 
     // parameter accessors to allow conversions
     float       get_critical_speed() const { return _critical_speed * 0.01; }
-    float       get_idle_output() { return _idle_output * 0.01; }
+    float       get_idle_output() const { return _idle_output * 0.01; }
     float       get_governor_disengage() { return _governor_disengage * 0.01; }
     float       get_governor_droop_response() { return _governor_droop_response * 0.01; }
     float       get_governor_tcgain() { return _governor_tcgain * 0.01; }
