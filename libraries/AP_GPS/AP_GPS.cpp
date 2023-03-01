@@ -1249,12 +1249,7 @@ void AP_GPS::send_mavlink_gps2_raw(mavlink_channel_t chan)
         num_sats(1),
         state[1].rtk_num_sats,
         state[1].rtk_age_ms,
-        gps_yaw_cdeg(1),
-        0,                    // TODO: Elipsoid height in mm
-        hacc * 1000,          // one-sigma standard deviation in mm
-        vacc * 1000,          // one-sigma standard deviation in mm
-        sacc * 1000,          // one-sigma standard deviation in mm/s
-        0);                    // TODO one-sigma heading accuracy standard deviation
+        gps_yaw_cdeg(1));
 }
 #endif // GPS_MAX_RECEIVERS
 

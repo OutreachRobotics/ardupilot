@@ -473,7 +473,6 @@ void Copter::ten_hz_logging_loop()
         Log_Write_SAMPLE();
     }
     Log_Write_SAMBA();
-    logger.Write_GPS(gps.primary_sensor());
     
     if (should_log(MASK_LOG_MOTBATT)) {
         Log_Write_MotBatt();
@@ -526,14 +525,6 @@ void Copter::twentyfive_hz_logging()
     if (should_log(MASK_LOG_ATTITUDE_MED) || should_log(MASK_LOG_ATTITUDE_FAST)) {
         Log_Write_EKF_POS();
     }
-
-#endif
-
-#if PRECISION_LANDING == ENABLED
-    // log output
-    Log_Write_Precland();
-#endif
-
 #if MODE_AUTOROTATE_ENABLED == ENABLED
     if (should_log(MASK_LOG_ATTITUDE_MED) || should_log(MASK_LOG_ATTITUDE_FAST)) {
         //update autorotation log
@@ -543,8 +534,7 @@ void Copter::twentyfive_hz_logging()
     Log_Write_Attitude();
     Log_Write_SAMBA_EKF();
     logger.Write_RCIN();
-    logger.Write_IMU();
-
+    AP::ins().Write_IMU();
 }
 
 // three_hz_loop - 3.3hz loop

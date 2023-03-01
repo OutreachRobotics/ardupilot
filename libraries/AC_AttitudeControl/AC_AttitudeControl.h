@@ -259,9 +259,9 @@ public:
     float max_angle_step_bf_yaw() { return max_rate_step_bf_yaw() / _p_angle_yaw.kP(); }
 
     // Return angular velocity in radians used in the angular velocity controller
-    Vector3f rate_bf_targets() const { return _rate_target_ang_vel; }
-    Vector3f get_ds_filtered_ang() const { return _attitude_target_ang_vel; }
-    Vector3f get_filtered_ang() const { return _rate_sysid_ang_vel; }
+    Vector3f rate_bf_targets() const { return _ang_vel_body; }
+    Vector3f get_ds_filtered_ang() const { return _ang_vel_target; }
+    Vector3f get_filtered_ang() const { return _sysid_ang_vel_body; }
     Vector3f get_delEKF_orientation() const { return mamba_orientation; }
     Mat get_delEKF_states() const { return mamba_states; }
 

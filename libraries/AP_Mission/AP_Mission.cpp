@@ -299,9 +299,6 @@ bool AP_Mission::verify_command(const Mission_Command& cmd)
     case MAV_CMD_DO_DIGICAM_CONTROL:
     case MAV_CMD_DO_SET_CAM_TRIGG_DIST:
     case MAV_CMD_DO_PARACHUTE:
-    case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
-    case MAV_CMD_DO_SPRAYER:
-    case MAV_CMD_DO_AUX_FUNCTION:
     case MAV_CMD_DO_SET_RESUME_REPEAT_DIST:
         return true;
     default:
@@ -318,8 +315,6 @@ bool AP_Mission::start_command(const Mission_Command& cmd)
 
     gcs().send_text(MAV_SEVERITY_INFO, "Mission: %u %s", cmd.index, cmd.type());
     switch (cmd.id) {
-    case MAV_CMD_DO_AUX_FUNCTION:
-        return start_command_do_aux_function(cmd);
     case MAV_CMD_DO_GRIPPER:
         return start_command_do_gripper(cmd);
     case MAV_CMD_DO_SET_SERVO:
@@ -334,10 +329,6 @@ bool AP_Mission::start_command(const Mission_Command& cmd)
         return start_command_camera(cmd);
     case MAV_CMD_DO_PARACHUTE:
         return start_command_parachute(cmd);
-    case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
-        return start_command_do_scripting(cmd);
-    case MAV_CMD_DO_SPRAYER:
-        return start_command_do_sprayer(cmd);
     case MAV_CMD_DO_SET_RESUME_REPEAT_DIST:
         return command_do_set_repeat_dist(cmd);
     default:
@@ -1053,11 +1044,6 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.p1 = packet.param1;                         // action 0=disable, 1=enable
         break;
 
-    case MAV_CMD_DO_AUX_FUNCTION:
-        cmd.content.auxfunction.function = packet.param1;
-        cmd.content.auxfunction.switchpos = packet.param2;
-        break;
-
     case MAV_CMD_DO_PARACHUTE:                         // MAV ID: 208
         cmd.p1 = packet.param1;                        // action 0=disable, 1=enable, 2=release.  See PARACHUTE_ACTION enum
         break;
@@ -1127,17 +1113,6 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
 
     case MAV_CMD_DO_SET_RESUME_REPEAT_DIST:
         cmd.p1 = packet.param1; // Resume repeat distance (m)
-        break;
-
-    case MAV_CMD_DO_SPRAYER:
-        cmd.p1 = packet.param1;                        // action 0=disable, 1=enable
-        break;
-
-    case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
-        cmd.p1 = packet.param1;
-        cmd.content.scripting.p1 = packet.param2;
-        cmd.content.scripting.p2 = packet.param3;
-        cmd.content.scripting.p3 = packet.param4;
         break;
 
     default:
@@ -1513,15 +1488,6 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param1 = cmd.p1;                         // action 0=disable, 1=enable, 2=release.  See PARACHUTE_ACTION enum
         break;
 
-    case MAV_CMD_DO_SPRAYER:
-        packet.param1 = cmd.p1;                         // action 0=disable, 1=enable
-        break;
-
-    case MAV_CMD_DO_AUX_FUNCTION:
-        packet.param1 = cmd.content.auxfunction.function;
-        packet.param2 = cmd.content.auxfunction.switchpos;
-        break;
-
     case MAV_CMD_DO_INVERTED_FLIGHT:                    // MAV ID: 210
         packet.param1 = cmd.p1;                         // normal=0 inverted=1
         break;
@@ -1587,13 +1553,6 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
 
     case MAV_CMD_DO_SET_RESUME_REPEAT_DIST:
         packet.param1 = cmd.p1; // Resume repeat distance (m)
-        break;
-
-    case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
-        packet.param1 = cmd.p1;
-        packet.param2 = cmd.content.scripting.p1;
-        packet.param3 = cmd.content.scripting.p2;
-        packet.param4 = cmd.content.scripting.p3;
         break;
 
     default:
@@ -2295,16 +2254,10 @@ const char *AP_Mission::Mission_Command::type() const
         return "PayloadPlace";
     case MAV_CMD_DO_PARACHUTE:
         return "Parachute";
-    case MAV_CMD_DO_SPRAYER:
-        return "Sprayer";
-    case MAV_CMD_DO_AUX_FUNCTION:
-        return "AuxFunction";
     case MAV_CMD_DO_MOUNT_CONTROL:
         return "MountControl";
     case MAV_CMD_DO_WINCH:
         return "Winch";
-    case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
-        return "Scripting";
 
     default:
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL

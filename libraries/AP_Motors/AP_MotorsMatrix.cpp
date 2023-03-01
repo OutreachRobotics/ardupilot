@@ -26,11 +26,6 @@ void AP_MotorsMatrix::init(motor_frame_class frame_class, motor_frame_type frame
     _active_frame_class = frame_class;
     _active_frame_type = frame_type;
 
-    if (frame_class == MOTOR_FRAME_SCRIPTING_MATRIX) {
-        // if Scripting frame class, do nothing scripting must call its own dedicated init function
-        return;
-    }
-
     // setup the motors
     setup_motors(frame_class, frame_type);
 
@@ -42,11 +37,6 @@ void AP_MotorsMatrix::init(motor_frame_class frame_class, motor_frame_type frame
 // dedicated init for lua scripting
 bool AP_MotorsMatrix::init(uint8_t expected_num_motors)
 {
-    if (_active_frame_class != MOTOR_FRAME_SCRIPTING_MATRIX) {
-        // not the correct class
-        return false;
-    }
-
     // Make sure the correct number of motors have been added
     uint8_t num_motors = 0;
     for (uint8_t i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
@@ -95,11 +85,6 @@ bool AP_MotorsMatrix::init(uint8_t expected_num_motors)
 // Set throttle factor from scripting
 bool AP_MotorsMatrix::set_throttle_factor(int8_t motor_num, float throttle_factor)
 {
-    if ((_active_frame_class != MOTOR_FRAME_SCRIPTING_MATRIX) ) {
-        // not the correct class
-        return false;
-    }
-
     if (initialised_ok() || !motor_enabled[motor_num]) {
         // Already setup or given motor is not enabled
         return false;

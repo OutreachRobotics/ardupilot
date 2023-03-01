@@ -6,6 +6,10 @@
 /*
  * Init and run calls for stabilize flight mode
  */
+bool ModeAcro::init(bool ignore_checks)
+{
+    return true;
+}
 
 // stabilize_run - runs the main stabilize controller
 // should be called at 100hz or more

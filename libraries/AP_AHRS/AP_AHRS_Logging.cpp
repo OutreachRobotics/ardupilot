@@ -121,22 +121,23 @@ void AP_AHRS_View::Write_Rate(const AP_Motors &motors, const AC_AttitudeControl 
                                 const AC_PosControl &pos_control) const
 {
     const Vector3f &rate_targets = attitude_control.rate_bf_targets();
-    const Vector3f &accel_target = pos_control.get_accel_target_cmss();
+    const Vector3f &filtered_ang = attitude_control.get_filtered_ang();
+    const Vector3f &delekf_euler = attitude_control.get_delEKF_orientation();
     const struct log_Rate pkt_rate{
         LOG_PACKET_HEADER_INIT(LOG_RATE_MSG),
         time_us         : AP_HAL::micros64(),
-        control_roll    : degrees(rate_targets.x),
+        control_roll    : rate_targets.x,
         roll            : degrees(get_gyro().x),
-        roll_out        : motors.get_roll(),
-        control_pitch   : degrees(rate_targets.y),
+        roll_out        : degrees(filtered_ang.x),
+        control_pitch   : rate_targets.y,
         pitch           : degrees(get_gyro().y),
-        pitch_out       : motors.get_pitch(),
-        control_yaw     : degrees(rate_targets.z),
+        pitch_out       : degrees(filtered_ang.y),
+        control_yaw     : rate_targets.z,
         yaw             : degrees(get_gyro().z),
-        yaw_out         : motors.get_yaw(),
-        control_accel   : (float)accel_target.z,
-        accel           : (float)(-(get_accel_ef_blended().z + GRAVITY_MSS) * 100.0f),
-        accel_out       : motors.get_throttle()
+        yaw_out         : degrees(filtered_ang.z),
+        control_accel   : degrees(delekf_euler.x),
+        accel           : degrees(delekf_euler.y),
+        accel_out       : degrees(delekf_euler.z)
     };
     AP::logger().WriteBlock(&pkt_rate, sizeof(pkt_rate));
 }

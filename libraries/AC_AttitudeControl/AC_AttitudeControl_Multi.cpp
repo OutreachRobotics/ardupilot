@@ -477,9 +477,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
     yaw_angle_error_last=yaw_angle_error; //assign new error to last
 
     // For logging purpose
-    _attitude_target_euler_angle.x = 0.0f;
-    _attitude_target_euler_angle.y = 0.0f;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = 0.0f;
+    _euler_angle_target.y = 0.0f;
+    _euler_angle_target.z = target_yaw;
 
     constrainCommand();
 
@@ -489,11 +489,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
     _motors.set_throttle(throttle);
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral*RMAX_ACTUATOR_THRUST;
-    _rate_target_ang_vel.y = forward*PMAX_ACTUATOR_THRUST;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = lateral*RMAX_ACTUATOR_THRUST;
+    _ang_vel_body.y = forward*PMAX_ACTUATOR_THRUST;
+    _ang_vel_body.z = yaw_input;
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
     
 }
 
@@ -538,9 +538,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
     forward_command=sequenceArmed?forward_command:0.0f;
 
     // For logging purpose
-    _attitude_target_euler_angle.x = 0.0f;
-    _attitude_target_euler_angle.y = target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = 0.0f;
+    _euler_angle_target.y = target_forward;
+    _euler_angle_target.z = target_yaw;
 
     _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
     _motors.set_forward(forward_command);
@@ -548,11 +548,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float 
     _motors.set_throttle(throttle);
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral*RMAX_ACTUATOR_THRUST;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = lateral*RMAX_ACTUATOR_THRUST;
+    _ang_vel_body.y = forward_command;
+    _ang_vel_body.z = yaw_input;
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)
@@ -596,9 +596,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     lateral_command=sequenceArmed?lateral_command:0.0f;
 
     // For logging purpose
-    _attitude_target_euler_angle.x = target_lateral;
-    _attitude_target_euler_angle.y = 0.0f;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = target_lateral;
+    _euler_angle_target.y = 0.0f;
+    _euler_angle_target.z = target_yaw;
 
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward*PMAX_ACTUATOR_THRUST);
@@ -606,11 +606,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float 
     _motors.set_throttle(throttle);
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward*PMAX_ACTUATOR_THRUST;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = lateral_command;
+    _ang_vel_body.y = forward*PMAX_ACTUATOR_THRUST;
+    _ang_vel_body.z = yaw_input;
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)
@@ -661,9 +661,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_approachHold(float lateral, f
     forward_command=sequenceArmed?forward_command:0.0f;
 
     // For logging purpose
-    _attitude_target_euler_angle.x = target_lateral;
-    _attitude_target_euler_angle.y = target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = target_lateral;
+    _euler_angle_target.y = target_forward;
+    _euler_angle_target.z = target_yaw;
 
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward_command);
@@ -671,11 +671,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_approachHold(float lateral, f
     _motors.set_throttle(throttle);
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = lateral_command;
+    _ang_vel_body.y = forward_command;
+    _ang_vel_body.z = yaw_input;
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed)
@@ -751,9 +751,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     constrainCommand();
 
     // For logging purpose
-    _attitude_target_euler_angle.x = filtered_target_lateral;
-    _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
 
     if(armed)
     {
@@ -771,11 +771,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     }
     
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = lateral_command;
+    _ang_vel_body.y = forward_command;
+    _ang_vel_body.z = yaw_input;
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed)
@@ -841,9 +841,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     constrainCommand();
 
     // For logging purpose
-    _attitude_target_euler_angle.x = filtered_target_lateral;
-    _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
 
     if(armed)
     {
@@ -861,11 +861,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     }
     
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = lateral_command;
+    _ang_vel_body.y = forward_command;
+    _ang_vel_body.z = yaw_input;
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float forward, float yaw, float throttle, bool armed)
@@ -923,9 +923,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float
     constrainCommand();
 
     // For logging purpose
-    _attitude_target_euler_angle.x = filtered_target_lateral;
-    _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
 
     if(armed)
     {
@@ -943,11 +943,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float
     }
     
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = lateral_command;
+    _ang_vel_body.y = forward_command;
+    _ang_vel_body.z = yaw_input;
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
@@ -1011,9 +1011,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     constrainCommand();
 
     // For logging purpose
-    _attitude_target_euler_angle.x = filtered_target_lateral;
-    _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
 
     if(armed)
     {
@@ -1031,11 +1031,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     }
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = lateral_command;
+    _ang_vel_body.y = forward_command;
+    _ang_vel_body.z = yaw_input;
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_taxi_LQR(float yaw, bool armed)
@@ -1090,9 +1090,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi_LQR(float yaw, bool arme
     constrainCommand();
 
     // For logging purpose
-    _attitude_target_euler_angle.x = filtered_target_lateral;
-    _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
 
     if(armed)
     {
@@ -1110,11 +1110,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi_LQR(float yaw, bool arme
     }
     
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = lateral_command;
+    _ang_vel_body.y = forward_command;
+    _ang_vel_body.z = yaw_input;
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::constrainCommand()
