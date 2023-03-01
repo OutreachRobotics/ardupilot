@@ -38,17 +38,17 @@ enum MessageID
     TextMessage
 };
 
-enum TextMessageID
-{
-    SamplingCompleted,
-    CalibrationStarted,
-    LowBattery,
-    SawNotConnected,
-    SawJammed,
-    SawHighCurrent,
-    SamplingStucked,    
-    NoCalibration    
-};
+// enum TextMessageID
+// {
+//     SamplingCompleted,
+//     CalibrationStarted,
+//     LowBattery,
+//     SawNotConnected,
+//     SawJammed,
+//     SawHighCurrent,
+//     SamplingStucked,    
+//     NoCalibration    
+// };
 
 /***************************************************************************
 	Class :
