@@ -99,19 +99,18 @@ struct PACKED log_SAMBA {
 // Write a SAMBA packet
 void Copter::Log_Write_SAMBA()
 {
-    uint16_t graspPWM = (gcs().getGraspPWM()+100)*10;
-    uint16_t sawPWM = (gcs().getSawPWM()+100)*10;
+    uint8_t* _sampler_status = gcs().getSamplerStatus();
     struct log_SAMBA pkt = {
         LOG_PACKET_HEADER_INIT(LOG_SAMBA_MSG),
         time_us  : AP_HAL::micros64(),
-        cutting_percentage  : gcs().getCuttingPercentage(),
-        arm_status : gcs().getArmStatus(),
-        battery_voltage : (float)gcs().getBatteryVoltage()/10.0f,
-        battery_soc : gcs().getBatterySOC(),
-        wrist1 : gcs().getWrist1(),
-        wrist2 : gcs().getWrist2(),
-        grasp : graspPWM,
-        saw : sawPWM
+        cutting_percentage  : _sampler_status[STATUS_CUTTING],
+        arm_status : _sampler_status[STATUS_ARM],
+        battery_voltage : (float)_sampler_status[STATUS_BATT_VOLT]/10.0f,
+        battery_soc : _sampler_status[STATUS_BATT_SOC],
+        wrist1 : _sampler_status[STATUS_WRIST1],
+        wrist2 : _sampler_status[STATUS_WRIST2],
+        grasp : _sampler_status[STATUS_GRASP],
+        saw : _sampler_status[STATUS_SAW]
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 };

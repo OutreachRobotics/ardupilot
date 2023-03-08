@@ -24,9 +24,24 @@
 #define COM_DYNA1           4
 #define COM_DYNA2           5
 
-#define STATUS_MSG_SIZE     8
+#define STATUS_CUTTING      0
+#define STATUS_WRIST1       1
+#define STATUS_WRIST2       2
+#define STATUS_SAW          3
+#define STATUS_GRASP        4
+#define STATUS_ARM          5
+#define STATUS_BATT_VOLT    6
+#define STATUS_BATT_SOC     7
+
+#define STATUS_MSG_SIZE     9
 #define COM_MSG_SIZE        7
 #define COM_HEADER          255
+
+#define RC_MID_VALUE        1500
+#define CALIB_TIME          3000
+
+#define MAMBA_DYNA_OFFSET   50
+
 
 /***************************************************************************
 	Enumerations :
@@ -38,17 +53,18 @@ enum MessageID
     TextMessage
 };
 
-// enum TextMessageID
-// {
-//     SamplingCompleted,
-//     CalibrationStarted,
-//     LowBattery,
-//     SawNotConnected,
-//     SawJammed,
-//     SawHighCurrent,
-//     SamplingStucked,    
-//     NoCalibration    
-// };
+enum TextMessageID
+{
+    SamplingCompleted,
+    CalibrationStarted,
+    LowBattery,
+    SawNotConnected,
+    SawJammed,
+    SawHighCurrent,
+    SamplingStucked,    
+    NoCalibration,
+    NoMessage = 195   
+};
 
 /***************************************************************************
 	Class :
@@ -59,22 +75,20 @@ class Sampler
 public:
     Sampler();
     void init();
-    void manageInput();
-    void receiveMsg();
-    void sendMsg();
+    uint8_t manageInput();
+    void sendCommand();
+
+    uint8_t* getStatus();
 
 private:
-    uint8_t cuttingPercentage = 0;
-    uint8_t armStatus  = 0;
-    uint8_t batteryVoltage = 0;
-    uint8_t batterySOC = 0;
-    uint8_t wrist1 = 0;
-    uint8_t wrist2 = 0;
-    uint8_t grasp = 0;
-    uint8_t saw = 0;
+    uint8_t comMsg[COM_MSG_SIZE];
+    uint8_t statusMsg[STATUS_MSG_SIZE];
+    uint8_t calib;
+    uint8_t landMode;
+    uint64_t calibTimer;
+    uint8_t calibPrevious;
 
-    int8_t comMsg[COM_MSG_SIZE];
-    uint8_t buf[STATUS_MSG_SIZE];
+    AP_HAL::UARTDriver *sampler_port;
 };
 
 #endif

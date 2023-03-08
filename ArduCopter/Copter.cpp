@@ -535,6 +535,7 @@ void Copter::twentyfive_hz_logging()
     Log_Write_SAMBA_EKF();
     logger.Write_RCIN();
     AP::ins().Write_IMU();
+    gcs().handleSampler();
 }
 
 // three_hz_loop - 3.3hz loop

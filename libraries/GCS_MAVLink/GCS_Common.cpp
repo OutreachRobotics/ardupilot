@@ -83,18 +83,6 @@ uint8_t GCS_MAVLINK::mavlink_active = 0;
 uint8_t GCS_MAVLINK::chan_is_streaming = 0;
 uint32_t GCS_MAVLINK::reserve_param_space_start_ms;
 
-uint8_t cuttingPercentage = 0;
-uint8_t armStatus  = 0;
-uint8_t batteryVoltage = 0;
-uint8_t batterySOC = 0;
-uint8_t deleavesMessage;
-uint8_t taxiMode;
-uint8_t wrist1 = 0;
-uint8_t wrist2 = 0;
-uint8_t grasp = 0;
-uint8_t saw = 0;
-uint32_t last_arm_time = 0;
-
 // private channels are ones used for point-to-point protocols, and
 // don't get broadcasts or fwded packets
 uint8_t GCS_MAVLINK::mavlink_private = 0;
@@ -105,8 +93,6 @@ GCS_MAVLINK::GCS_MAVLINK(GCS_MAVLINK_Parameters &parameters,
                          AP_HAL::UARTDriver &uart)
 {
     _port = &uart;
-    _deleaves_port = hal.serial(UART_DELEAVES);
-
     streamRates = parameters.streamRates;
 }
 
@@ -182,10 +168,58 @@ bool GCS_MAVLINK::init(uint8_t instance)
         status->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
     }
 
-    _deleaves_port->begin(57600,10,10);
-
     return true;
 }
+
+void GCS::handleSampler()
+{
+    AP_Logger *logger = AP_Logger::get_singleton();
+    if(!logger->CardInserted() && noSDWarning)
+    {
+        gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
+		noSDWarning = false;
+    }
+
+    TextMessageID textMessage = (TextMessageID)sampler.manageInput();
+    switch (textMessage)
+    {
+        case SamplingCompleted:
+            gcs().send_text(MAV_SEVERITY_INFO, "#Sampling completed");
+            gcs().set_log_sample_data();
+            break;
+        case CalibrationStarted:
+            gcs().send_text(MAV_SEVERITY_INFO, "#Calibration started");
+            break;
+        case LowBattery:
+            gcs().send_text(MAV_SEVERITY_INFO, "#Low battery");
+            break;
+        case SawNotConnected:
+            gcs().send_text(MAV_SEVERITY_ALERT, "Saw not connected");
+            break;
+        case SawJammed:
+            gcs().send_text(MAV_SEVERITY_ALERT, "Saw jammed during the cutting sequence");
+            break;
+        case SawHighCurrent:
+            gcs().send_text(MAV_SEVERITY_ALERT, "Saw high current protection triggered");
+            break;
+        case SamplingStucked:
+            gcs().send_text(MAV_SEVERITY_ALERT, "Unable to complete the sampling sequence");
+            break;
+        case NoCalibration:
+            gcs().send_text(MAV_SEVERITY_ALERT, "The cutting sequence needs to be stopped for calibration");
+            break;
+        default:
+            break;
+    }      
+    
+    sampler.sendCommand();  
+}
+
+uint8_t* GCS::getSamplerStatus()
+{
+    return sampler.getStatus();
+}
+
 
 void GCS_MAVLINK::send_meminfo(void)
 {
@@ -1405,70 +1439,6 @@ void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
 void
 GCS_MAVLINK::update_receive(uint32_t max_time_us)
 {
-    taxiMode = hal.rcin->read(CH_6) > 1500;
-
-    AP_Logger *logger = AP_Logger::get_singleton();
-    if(!logger->CardInserted())
-    {
-        gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
-    }
-
-    while(_deleaves_port->available()>1)
-    {
-        uint8_t temp = _deleaves_port->read();
-        if(temp == DELEAVES_DATA_HEADER && _deleaves_port->available()>7)
-        {
-            cuttingPercentage = _deleaves_port->read();
-            uint8_t tempValue = _deleaves_port->read();
-            if(tempValue!=armStatus && tempValue && AP_HAL::millis()-last_arm_time>5000)
-            {
-                last_arm_time = AP_HAL::millis();
-                gcs().send_text(MAV_SEVERITY_INFO, "#Sampling started");
-            } 
-            armStatus = tempValue;           
-            batteryVoltage = _deleaves_port->read();
-            batterySOC = _deleaves_port->read();
-            wrist1 = _deleaves_port->read();
-            wrist2 = _deleaves_port->read();
-            grasp = _deleaves_port->read();
-            saw = _deleaves_port->read();            
-        }
-        else if(temp == DELEAVES_MESSAGE_HEADER)
-        {
-            deleavesMessage = (uint8_t)_deleaves_port->read();
-            switch (deleavesMessage)
-            {
-            case SamplingCompleted:
-                gcs().send_text(MAV_SEVERITY_INFO, "#Sampling completed");
-                gcs().set_log_sample_data();
-                break;
-            case CalibrationStarted:
-                gcs().send_text(MAV_SEVERITY_INFO, "#Calibration started");
-                break;
-            case LowBattery:
-                gcs().send_text(MAV_SEVERITY_INFO, "#Low battery");
-                break;
-            case SawNotConnected:
-                gcs().send_text(MAV_SEVERITY_ALERT, "Saw not connected");
-                break;
-            case SawJammed:
-                gcs().send_text(MAV_SEVERITY_ALERT, "Saw jammed during the cutting sequence");
-                break;
-            case SawHighCurrent:
-                gcs().send_text(MAV_SEVERITY_ALERT, "Saw high current protection triggered");
-                break;
-            case SamplingStucked:
-                gcs().send_text(MAV_SEVERITY_ALERT, "Unable to complete the sampling sequence");
-                break;
-            case NoCalibration:
-                gcs().send_text(MAV_SEVERITY_ALERT, "The cutting sequence needs to be stopped for calibration");
-                break;
-            default:
-                break;
-            }
-        }
-    }
-
     // do absolutely nothing if we are locked
     if (locked()) {
         return;
@@ -2652,46 +2622,6 @@ bool GCS::get_log_sample_data()
     bool ret = log_sample_data;
     log_sample_data = false;
     return ret;
-}
-
-uint8_t GCS::getArmStatus()
-{
-    return armStatus;
-}
-
-uint8_t GCS::getCuttingPercentage()
-{
-    return cuttingPercentage;
-}
-
-uint8_t GCS::getBatteryVoltage()
-{
-    return batteryVoltage;
-}
-
-uint8_t GCS::getBatterySOC()
-{
-    return batterySOC;
-}
-
-uint8_t GCS::getWrist1()
-{
-    return wrist1;
-}
-
-uint8_t GCS::getWrist2()
-{
-    return wrist2;
-}
-
-uint16_t GCS::getGraspPWM()
-{
-    return grasp;
-}
-
-uint16_t GCS::getSawPWM()
-{
-    return saw;
 }
 
 void GCS::set_log_sample_data()
@@ -4723,17 +4653,17 @@ void GCS_MAVLINK::send_sys_status()
     const uint16_t errors2 = (errors>>16) & 0xffff;
     const uint16_t errors4 = AP::internalerror().count() & 0xffff;
 
-
+    uint8_t* _status_msg = gcs().getSamplerStatus();
 
     mavlink_msg_sys_status_send(
         chan,
-        cuttingPercentage,
-        armStatus,
-        taxiMode,
+        _status_msg[STATUS_CUTTING],
+        0,
+        0,
         static_cast<uint16_t>(AP::scheduler().load_average() * 1000),
-        static_cast<uint16_t>(batteryVoltage) * 100,  // mV
+        static_cast<uint16_t>(0) * 100,  // mV
         battery_current,        // in 10mA units
-        batterySOC,      // in %
+        0,      // in %
         0,  // comm drops %,
         0,  // comm drops in pkts,
         errors1,

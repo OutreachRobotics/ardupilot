@@ -24,24 +24,9 @@
 #include "MissionItemProtocol_Rally.h"
 #include "MissionItemProtocol_Fence.h"
 #include "ap_message.h"
+#include "DEL_Sampler/del_sampler.h"
 
 #define GCS_DEBUG_SEND_MESSAGE_TIMINGS 0
-#define UART_DELEAVES 4
-#define DELEAVES_DATA_HEADER 0xFE
-#define DELEAVES_MESSAGE_HEADER 0xF9
-
-
-enum textMessageID
-{
-    SamplingCompleted,
-    CalibrationStarted,
-    LowBattery,
-    SawNotConnected,
-    SawJammed,
-    SawHighCurrent,
-    SamplingStucked,    
-    NoCalibration    
-};
 
 #ifndef HAL_NO_GCS
 
@@ -1017,17 +1002,14 @@ public:
 
     bool get_log_sample_data();
     void set_log_sample_data();
-    uint8_t getCuttingPercentage();
-    uint8_t getArmStatus();
-    uint8_t getBatteryVoltage();
-    uint8_t getBatterySOC();
-    uint8_t getWrist1();
-    uint8_t getWrist2();
-    uint16_t getGraspPWM();
-    uint16_t getSawPWM();
-    
+
+    uint8_t* getSamplerStatus();
+    void handleSampler();
 
 protected:
+
+    Sampler sampler;
+    uint8_t noSDWarning;
 
     virtual uint8_t sysid_this_mav() const = 0;
 
