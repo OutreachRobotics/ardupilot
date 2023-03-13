@@ -1006,10 +1006,27 @@ public:
     uint8_t* getSamplerStatus();
     void handleSampler();
 
+    void init_orientation_mat();
+
+    Vector3f get_platform_orientation();
+    Vector2f get_platform_reach();
+    float get_rangefinder_distance();
+    float get_rope_length();
+
+    void set_platform_orientation(Vector3f setter);
+    void set_platform_reach(Vector2f setter);
+    void set_rangefinder_distance(float setter);
+    void set_rope_length(float setter);
+
 protected:
 
     Sampler sampler;
     uint8_t noSDWarning;
+
+    Vector3f platform_orientation;
+    Vector2f platform_reach;
+    float rangefinder_distance;
+    float rope_length;
 
     virtual uint8_t sysid_this_mav() const = 0;
 

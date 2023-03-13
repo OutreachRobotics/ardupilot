@@ -157,7 +157,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #endif
 #if LOGGING_ENABLED == ENABLED
     SCHED_TASK(ten_hz_logging_loop,   10,    350),
-    SCHED_TASK(twentyfive_hz_logging, 50,    600),
+    SCHED_TASK(fifty_hz_logging, 50,    800),
     SCHED_TASK_CLASS(AP_Logger,      &copter.logger,           periodic_tasks, 400, 300),
 #endif
     SCHED_TASK_CLASS(AP_InertialSensor,    &copter.ins,                 periodic,       400,  50),
@@ -511,8 +511,8 @@ void Copter::ten_hz_logging_loop()
 #endif
 }
 
-// twentyfive_hz_logging - should be run at 25hz
-void Copter::twentyfive_hz_logging()
+// fifty_hz_logging - should be run at 25hz
+void Copter::fifty_hz_logging()
 {
     if (should_log(MASK_LOG_ATTITUDE_FAST)) {
         Log_Write_EKF_POS();
@@ -536,6 +536,12 @@ void Copter::twentyfive_hz_logging()
     logger.Write_RCIN();
     AP::ins().Write_IMU();
     gcs().handleSampler();
+
+    // Populating the reach widget
+    gcs().set_platform_orientation(attitude_control->getDelEKFOrientation());
+    gcs().set_platform_reach(attitude_control->getMaxReach());
+    gcs().set_rope_length(attitude_control->get_mamba_length());
+    gcs().set_rangefinder_distance(float(rangefinder.distance_cm_orient(ROTATION_PITCH_270))/100.0f);
 }
 
 // three_hz_loop - 3.3hz loop

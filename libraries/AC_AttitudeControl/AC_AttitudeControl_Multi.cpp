@@ -1158,3 +1158,8 @@ Mat AC_AttitudeControl_Multi::getDelEKFStates()
     return delEKF.getEKFStates();
 }
 
+Vector2f AC_AttitudeControl_Multi::getMaxReach()
+{
+    return Vector2f(MAX_ROLL,MAX_PITCH);
+}
+

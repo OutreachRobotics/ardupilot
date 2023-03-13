@@ -220,6 +220,45 @@ uint8_t* GCS::getSamplerStatus()
     return sampler.getStatus();
 }
 
+void GCS::set_platform_orientation(Vector3f setter)
+{
+    platform_orientation = setter;
+}
+
+void GCS::set_platform_reach(Vector2f setter)
+{
+    platform_reach = setter;
+}
+
+void GCS::set_rangefinder_distance(float setter)
+{
+    rangefinder_distance = setter;
+}
+
+void GCS::set_rope_length(float setter)
+{
+    rope_length = setter;
+}
+
+Vector3f GCS::get_platform_orientation()
+{
+    return platform_orientation;
+}
+
+Vector2f GCS::get_platform_reach()
+{
+    return platform_reach;
+}
+
+float GCS::get_rangefinder_distance()
+{
+    return rangefinder_distance;
+}
+
+float GCS::get_rope_length()
+{
+    return rope_length;
+}
 
 void GCS_MAVLINK::send_meminfo(void)
 {
@@ -4654,16 +4693,18 @@ void GCS_MAVLINK::send_sys_status()
     const uint16_t errors4 = AP::internalerror().count() & 0xffff;
 
     uint8_t* _status_msg = gcs().getSamplerStatus();
+    uint32_t taxi_mode = hal.rcin->read(CH_13)>RC_MID_VALUE;
+    uint32_t wrist_mode = hal.rcin->read(CH_14)>RC_MID_VALUE;
 
     mavlink_msg_sys_status_send(
         chan,
-        _status_msg[STATUS_CUTTING],
-        0,
-        0,
+        static_cast<uint32_t>(_status_msg[STATUS_CUTTING]),
+        taxi_mode,
+        wrist_mode,
         static_cast<uint16_t>(AP::scheduler().load_average() * 1000),
-        static_cast<uint16_t>(0) * 100,  // mV
+        static_cast<uint16_t>(_status_msg[STATUS_BATT_VOLT])* 100,  // mV
         battery_current,        // in 10mA units
-        0,      // in %
+        static_cast<int8_t>(_status_msg[STATUS_BATT_SOC]),      // in %
         0,  // comm drops %,
         0,  // comm drops in pkts,
         errors1,
@@ -4679,17 +4720,22 @@ void GCS_MAVLINK::send_extended_sys_state() const
 
 void GCS_MAVLINK::send_attitude() const
 {
-    const AP_AHRS &ahrs = AP::ahrs();
-    const Vector3f omega = ahrs.get_gyro();
+    Vector2f reach = gcs().get_platform_reach();
+    Vector3f orientation = gcs().get_platform_orientation();
+    float length = gcs().get_rope_length();
+    float distance = gcs().get_rangefinder_distance();
+
+    float forward_reach = (length*sinf(orientation.y) + distance*cosf(orientation.y)) / (length*sinf(reach.y));
+
     mavlink_msg_attitude_send(
         chan,
         AP_HAL::millis(),
-        ahrs.roll,
-        ahrs.pitch,
-        ahrs.yaw,
-        omega.x,
-        omega.y,
-        omega.z);
+        (orientation.x/reach.x),
+        (orientation.y/reach.y),
+        orientation.z,
+        distance,
+        forward_reach,
+        orientation.z);
 }
 
 void GCS_MAVLINK::send_attitude_quaternion() const

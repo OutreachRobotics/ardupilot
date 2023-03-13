@@ -44,6 +44,10 @@ void GCS::init()
     mavlink_system.sysid = sysid_this_mav();
     sampler.init();
     noSDWarning = true;
+    platform_orientation = Vector3f(0,0,0);
+    platform_reach = Vector2f(0,0);
+    rangefinder_distance = 0.0f;
+    rope_length = 0.0f;
 }
 
 /*

@@ -152,6 +152,7 @@ public:
 
     void updateDelEKF(Vector3f F_in, Vector3f measure);
     Vector3f getDelEKFOrientation();
+    Vector2f getMaxReach();
     Mat getDelEKFStates();
 
     // user settable parameters
