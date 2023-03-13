@@ -97,7 +97,7 @@ struct PACKED log_SAMBA {
 };
 
 // Write a SAMBA packet
-void Copter::Log_Write_SAMBA()
+void Copter::Log_Write_SAMPLER()
 {
     uint8_t* _sampler_status = gcs().getSamplerStatus();
     struct log_SAMBA pkt = {
@@ -130,7 +130,7 @@ struct PACKED log_SAMPLE {
 };
 
 // Write a SAMPLE packet
-void Copter::Log_Write_SAMPLE()
+void Copter::Log_Write_PLANT()
 {
     Vector3f local_position;
     ahrs.get_relative_position_NED_origin(local_position);
@@ -168,7 +168,7 @@ struct PACKED log_SAMBA_EKF {
 };
 
 // Write a SAMPLE packet
-void Copter::Log_Write_SAMBA_EKF()
+void Copter::Log_Write_MAMBA_EKF()
 {
     Mat states = attitude_control->getDelEKFStates();
 

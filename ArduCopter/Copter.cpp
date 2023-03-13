@@ -470,9 +470,9 @@ void Copter::ten_hz_logging_loop()
 {
     if(gcs().get_log_sample_data())
     {
-        Log_Write_SAMPLE();
+        Log_Write_PLANT();
     }
-    Log_Write_SAMBA();
+    Log_Write_SAMPLER();
     
     if (should_log(MASK_LOG_MOTBATT)) {
         Log_Write_MotBatt();
@@ -532,7 +532,7 @@ void Copter::fifty_hz_logging()
     }
 #endif
     Log_Write_Attitude();
-    Log_Write_SAMBA_EKF();
+    Log_Write_MAMBA_EKF();
     logger.Write_RCIN();
     AP::ins().Write_IMU();
     gcs().handleSampler();

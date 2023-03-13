@@ -240,6 +240,12 @@ void GCS::set_rope_length(float setter)
     rope_length = setter;
 }
 
+MAV_RESULT GCS::set_camera_switch(uint8_t setter)
+{
+    camera_switch = setter;
+    return MAV_RESULT_ACCEPTED;
+}
+
 Vector3f GCS::get_platform_orientation()
 {
     return platform_orientation;
@@ -4315,6 +4321,8 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
         break;
 
     case MAV_CMD_DO_SET_SERVO:
+        result = gcs().set_camera_switch(packet.param1);
+        break;
     case MAV_CMD_DO_REPEAT_SERVO:
     case MAV_CMD_DO_SET_RELAY:
     case MAV_CMD_DO_REPEAT_RELAY:
