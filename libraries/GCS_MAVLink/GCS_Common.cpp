@@ -232,20 +232,19 @@ void GCS::set_platform_reach(Vector2f setter)
 
 void GCS::set_rangefinder_distance(float setter)
 {
-    rangefinder_distance = setter;
+    rangefinder_distance = LPF_RANGE_B*(setter+last_range_read)+LPF_RANGE_A*rangefinder_distance;
+    last_range_read = setter;
 }
 
 MAV_RESULT GCS::set_rope_length(uint8_t setter)
 {
     rope_length = setter;
-    hal.console->printf("\r\nRope lenght: %d\r\n",rope_length);   
     return MAV_RESULT_ACCEPTED;
 }
 
 MAV_RESULT GCS::set_camera_switch(uint8_t setter)
 {
     camera_switch = setter;
-    hal.console->printf("\r\nCamera switch: %d\r\n",camera_switch);
     return MAV_RESULT_ACCEPTED;
 }
 
