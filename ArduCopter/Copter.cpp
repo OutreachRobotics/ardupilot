@@ -540,7 +540,6 @@ void Copter::fifty_hz_logging()
     // Populating the reach widget
     gcs().set_platform_orientation(attitude_control->getDelEKFOrientation());
     gcs().set_platform_reach(attitude_control->getMaxReach());
-    gcs().set_rope_length(attitude_control->get_mamba_length());
     gcs().set_rangefinder_distance(float(rangefinder.distance_cm_orient(ROTATION_PITCH_270))/100.0f);
 }
 

@@ -1009,14 +1009,14 @@ public:
     Vector3f get_platform_orientation();
     Vector2f get_platform_reach();
     float get_rangefinder_distance();
-    float get_rope_length();
+    uint8_t get_rope_length();
 
     void set_platform_orientation(Vector3f setter);
     void set_platform_reach(Vector2f setter);
     void set_rangefinder_distance(float setter);
-    void set_rope_length(float setter);
 
     MAV_RESULT set_camera_switch(uint8_t setter);
+    MAV_RESULT set_rope_length(uint8_t setter);
 
 protected:
 
@@ -1026,7 +1026,7 @@ protected:
     Vector3f platform_orientation;
     Vector2f platform_reach;
     float rangefinder_distance;
-    float rope_length;
+    uint8_t rope_length;
     uint8_t camera_switch;
 
     virtual uint8_t sysid_this_mav() const = 0;

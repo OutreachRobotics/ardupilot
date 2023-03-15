@@ -235,14 +235,17 @@ void GCS::set_rangefinder_distance(float setter)
     rangefinder_distance = setter;
 }
 
-void GCS::set_rope_length(float setter)
+MAV_RESULT GCS::set_rope_length(uint8_t setter)
 {
     rope_length = setter;
+    hal.console->printf("\r\nRope lenght: %d\r\n",rope_length);   
+    return MAV_RESULT_ACCEPTED;
 }
 
 MAV_RESULT GCS::set_camera_switch(uint8_t setter)
 {
     camera_switch = setter;
+    hal.console->printf("\r\nCamera switch: %d\r\n",camera_switch);
     return MAV_RESULT_ACCEPTED;
 }
 
@@ -261,7 +264,7 @@ float GCS::get_rangefinder_distance()
     return rangefinder_distance;
 }
 
-float GCS::get_rope_length()
+uint8_t GCS::get_rope_length()
 {
     return rope_length;
 }
@@ -4321,9 +4324,11 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
         break;
 
     case MAV_CMD_DO_SET_SERVO:
-        result = gcs().set_camera_switch(packet.param1);
+        result = gcs().set_camera_switch(uint8_t(packet.param1));
         break;
     case MAV_CMD_DO_REPEAT_SERVO:
+        result = gcs().set_rope_length(uint8_t(packet.param1));
+        break;
     case MAV_CMD_DO_SET_RELAY:
     case MAV_CMD_DO_REPEAT_RELAY:
         result = handle_servorelay_message(packet);
@@ -4730,8 +4735,9 @@ void GCS_MAVLINK::send_attitude() const
 {
     Vector2f reach = gcs().get_platform_reach();
     Vector3f orientation = gcs().get_platform_orientation();
-    float length = gcs().get_rope_length();
+    float length = float(gcs().get_rope_length());
     float distance = gcs().get_rangefinder_distance();
+    distance = distance>0.3f?distance-0.3f:0.0f;
 
     float forward_reach = (length*sinf(orientation.y) + distance*cosf(orientation.y)) / (length*sinf(reach.y));
 
