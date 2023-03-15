@@ -29,7 +29,7 @@ void ModeAltHold::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
 
-    taxi_mode = hal.rcin->read(CH_6) > RESET_REF_VALUE;
+    taxi_mode = hal.rcin->read(CH_13) > RESET_REF_VALUE;
 
     lateral_input = -(float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
     pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;

@@ -1124,11 +1124,6 @@ void AC_AttitudeControl_Multi::constrainCommand()
     forward_command=constrain_float(forward_command,-PMAX_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
 }
 
-float AC_AttitudeControl_Multi::get_mamba_length()
-{
-    return constrain_float(_pid_rate_pitch.kI(),5.5f,20.0f);
-}
-
 float AC_AttitudeControl_Multi::get_sensitivity_coeff()
 {
     return constrain_float(_pid_rate_roll.kI(),0.1f,4.0f);
@@ -1139,9 +1134,9 @@ float AC_AttitudeControl_Multi::get_R_mat()
     return _pid_rate_yaw.kI();
 }
 
-void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure)
+void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure, uint8_t rope_length)
 {
-    delEKF.update_length(get_mamba_length());
+    delEKF.update_length(float(rope_length));
     delEKF.update_R_coeff(_pid_rate_yaw.kI());
     delEKF.linearDynamicsEstimation(F_in, measure, ahrs_ang);
     mamba_orientation = delEKF.getPlatformOrientation();

@@ -185,7 +185,7 @@ void Copter::Log_Write_MAMBA_EKF()
         phi2p       : (float)states[7],
         phi3p_dt    : (float)states[8],
         phi3p       : (float)states[9],
-        length      : attitude_control->get_mamba_length(),
+        length      : (float)gcs().get_rope_length(),
         r_mat       : attitude_control->get_R_mat()
     };
     logger.WriteBlock(&pkt, sizeof(pkt));

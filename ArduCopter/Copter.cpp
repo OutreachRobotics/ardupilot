@@ -230,7 +230,7 @@ void Copter::fast_loop()
     // motors->get_yaw();     return yaw moment
     Vector3f gyro = ahrs.get_gyro();
     attitude_control->updateDelEKF(Vector3f(motors->get_lateral(),
-        motors->get_forward(), motors->get_yaw()), gyro);
+        motors->get_forward(), motors->get_yaw()), gyro, gcs().get_rope_length());
 
     // run low level rate controllers that only require IMU data
     attitude_control->downSamplingDataFilter();

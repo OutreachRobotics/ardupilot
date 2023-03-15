@@ -146,11 +146,10 @@ public:
 
     // sanity check parameters.  should be called once before take-off
     void parameter_sanity_check() override;
-    float get_mamba_length();
     float get_sensitivity_coeff();
     float get_R_mat();
 
-    void updateDelEKF(Vector3f F_in, Vector3f measure);
+    void updateDelEKF(Vector3f F_in, Vector3f measure, uint8_t rope_length);
     Vector3f getDelEKFOrientation();
     Vector2f getMaxReach();
     Mat getDelEKFStates();
