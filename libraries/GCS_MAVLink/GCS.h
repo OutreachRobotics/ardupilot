@@ -1021,6 +1021,9 @@ public:
     MAV_RESULT set_camera_switch(uint8_t setter);
     MAV_RESULT set_rope_length(uint8_t setter);
 
+    void start_herelink_record();
+    void stop_herelink_record();
+
 protected:
 
     Sampler sampler;
@@ -1030,8 +1033,11 @@ protected:
     Vector2f platform_reach;
     float rangefinder_distance;
     float last_range_read;
+    float last_pitch_read;
+    float last_roll_read;
     uint8_t rope_length;
     uint8_t camera_switch;
+    bool record_flag;
 
     virtual uint8_t sysid_this_mav() const = 0;
 

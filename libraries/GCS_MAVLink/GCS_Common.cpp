@@ -222,7 +222,11 @@ uint8_t* GCS::getSamplerStatus()
 
 void GCS::set_platform_orientation(Vector3f setter)
 {
-    platform_orientation = setter;
+    platform_orientation.z = setter.z;
+    platform_orientation.x = LPF_RANGE_B*(setter.x+last_roll_read)+LPF_RANGE_A*platform_orientation.x;
+    platform_orientation.y = LPF_RANGE_B*(setter.y+last_pitch_read)+LPF_RANGE_A*platform_orientation.y;
+    last_roll_read = setter.x;
+    last_pitch_read = setter.y;
 }
 
 void GCS::set_platform_reach(Vector2f setter)
@@ -267,6 +271,23 @@ uint8_t GCS::get_rope_length()
 {
     return rope_length;
 }
+
+void GCS::start_herelink_record()
+{
+    for(int i=0;i<num_gcs();i++)
+    {
+        mavlink_msg_command_long_send(_chan[i]->get_chan(), 42, 100, 2500,false,0,0,0,0,0,0,0);
+    }
+}
+
+void GCS::stop_herelink_record()
+{
+    for(int i=0;i<num_gcs();i++)
+    {
+        mavlink_msg_command_long_send(_chan[i]->get_chan(), 42, 100, 2501,false,0,0,0,0,0,0,0);
+    }
+}
+
 
 void GCS_MAVLINK::send_meminfo(void)
 {

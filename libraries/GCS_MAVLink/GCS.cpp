@@ -48,6 +48,8 @@ void GCS::init()
     platform_reach = Vector2f(0,0);
     rangefinder_distance = 0.0f;
     last_range_read = 0.0f;
+    last_pitch_read = 0.0f;
+    last_roll_read = 0.0f;
     rope_length = 0.0f;
     camera_switch = 0;
 }
