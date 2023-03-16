@@ -271,6 +271,16 @@ AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_
     filtered_target_forward = 0.0f;
     filtered_target_lateral = 0.0f;
 
+    roll_sensitivity = ROLL_SENSITIVITY;
+    pitch_sensitivity = PITCH_SENSITIVITY;
+
+    yaw_kp = YAW_KP;
+    yaw_kd = YAW_KD;
+    roll_kp = ROLL_KP;
+    roll_kd = ROLL_KD;
+    pitch_kp = PITCH_KP;
+    pitch_kd = PITCH_KD;
+
     delEKF = DelEKF();
 }
 
@@ -380,15 +390,6 @@ void AC_AttitudeControl_Multi::downSamplingDataFilter()
 
     last_ahrs_ang = ahrs_ang;
     last_ang_vel = ang_vel;
-
-    yaw_kp = 20.0f;
-    yaw_kd = 12.0f;
-    roll_kp = 28.0f;
-    roll_kd = 46.0f;
-    pitch_kp = 50.0f;
-    pitch_kd = 50.0f;
-    roll_sensitivity = 0.003f;
-    pitch_sensitivity = 0.003f;
 }
 
 void AC_AttitudeControl_Multi::lowPassDataFilter()
@@ -702,13 +703,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         // Forward control, velocity on move, angular on hold
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*pitch_sensitivity*get_sensitivity_coeff();
+            target_forward += forward*pitch_sensitivity;
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*roll_sensitivity*get_sensitivity_coeff();
+            target_lateral += lateral*roll_sensitivity;
         }
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
@@ -804,13 +805,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
         // Forward control, velocity on move, angular on hold
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*pitch_sensitivity*get_sensitivity_coeff();
+            target_forward += forward*pitch_sensitivity;
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*roll_sensitivity*get_sensitivity_coeff();
+            target_lateral += lateral*roll_sensitivity;
         }
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
@@ -1124,20 +1125,9 @@ void AC_AttitudeControl_Multi::constrainCommand()
     forward_command=constrain_float(forward_command,-PMAX_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
 }
 
-float AC_AttitudeControl_Multi::get_sensitivity_coeff()
-{
-    return constrain_float(_pid_rate_roll.kI(),0.1f,4.0f);
-}
-
-float AC_AttitudeControl_Multi::get_R_mat()
-{
-    return _pid_rate_yaw.kI();
-}
-
 void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure, uint8_t rope_length)
 {
     delEKF.update_length(float(rope_length));
-    delEKF.update_R_coeff(_pid_rate_yaw.kI());
     delEKF.linearDynamicsEstimation(F_in, measure, ahrs_ang);
     mamba_orientation = delEKF.getPlatformOrientation();
     mamba_states = delEKF.getEKFStates();

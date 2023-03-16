@@ -4726,8 +4726,8 @@ void GCS_MAVLINK::send_sys_status()
     const uint16_t errors4 = AP::internalerror().count() & 0xffff;
 
     uint8_t* _status_msg = gcs().getSamplerStatus();
-    uint32_t taxi_mode = hal.rcin->read(CH_13)>RC_MID_VALUE;
-    uint32_t wrist_mode = hal.rcin->read(CH_14)>RC_MID_VALUE;
+    uint32_t taxi_mode = hal.rcin->read(CH_13)>MID_PPM_VALUE;
+    uint32_t wrist_mode = hal.rcin->read(CH_14)>MID_PPM_VALUE;
 
     mavlink_msg_sys_status_send(
         chan,

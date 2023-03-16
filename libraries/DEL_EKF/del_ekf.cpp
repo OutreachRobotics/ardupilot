@@ -12,32 +12,19 @@
 	Global variables declaration :
 ***************************************************************************/
 
-	double i2[] = {1,0,
-					0,1};
-	double i4[] = {1,0,0,0,
-					0,1,0,0,
-					0,0,1,0,
-					0,0,0,1};
+	double i2[] = EYE_2;
+	double i4[] = EYE_4;
 
-	double proll[] = {1000,0,0,0,
-					0,1000,0,0,
-					0,0,1000,0,
-					0,0,0,1000};
-	double ppitch[] = {1000,0,0,0,
-					0,1000,0,0,
-					0,0,1000,0,
-					0,0,0,1000};
-	double pyaw[] = {1,0,
-					0,1};
+	double proll[] = P_INI_4;
+	double ppitch[] = P_INI_4;
+	double pyaw[] = P_INI_2;
 
-	double croll [] = {0,0,1,0,
-						0,0,0,1};
-	double cpitch [] = {0,0,1,0,
-						0,0,0,1};
-	double cyaw [] = {1,0};
+	double croll [] = C_ROLL;
+	double cpitch [] = C_PITCH;
+	double cyaw [] = C_YAW;
 
-	double R_value [] = {0.1f,0,
-						0,1e-3};
+	double R_roll [] = R_ROLL;
+	double R_pitch [] = R_PITCH;
 	
 
 /***************************************************************************
@@ -73,9 +60,9 @@ DelEKF::DelEKF()
 	Qe_pitch = Mat(4,4,i4);
 	Qe_yaw = Mat(2,2,i2);
 	
-	Re_roll = Mat(2,2,R_value);
-	Re_pitch = Mat(2,2,R_value);
-	Re_yaw = 100.0f;
+	Re_roll = Mat(2,2,R_roll);
+	Re_pitch = Mat(2,2,R_pitch);
+	Re_yaw = R_YAW_GYRO;
 	
 	C_roll = Mat(2,4,croll);
 	C_pitch = Mat(2,4,cpitch);
@@ -117,7 +104,7 @@ Mat DelEKF::commandLPF(Mat F_in)
 {
 	Mat F_in_filt(3,1);
 
-	F_in_filt = F_in*0.1582 + last_F_in*0.1582 + last_F_in_filt*0.6835;
+	F_in_filt = F_in*MOTOR_TF_B + last_F_in*MOTOR_TF_B + last_F_in_filt*MOTOR_TF_A;
 	last_F_in_filt = F_in_filt;
 	last_F_in = F_in;
 
@@ -247,9 +234,7 @@ Mat DelEKF::getLQRgain()
 
 Mat DelEKF::getLQRgain_taxi()
 {
-	double k_lqr_array[] = {   -0.0000,   -0.0000,    0.0000,    0.0000,    9.1023,   10.6138,   33.0339,  -11.7028,    0.0000,    0.0000,
-   -9.5826,  -68.3837,  -33.1381,   68.7290,   -0.0000,    0.0000,   -0.0000,   -0.0000,    0.0000,    0.0000,
-0.000000,0.000000,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,15.827118,64.039825}; 
+	double k_lqr_array[] = K_LQR_TAXI;
 	return Mat(3,10,k_lqr_array);
 }
 
@@ -274,95 +259,56 @@ void DelEKF::update_length(float length)
 {
 	if(length<6.0f)
 	{
-		double froll [] = {0.999553,-0.357855,0.000439,0.351230,
-0.002500,0.999553,0.000000,0.000439,
-0.000826,0.660914,0.999174,-0.660916,
-0.000001,0.000826,0.002499,0.999174};
-		double fpitch [] = {0.999852,-0.118002,0.000139,0.111376,
-0.002500,0.999852,0.000000,0.000139,
-0.000262,0.209578,0.999738,-0.209578,
-0.000000,0.000262,0.002500,0.999738};
-		double fyaw [] = {1.000000,0.000000,
-		0.002500,1.000000};
-		
-		double broll [] = {0.006903,0.000000,0.129868,0.000000};
-		double bpitch [] = {-0.010867,0.000000,0.163306,0.000000};
-		double byaw [] = {1.942125,0.000000};
-
-		double k_lqr_array[] = {0.000000,0.000000,0.000000,0.000000,65.628005,128.624906,60.277595,241.652402,-0.000000,-0.000000,
--69.598605,-218.873665,-53.880482,-162.008795,-0.000000,-0.000000,-0.000000,-0.000000,-0.000000,-0.000000,
-0.000000,0.000000,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,15.827118,64.039825};
+		double froll [] = F_ROLL_6M;
+		double fpitch [] = F_PITCH_6M;
+		double fyaw [] = F_YAW_6M;		
+		double broll [] = B_ROLL_6M;
+		double bpitch [] = B_PITCH_6M;
+		double byaw [] = B_YAW_6M;
+		double k_lqr_array[] = K_LQR_6M;
 
 		F_roll = Mat(4,4,froll);
 		F_pitch = Mat(4,4,fpitch);
-		F_yaw = Mat(2,2,fyaw);
-		
+		F_yaw = Mat(2,2,fyaw);		
 		B_roll = Mat(4,1,broll);
 		B_pitch = Mat(4,1,bpitch);
 		B_yaw = Mat(2,1,byaw);
-
 		k_lqr = Mat(3,10,k_lqr_array);
 	}
 	else if(length<12.0f)
 	{
-		double froll [] = {0.999793,-0.165521,0.000203,0.162457,
-0.002500,0.999793,0.000000,0.000203,
-0.000826,0.660967,0.999174,-0.660968,
-0.000001,0.000826,0.002499,0.999174};
-		double fpitch [] = {0.999932,-0.054577,0.000064,0.051513,
-0.002500,0.999932,0.000000,0.000064,
-0.000262,0.209583,0.999738,-0.209584,
-0.000000,0.000262,0.002500,0.999738};
-		double fyaw [] = {1.000000,0.000000,
-0.002500,1.000000};
-		
-		double broll [] = {0.003193,0.000000,0.129868,0.000000};
-		double bpitch [] = {-0.005026,0.000000,0.163306,0.000000};
-		double byaw [] = {1.942125,0.000000};
-
-		double k_lqr_array[] = {0.000000,0.000000,0.000000,0.000000,108.152407,193.429110,53.073776,185.337092,-0.000000,-0.000000,
--116.748013,-284.042192,-45.783551,-103.085713,0.000000,0.000000,0.000000,0.000000,-0.000000,0.000000,
-0.000000,0.000000,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,15.827118,64.039825};
+		double froll [] = F_ROLL_10M;
+		double fpitch [] = F_PITCH_10M;
+		double fyaw [] = F_YAW_10M;		
+		double broll [] = B_ROLL_10M;
+		double bpitch [] = B_PITCH_10M;
+		double byaw [] = B_YAW_10M;
+		double k_lqr_array[] = K_LQR_10M;
 	
 		F_roll = Mat(4,4,froll);
 		F_pitch = Mat(4,4,fpitch);
-		F_yaw = Mat(2,2,fyaw);
-		
+		F_yaw = Mat(2,2,fyaw);		
 		B_roll = Mat(4,1,broll);
 		B_pitch = Mat(4,1,bpitch);
 		B_yaw = Mat(2,1,byaw);
-
 		k_lqr = Mat(3,10,k_lqr_array);
 	}
-	else if(length<17.0f)
+	else
 	{
-		double froll [] = {0.999873,-0.101862,0.000125,0.099976,
-0.002500,0.999873,0.000000,0.000125,
-0.000826,0.660984,0.999174,-0.660985,
-0.000001,0.000826,0.002499,0.999174};
-		double fpitch [] = {0.999958,-0.033586,0.000040,0.031700,
-0.002500,0.999958,0.000000,0.000040,
-0.000262,0.209585,0.999738,-0.209585,
-0.000000,0.000262,0.002500,0.999738};
-		double fyaw [] = {1.000000,0.000000,
-		0.002500,1.000000};
-		
-		double broll [] = {0.001965,0.000000,0.129868,0.000000};
-		double bpitch [] = {-0.003093,0.000000,0.163306,0.000000};
-		double byaw [] = {1.942125,0.000000};
-
-		double k_lqr_array[] = {-0.000000,-0.000000,-0.000000,-0.000000,143.493861,224.817840,49.329376,158.164849,-0.000000,-0.000000,
--156.826423,-317.108500,-41.268237,-73.467628,0.000000,0.000000,0.000000,0.000000,-0.000000,-0.000000,
-0.000000,0.000000,0.000000,0.000000,-0.000000,-0.000000,-0.000000,-0.000000,15.827118,64.039825};
+		double froll [] = F_ROLL_15M;
+		double fpitch [] = F_PITCH_15M;
+		double fyaw [] = F_YAW_15M;		
+		double broll [] = B_ROLL_15M;
+		double bpitch [] = B_PITCH_15M;
+		double byaw [] = B_YAW_15M;
+		double k_lqr_array[] = K_LQR_15M;
 
 		F_roll = Mat(4,4,froll);
 		F_pitch = Mat(4,4,fpitch);
-		F_yaw = Mat(2,2,fyaw);
-		
+		F_yaw = Mat(2,2,fyaw);		
 		B_roll = Mat(4,1,broll);
 		B_pitch = Mat(4,1,bpitch);
 		B_yaw = Mat(2,1,byaw);
-
 		k_lqr = Mat(3,10,k_lqr_array);
 	}
 

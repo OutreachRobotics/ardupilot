@@ -6,7 +6,7 @@
 #include "AC_AttitudeControl.h"
 #include <AP_Motors/AP_MotorsMulticopter.h>
 #include <DEL_EKF/del_ekf.h>
-
+#include <DEL_Helper/del_helper.h>
 
 // default rate controller PID gains
 #ifndef AC_ATC_MULTI_RATE_RP_P
@@ -40,58 +40,6 @@
  # define AC_ATC_MULTI_RATE_YAW_FILT_HZ     2.5f
 #endif
 
-#define YAW_SENSITIVITY                     0.01f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
-#define PMAX_ACTUATOR_THRUST                14.0f
-#define RMAX_ACTUATOR_THRUST                (13.0f*(ROLL_ADJUSTMENT+1.0f)/2.0f)
-
-#define M_PLATFORM                          3.24f
-#define MAX_PITCH                           0.38f // 17.5° - 10 N to keep that angle
-#define MAX_ROLL                            (MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
-#define MIN_PITCH                           (-MAX_PITCH)
-#define MIN_ROLL                            (-MAX_ROLL)
-#define DEADBAND                            0.02f
-
-// Low pass filter coefficient fc = 15 Hz, Fs = 50 Hz
-#define B1_LP                                  0.5792
-#define B0_LP                                  0.5792
-#define A0_LP                                  0.1584
-
-// Low pass filter coefficient fc = 10 Hz, Fs = 400 Hz
-// #define B1_DS                                  0.0730
-// #define B0_DS                                  0.0730
-// #define A0_DS                                  -0.8541
-
-// Low pass filter coefficient fc = 15 Hz, Fs = 400 Hz
-// #define B1_DS                                  0.1058
-// #define B0_DS                                  0.1058
-// #define A0_DS                                  -0.7883
-
-// Low pass filter coefficient fc = 20 Hz, Fs = 400 Hz
-// #define B1_DS                                  0.1367
-// #define B0_DS                                  0.1367
-// #define A0_DS                                  -0.7265
-
-// Low pass filter coefficient fc = 25 Hz, Fs = 400 Hz
-#define B1_DS                                  0.1659
-#define B0_DS                                  0.1659
-#define A0_DS                                 -0.6682
-
-// Low pass filter coefficient fc = 1 Hz, Fs = 50 Hz
-#define B1_SP                                  0.0592
-#define B0_SP                                  0.0592
-#define A0_SP                                 -0.8816
-
-// Low pass filter coefficient fc = 1 Hz, Fs = 50 Hz
-#define B1_SP_T                                  0.006244029
-#define B0_SP_T                                  0.006244029
-#define A0_SP_T                                  0.987511942
-
-enum Control_Type
-{
-  pd_control,
-  tach_control,
-  LQR_control
-};
 
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
 public:
@@ -146,8 +94,6 @@ public:
 
     // sanity check parameters.  should be called once before take-off
     void parameter_sanity_check() override;
-    float get_sensitivity_coeff();
-    float get_R_mat();
 
     void updateDelEKF(Vector3f F_in, Vector3f measure, uint8_t rope_length);
     Vector3f getDelEKFOrientation();

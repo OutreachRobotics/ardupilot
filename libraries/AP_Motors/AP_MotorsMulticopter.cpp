@@ -16,6 +16,7 @@
 #include "AP_MotorsMulticopter.h"
 #include <AP_HAL/AP_HAL.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
+#include <DEL_Helper/del_helper.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -242,10 +243,8 @@ void AP_MotorsMulticopter::output()
     // _lateral_in is for lateral force
     // _forward_in is for forward force
 
-    float roll_adjustment = _boost_scale;
-    roll_adjustment = constrain_float(roll_adjustment, 0.1, 0.5);
     float forward_in = _forward_in/2.0f;
-    float lateral_in = _lateral_in/(1.0f+roll_adjustment);
+    float lateral_in = _lateral_in/(1.0f+ROLL_ADJUSTMENT);
     float yaw_in = _yaw_in/2.0f;
 
     float front, back, left, right, yawCtrClk, yawClk;
@@ -260,8 +259,8 @@ void AP_MotorsMulticopter::output()
     _actuator[1] = front;  
     _actuator[2] = right + yawClk;
     _actuator[3] = left + yawCtrClk;
-    _actuator[4] = roll_adjustment * right + yawCtrClk;
-    _actuator[5] = roll_adjustment * left + yawClk;
+    _actuator[4] = ROLL_ADJUSTMENT * right + yawCtrClk;
+    _actuator[5] = ROLL_ADJUSTMENT * left + yawClk;
     _actuator[6] = back;   
     _actuator[7] = back;   
 
@@ -420,10 +419,10 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
     float pwm_output;
 
     if (!armed()) {
-        pwm_output = 1000;
+        pwm_output = LOW_PPM_VALUE;
     } else {
         pwm_output = sq(actuator)*T2PWM_COEF1 + actuator*T2PWM_COEF2 + T2PWM_COEF3;
-        pwm_output = constrain_float(pwm_output,1150,1800);
+        pwm_output = constrain_float(pwm_output,MOTOR_MIN_PPM,MOTOR_MAX_PPM);
     }
 
     return pwm_output;

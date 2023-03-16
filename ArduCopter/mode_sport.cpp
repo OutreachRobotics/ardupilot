@@ -1,9 +1,7 @@
 #include "Copter.h"
+#include <DEL_Helper/del_helper.h>
 
 #if MODE_SPORT_ENABLED == ENABLED
-
-#define MAX_INPUT 100.0f
-#define MID_INPUT 50.0f
 
 /*
  * Init and run calls for sport flight mode
@@ -37,10 +35,11 @@ void ModeSport::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
 
-    lateral_input = (float(channel_roll->percent_input()) - MID_INPUT) / MID_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
-    pitch_input = -(float(channel_pitch->percent_input()) - MID_INPUT) / MID_INPUT;
-    yaw_input = (float(channel_yaw->percent_input()) - MID_INPUT) / MID_INPUT;
-    thrust_input = float(channel_throttle->percent_input()) / MAX_INPUT;
+    lateral_input = -(float(channel_roll->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
+    pitch_input = -(float(channel_pitch->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
+    yaw_input = (float(channel_yaw->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
+    thrust_input = float(channel_throttle->percent_input()) / MAX_RC_INPUT;
+
 
     //Add a deadband to inputs
     lateral_input = abs(lateral_input)<DEADBAND ? 0.0f : lateral_input;

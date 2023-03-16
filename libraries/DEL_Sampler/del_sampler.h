@@ -10,6 +10,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <RC_Channel/RC_Channel.h>
+#include <DEL_Helper/del_helper.h>
 
 /***************************************************************************
     Macro :
@@ -17,6 +18,8 @@
 
 #define UART_DELEAVES       4
 
+#define COM_MSG_SIZE        7
+#define COM_HEADER          255
 #define COM_SEQUENCE        0
 #define COM_STEALTH         1 
 #define COM_CALIB           2
@@ -24,6 +27,7 @@
 #define COM_DYNA1           4
 #define COM_DYNA2           5
 
+#define STATUS_MSG_SIZE     9
 #define STATUS_CUTTING      0
 #define STATUS_WRIST1       1
 #define STATUS_WRIST2       2
@@ -33,13 +37,8 @@
 #define STATUS_BATT_VOLT    6
 #define STATUS_BATT_SOC     7
 
-#define STATUS_MSG_SIZE     9
-#define COM_MSG_SIZE        7
-#define COM_HEADER          255
-
-#define RC_MID_VALUE        1500
 #define CALIB_TIME          3000
-
+// Need to offset the received dyna speed to fit in uint8_t
 #define MAMBA_DYNA_OFFSET   50
 
 

@@ -25,11 +25,9 @@
 #include "MissionItemProtocol_Fence.h"
 #include "ap_message.h"
 #include "DEL_Sampler/del_sampler.h"
+#include "DEL_Helper/del_helper.h"
 
 #define GCS_DEBUG_SEND_MESSAGE_TIMINGS 0
-
-#define LPF_RANGE_B (1/7.314)
-#define LPF_RANGE_A (5.314/7.314)
 
 #ifndef HAL_NO_GCS
 

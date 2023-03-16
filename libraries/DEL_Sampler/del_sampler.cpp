@@ -59,29 +59,29 @@ void Sampler::sendCommand()
     uint8_t dyna1Speed = 0;
     uint8_t dyna2Speed = 0;
 
-    if(hal.rcin->read(CH_14)>RC_MID_VALUE && abs(hal.rcin->read(CH_3)-RC_MID_VALUE)>50)
+    if(hal.rcin->read(CH_14)>MID_PPM_VALUE && abs(hal.rcin->read(CH_3)-MID_PPM_VALUE)>50)
     {
-        dyna1Speed = ((hal.rcin->read(CH_3)-RC_MID_VALUE) / 17) + MAMBA_DYNA_OFFSET;
+        dyna1Speed = ((hal.rcin->read(CH_3)-MID_PPM_VALUE) / 17) + MAMBA_DYNA_OFFSET;
     }
     else 
     {
         dyna1Speed = 0 + MAMBA_DYNA_OFFSET;
     }
     
-    if(hal.rcin->read(CH_14)>RC_MID_VALUE && abs(hal.rcin->read(CH_4)-RC_MID_VALUE)>50)
+    if(hal.rcin->read(CH_14)>MID_PPM_VALUE && abs(hal.rcin->read(CH_4)-MID_PPM_VALUE)>50)
     {
-        dyna2Speed = ((hal.rcin->read(CH_4)-RC_MID_VALUE) / 17) + MAMBA_DYNA_OFFSET;
+        dyna2Speed = ((hal.rcin->read(CH_4)-MID_PPM_VALUE) / 17) + MAMBA_DYNA_OFFSET;
     }
     else 
     {
         dyna2Speed = 0 + MAMBA_DYNA_OFFSET;
     }
     
-    if(hal.rcin->read(CH_15)>RC_MID_VALUE && !calibPrevious)
+    if(hal.rcin->read(CH_15)>MID_PPM_VALUE && !calibPrevious)
     {
         calibTimer = AP_HAL::millis();
     }
-    else if(hal.rcin->read(CH_15)<RC_MID_VALUE && calibPrevious)
+    else if(hal.rcin->read(CH_15)<MID_PPM_VALUE && calibPrevious)
     {
         if(AP_HAL::millis() - calibTimer > CALIB_TIME)
         {
@@ -92,11 +92,11 @@ void Sampler::sendCommand()
             landMode = landMode ? 0 : 1;
         }
     }
-    calibPrevious = hal.rcin->read(CH_15)>RC_MID_VALUE;
+    calibPrevious = hal.rcin->read(CH_15)>MID_PPM_VALUE;
 
     comMsg[0] = COM_HEADER;
-    comMsg[1] = hal.rcin->read(CH_12)>RC_MID_VALUE;
-    comMsg[2] = hal.rcin->read(CH_11)>RC_MID_VALUE;
+    comMsg[1] = hal.rcin->read(CH_12)>MID_PPM_VALUE;
+    comMsg[2] = hal.rcin->read(CH_11)>MID_PPM_VALUE;
     comMsg[3] = calib;
     comMsg[4] = landMode;
     comMsg[5] = dyna1Speed;
