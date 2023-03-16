@@ -458,9 +458,6 @@ void Copter::update_batt_compass(void)
 // should be run at 400hz
 void Copter::fourhundred_hz_logging()
 {
-    if (should_log(MASK_LOG_ATTITUDE_FAST) && !copter.flightmode->logs_attitude()) {
-        Log_Write_Attitude();
-    }
     // Log_Write_Attitude();    
 }
 
@@ -473,68 +470,16 @@ void Copter::ten_hz_logging_loop()
         Log_Write_PLANT();
     }
     Log_Write_SAMPLER();
-    
-    if (should_log(MASK_LOG_MOTBATT)) {
-        Log_Write_MotBatt();
-    }
-    if (should_log(MASK_LOG_RCIN)) {
-        logger.Write_RCIN();
-        if (rssi.enabled()) {
-            logger.Write_RSSI();
-        }
-    }
-    if (should_log(MASK_LOG_RCOUT)) {
-        logger.Write_RCOUT();
-    }
-    if (should_log(MASK_LOG_NTUN) && (flightmode->requires_GPS() || landing_with_GPS() || !flightmode->has_manual_throttle())) {
-        pos_control->write_log();
-    }
-    if (should_log(MASK_LOG_IMU) || should_log(MASK_LOG_IMU_FAST) || should_log(MASK_LOG_IMU_RAW)) {
-        AP::ins().Write_Vibration();
-    }
-    if (should_log(MASK_LOG_CTUN)) {
-        attitude_control->control_monitor_log();
-#if HAL_PROXIMITY_ENABLED
-        logger.Write_Proximity(g2.proximity);  // Write proximity sensor distances
-#endif
-#if BEACON_ENABLED == ENABLED
-        logger.Write_Beacon(g2.beacon);
-#endif
-    }
-#if FRAME_CONFIG == HELI_FRAME
-    Log_Write_Heli();
-#endif
-#if WINCH_ENABLED == ENABLED
-    if (should_log(MASK_LOG_ANY)) {
-        g2.winch.write_log();
-    }
-#endif
 }
 
 // fifty_hz_logging - should be run at 25hz
 void Copter::fifty_hz_logging()
 {
-    if (should_log(MASK_LOG_ATTITUDE_FAST)) {
-        Log_Write_EKF_POS();
-    }
-    // log attitude data if we're not already logging at the higher rate
-    if (should_log(MASK_LOG_ATTITUDE_MED) && !should_log(MASK_LOG_ATTITUDE_FAST) && !copter.flightmode->logs_attitude()) {
-        Log_Write_Attitude();
-    }
-    // log EKF attitude data
-    if (should_log(MASK_LOG_ATTITUDE_MED) || should_log(MASK_LOG_ATTITUDE_FAST)) {
-        Log_Write_EKF_POS();
-    }
-#if MODE_AUTOROTATE_ENABLED == ENABLED
-    if (should_log(MASK_LOG_ATTITUDE_MED) || should_log(MASK_LOG_ATTITUDE_FAST)) {
-        //update autorotation log
-        g2.arot.Log_Write_Autorotation();
-    }
-#endif
     Log_Write_Attitude();
     Log_Write_MAMBA_EKF();
     logger.Write_RCIN();
     AP::ins().Write_IMU();
+    
     gcs().handleSampler();
 
     // Populating the reach widget

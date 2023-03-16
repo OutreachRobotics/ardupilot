@@ -33,7 +33,7 @@
 #define MIN_ROLL                            (-MAX_ROLL)
 #define DEADBAND                            0.02f
 
-// FILTER COEFFICIENTS //////////////////////////////////////////////////
+// FILTER COEFFICIENTS //////////////////////////////////////////////////////
 // Low pass filter coefficient fc = 15 Hz, Fs = 50 Hz
 #define B1_LP                               0.5792
 #define B0_LP                               0.5792
@@ -46,11 +46,11 @@
 #define B1_SP                               0.0592
 #define B0_SP                               0.0592
 #define A0_SP                               -0.8816
-// Low pass filter coefficient fc = 0.5 Hz, Fs = 10 Hz
-#define LPF_RANGE_B                         0.1367
-#define LPF_RANGE_A                         0.7266
+// Low pass filter coefficient fc = 1 Hz, Fs = 50 Hz
+#define LPF_RANGE_B                         0.0592
+#define LPF_RANGE_A                         0.8816
 
-// PD GAIN /////////////////////////////////////////////////////////////
+// PD GAIN ///////////////////////////////////////////////////////////////////
 #define YAW_KP                              20.0f
 #define YAW_KD                              12.0f
 #define ROLL_KP                             28.0f
@@ -58,7 +58,7 @@
 #define PITCH_KP                            50.0f
 #define PITCH_KD                            50.0f
 
-// MOTOR /////////////////////////////////////////////////////////////
+// MOTOR //////////////////////////////////////////////////////////////////////
 #define T2PWM_COEF1                         -2.2435f
 #define T2PWM_COEF2                         103.52f
 #define T2PWM_COEF3                         1177.4f
@@ -66,6 +66,8 @@
 #define ROLL_ADJUSTMENT                     0.37f
 #define MOTOR_MAX_PPM                       1800
 #define MOTOR_MIN_PPM                       1150
+#define MOTOR_TF_B                          0.1582
+#define MOTOR_TF_A                          0.6835
 
 // EKF CONSTANT ////////////////////////////////////////////////////////////////
 #define EYE_2                               {1,0,0,1}
@@ -80,9 +82,6 @@
 #define R_ROLL                              {0.1f,0,0,1e-4}
 #define R_PITCH                             {0.1f,0,0,1e-4}
 #define R_YAW_GYRO                          100.0f
-
-#define MOTOR_TF_B                          0.1582
-#define MOTOR_TF_A                          0.6835
 
 #define TS                                  (1/400.0f)
 

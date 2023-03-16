@@ -152,4 +152,4 @@ struct PACKED log_Rate {
     { LOG_POS_MSG, sizeof(log_POS), \
         "POS","QLLfff","TimeUS,Lat,Lng,Alt,RelHomeAlt,RelOriginAlt", "sDUmmm", "FGG000" }, \
     { LOG_RATE_MSG, sizeof(log_Rate), \
-        "RATE", "Qffffffffffff",  "TimeUS,RDes,R,ROut,PDes,P,POut,YDes,Y,YOut,ADes,A,AOut", "skk-kk-kk-oo-", "F?????????BB-" },
+        "RATE", "Qffffffffffff",  "TimeUS,FX,gyroX,arduX,FY,gyroY,arduY,MZ,gyroZ,gyroZ,EKFX,EKFY,EKZ", "sNkdNkdNkdddd", "F????????????" },

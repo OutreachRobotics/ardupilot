@@ -120,19 +120,19 @@ void AP_AHRS_View::Write_AttitudeView(const Vector3f &targets) const
 void AP_AHRS_View::Write_Rate(const AP_Motors &motors, const AC_AttitudeControl &attitude_control,
                                 const AC_PosControl &pos_control) const
 {
-    const Vector3f &rate_targets = attitude_control.rate_bf_targets();
+    const Vector3f &thrust = attitude_control.rate_bf_targets();
     const Vector3f &filtered_ang = attitude_control.get_filtered_ang();
     const Vector3f &delekf_euler = attitude_control.get_delEKF_orientation();
     const struct log_Rate pkt_rate{
         LOG_PACKET_HEADER_INIT(LOG_RATE_MSG),
         time_us         : AP_HAL::micros64(),
-        control_roll    : rate_targets.x,
+        control_roll    : thrust.x,
         roll            : degrees(get_gyro().x),
         roll_out        : degrees(filtered_ang.x),
-        control_pitch   : rate_targets.y,
+        control_pitch   : thrust.y,
         pitch           : degrees(get_gyro().y),
         pitch_out       : degrees(filtered_ang.y),
-        control_yaw     : rate_targets.z,
+        control_yaw     : thrust.z,
         yaw             : degrees(get_gyro().z),
         yaw_out         : degrees(filtered_ang.z),
         control_accel   : degrees(delekf_euler.x),
