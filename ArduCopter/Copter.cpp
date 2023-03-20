@@ -479,6 +479,7 @@ void Copter::fifty_hz_logging()
     Log_Write_MAMBA_EKF();
     logger.Write_RCIN();
     AP::ins().Write_IMU();
+    rangefinder.Log_RFND();
     
     gcs().handleSampler();
 

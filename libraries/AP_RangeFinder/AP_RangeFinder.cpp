@@ -773,10 +773,10 @@ void RangeFinder::Log_RFND() const
         return;
     }
 
-    AP_Logger &logger = AP::logger();
-    if (!logger.should_log(_log_rfnd_bit)) {
-        return;
-    }
+    // AP_Logger &logger = AP::logger();
+    // if (!logger.should_log(_log_rfnd_bit)) {
+    //     return;
+    // }
 
     for (uint8_t i=0; i<RANGEFINDER_MAX_INSTANCES; i++) {
         const AP_RangeFinder_Backend *s = get_backend(i);

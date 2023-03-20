@@ -4726,8 +4726,8 @@ void GCS_MAVLINK::send_sys_status()
     const uint16_t errors4 = AP::internalerror().count() & 0xffff;
 
     uint8_t* _status_msg = gcs().getSamplerStatus();
-    uint32_t taxi_mode = hal.rcin->read(CH_13)>MID_PPM_VALUE;
-    uint32_t wrist_mode = hal.rcin->read(CH_14)>MID_PPM_VALUE;
+    uint32_t taxi_mode = hal.rcin->read(TAXI_CHANNEL)>MID_PPM_VALUE;
+    uint32_t wrist_mode = hal.rcin->read(WRIST_CHANNEL)>MID_PPM_VALUE;
 
     mavlink_msg_sys_status_send(
         chan,
@@ -4757,7 +4757,7 @@ void GCS_MAVLINK::send_attitude() const
     Vector3f orientation = gcs().get_platform_orientation();
     float length = float(gcs().get_rope_length());
     float distance = gcs().get_rangefinder_distance();
-    distance = distance>0.3f?distance-0.3f:0.0f;
+    distance = distance>RANGEFINDER_OFFSET?distance-RANGEFINDER_OFFSET:0.0f;
 
     float forward_reach = (length*sinf(orientation.y) + distance*cosf(orientation.y)) / (length*sinf(reach.y));
 

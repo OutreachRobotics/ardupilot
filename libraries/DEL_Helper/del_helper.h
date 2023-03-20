@@ -20,6 +20,16 @@
 #define MID_PPM_VALUE                       1500
 #define LOW_PPM_VALUE                       1000
 
+// RANGEFINDER ///////////////////////////////////////////////////////////
+#define RANGEFINDER_OFFSET                  0.45f
+
+// RC CHANNEL ////////////////////////////////////////////////////////////
+#define SEQUENCE_CHANNEL                    CH_12
+#define STEALTH_CHANNEL                     CH_11
+#define TAXI_CHANNEL                        CH_13
+#define CALIB_CHANNEL                       CH_15
+#define WRIST_CHANNEL                       CH_14
+
 // ATTITUDE CONTROL //////////////////////////////////////////////////////
 #define YAW_SENSITIVITY                     0.01f
 #define ROLL_SENSITIVITY                    0.003f
@@ -27,7 +37,7 @@
 #define PMAX_ACTUATOR_THRUST                14.0f
 #define RMAX_ACTUATOR_THRUST                (13.0f*(ROLL_ADJUSTMENT+1.0f)/2.0f)
 #define M_PLATFORM                          3.64f
-#define MAX_PITCH                           0.38f // 21.8° - 13.1 N to keep that angle
+#define MAX_PITCH                           0.305f // 17.5°
 #define MAX_ROLL                            (MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
 #define MIN_PITCH                           (-MAX_PITCH)
 #define MIN_ROLL                            (-MAX_ROLL)
@@ -62,7 +72,6 @@
 #define T2PWM_COEF1                         -2.2435f
 #define T2PWM_COEF2                         103.52f
 #define T2PWM_COEF3                         1177.4f
-#define MAX_ACTUATOR_THRUST                 6.5f
 #define ROLL_ADJUSTMENT                     0.37f
 #define MOTOR_MAX_PPM                       1800
 #define MOTOR_MIN_PPM                       1150
@@ -81,7 +90,7 @@
 // EKF TUNING ///////////////////////////////////////////////////////////////////
 #define R_ROLL                              {0.1f,0,0,1e-4}
 #define R_PITCH                             {0.1f,0,0,1e-4}
-#define R_YAW_GYRO                          100.0f
+#define R_YAW_GYRO                          0.1f
 
 #define TS                                  (1/400.0f)
 

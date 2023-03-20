@@ -132,5 +132,4 @@ protected:
     float last_target_lateral, last_target_forward;
     float filtered_target_lateral, filtered_target_forward;
     float roll_kp, roll_kd, pitch_kp, pitch_kd, yaw_kp, yaw_kd;
-    float pitch_sensitivity, roll_sensitivity;
 };

@@ -40,6 +40,8 @@
 #define CALIB_TIME          3000
 // Need to offset the received dyna speed to fit in uint8_t
 #define MAMBA_DYNA_OFFSET   50
+#define WRIST_DEADBAND      50
+#define WRIST_SPEED_FACTOR  17
 
 
 /***************************************************************************

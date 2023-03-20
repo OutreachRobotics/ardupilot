@@ -196,6 +196,8 @@ public:
 
     static RangeFinder *get_singleton(void) { return _singleton; }
 
+    void Log_RFND() const;
+
 protected:
     AP_RangeFinder_Params params[RANGEFINDER_MAX_INSTANCES];
 
@@ -217,7 +219,6 @@ private:
     bool _add_backend(AP_RangeFinder_Backend *driver, uint8_t instance, uint8_t serial_instance=0);
 
     uint32_t _log_rfnd_bit = -1;
-    void Log_RFND() const;
 };
 
 namespace AP {

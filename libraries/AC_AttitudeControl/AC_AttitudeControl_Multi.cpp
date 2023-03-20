@@ -271,9 +271,6 @@ AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_
     filtered_target_forward = 0.0f;
     filtered_target_lateral = 0.0f;
 
-    roll_sensitivity = ROLL_SENSITIVITY;
-    pitch_sensitivity = PITCH_SENSITIVITY;
-
     yaw_kp = YAW_KP;
     yaw_kd = YAW_KD;
     roll_kp = ROLL_KP;
@@ -703,13 +700,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         // Forward control, velocity on move, angular on hold
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*pitch_sensitivity;
+            target_forward += forward*PITCH_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*roll_sensitivity;
+            target_lateral += lateral*ROLL_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
         }
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
@@ -805,13 +802,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
         // Forward control, velocity on move, angular on hold
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*pitch_sensitivity;
+            target_forward += forward*PITCH_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*roll_sensitivity;
+            target_lateral += lateral*ROLL_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
         }
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
