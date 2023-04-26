@@ -171,7 +171,7 @@ bool GCS_MAVLINK::init(uint8_t instance)
     return true;
 }
 
-void GCS::handleSampler()
+void GCS::handleDelComm()
 {
     AP_Logger *logger = AP_Logger::get_singleton();
     if(!logger->CardInserted() && noSDWarning && AP_HAL::millis()>30000)
@@ -180,8 +180,17 @@ void GCS::handleSampler()
 		noSDWarning = false;
     }
 
-    TextMessageID textMessage = (TextMessageID)sampler.manageInput();
-    switch (textMessage)
+    TextMessageID textMessage = (TextMessageID)del_comm.manageSamplerInput();
+    handleDelMessage(textMessage);
+    textMessage = (TextMessageID)del_comm.manageFCUInput();
+    handleDelMessage(textMessage);
+    
+    del_comm.sendCommand(camera_switch);  
+}
+
+void GCS::handleDelMessage(TextMessageID msg)
+{
+    switch (msg)
     {
         case SamplingCompleted:
             gcs().send_text(MAV_SEVERITY_INFO, "#Sampling completed");
@@ -210,14 +219,12 @@ void GCS::handleSampler()
             break;
         default:
             break;
-    }      
-    
-    sampler.sendCommand();  
+    }  
 }
 
-uint8_t* GCS::getSamplerStatus()
+uint8_t* GCS::getDelCommStatus()
 {
-    return sampler.getStatus();
+    return del_comm.getStatus();
 }
 
 void GCS::set_platform_orientation(Vector3f setter)
@@ -4725,9 +4732,10 @@ void GCS_MAVLINK::send_sys_status()
     const uint16_t errors2 = (errors>>16) & 0xffff;
     const uint16_t errors4 = AP::internalerror().count() & 0xffff;
 
-    uint8_t* _status_msg = gcs().getSamplerStatus();
+    uint8_t* _status_msg = gcs().getDelCommStatus();
     uint32_t taxi_mode = hal.rcin->read(TAXI_CHANNEL)>MID_PPM_VALUE;
     uint32_t wrist_mode = hal.rcin->read(WRIST_CHANNEL)>MID_PPM_VALUE;
+    uint16_t voltage = ((uint16_t)_status_msg[STATUS_BATT_HIGH] << 8) | _status_msg[STATUS_BATT_LOW];
 
     mavlink_msg_sys_status_send(
         chan,
@@ -4735,7 +4743,7 @@ void GCS_MAVLINK::send_sys_status()
         taxi_mode,
         wrist_mode,
         static_cast<uint16_t>(AP::scheduler().load_average() * 1000),
-        static_cast<uint16_t>(_status_msg[STATUS_BATT_VOLT])* 100,  // mV
+        static_cast<uint16_t>(voltage)* 10,  // mV
         battery_current,        // in 10mA units
         static_cast<int8_t>(_status_msg[STATUS_BATT_SOC]),      // in %
         0,  // comm drops %,

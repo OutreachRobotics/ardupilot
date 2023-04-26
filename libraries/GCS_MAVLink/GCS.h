@@ -24,7 +24,7 @@
 #include "MissionItemProtocol_Rally.h"
 #include "MissionItemProtocol_Fence.h"
 #include "ap_message.h"
-#include "DEL_Sampler/del_sampler.h"
+#include "DEL_Comm/del_comm.h"
 #include "DEL_Helper/del_helper.h"
 
 #define GCS_DEBUG_SEND_MESSAGE_TIMINGS 0
@@ -1004,8 +1004,9 @@ public:
     bool get_log_sample_data();
     void set_log_sample_data();
 
-    uint8_t* getSamplerStatus();
-    void handleSampler();
+    uint8_t* getDelCommStatus();
+    void handleDelComm();
+    void handleDelMessage(TextMessageID msg);
 
     Vector3f get_platform_orientation();
     Vector2f get_platform_reach();
@@ -1024,7 +1025,7 @@ public:
 
 protected:
 
-    Sampler sampler;
+    DEL_Comm del_comm;
     uint8_t noSDWarning;
 
     Vector3f platform_orientation;

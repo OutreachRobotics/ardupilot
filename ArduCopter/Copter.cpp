@@ -472,7 +472,7 @@ void Copter::ten_hz_logging_loop()
     Log_Write_SAMPLER();
 }
 
-// fifty_hz_logging - should be run at 25hz
+// fifty_hz_logging - should be run at 50hz
 void Copter::fifty_hz_logging()
 {
     Log_Write_Attitude();
@@ -481,7 +481,7 @@ void Copter::fifty_hz_logging()
     AP::ins().Write_IMU();
     rangefinder.Log_RFND();
     
-    gcs().handleSampler();
+    gcs().handleDelComm();
 
     // Populating the reach widget
     gcs().set_platform_orientation(attitude_control->getDelEKFOrientation());

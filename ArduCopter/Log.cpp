@@ -99,13 +99,14 @@ struct PACKED log_SAMBA {
 // Write a SAMBA packet
 void Copter::Log_Write_SAMPLER()
 {
-    uint8_t* _sampler_status = gcs().getSamplerStatus();
+    uint8_t* _sampler_status = gcs().getDelCommStatus();
+    uint16_t voltage = ((uint16_t)_sampler_status[STATUS_BATT_HIGH] << 8) | _sampler_status[STATUS_BATT_LOW];
     struct log_SAMBA pkt = {
         LOG_PACKET_HEADER_INIT(LOG_SAMBA_MSG),
         time_us  : AP_HAL::micros64(),
         cutting_percentage  : _sampler_status[STATUS_CUTTING],
         arm_status : _sampler_status[STATUS_ARM],
-        battery_voltage : (float)_sampler_status[STATUS_BATT_VOLT]/10.0f,
+        battery_voltage : (float)voltage/100.0f,
         battery_soc : _sampler_status[STATUS_BATT_SOC],
         wrist1 : _sampler_status[STATUS_WRIST1],
         wrist2 : _sampler_status[STATUS_WRIST2],

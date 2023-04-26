@@ -1,8 +1,8 @@
 
 // del_smapler.h
 
-#ifndef DEL_SAMPLER_H
-#define DEL_SAMPLER_H
+#ifndef DEL_COMM_H
+#define DEL_COMM_H
 
 /***************************************************************************
     Include headers :
@@ -16,7 +16,8 @@
     Macro :
 ***************************************************************************/
 
-#define UART_DELEAVES       4
+#define UART_SAMPLER        4
+#define UART_FCU            2
 
 #define COM_MSG_SIZE        7
 #define COM_HEADER          255
@@ -26,16 +27,22 @@
 #define COM_LANDMODE        3
 #define COM_DYNA1           4
 #define COM_DYNA2           5
+#define COM2_MSG_SIZE       2
+#define COM_HDMI            1
 
 #define STATUS_MSG_SIZE     9
+#define SAMPLER_MSG_SIZE    7
+#define FCU_MSG_SIZE        4
+#define FCU_MSG_OFFSET      6
 #define STATUS_CUTTING      0
 #define STATUS_WRIST1       1
 #define STATUS_WRIST2       2
 #define STATUS_SAW          3
 #define STATUS_GRASP        4
 #define STATUS_ARM          5
-#define STATUS_BATT_VOLT    6
-#define STATUS_BATT_SOC     7
+#define STATUS_BATT_LOW     6
+#define STATUS_BATT_HIGH    7
+#define STATUS_BATT_SOC     8
 
 #define CALIB_TIME          3000
 // Need to offset the received dyna speed to fit in uint8_t
@@ -71,18 +78,20 @@ enum TextMessageID
 	Class :
 ***************************************************************************/
 
-class Sampler
+class DEL_Comm
 {
 public:
-    Sampler();
+    DEL_Comm();
     void init();
-    uint8_t manageInput();
-    void sendCommand();
+    uint8_t manageSamplerInput();
+    uint8_t manageFCUInput();
+    void sendCommand(uint8_t camera);
 
     uint8_t* getStatus();
 
 private:
     uint8_t comMsg[COM_MSG_SIZE];
+    uint8_t com2Msg[COM2_MSG_SIZE];
     uint8_t statusMsg[STATUS_MSG_SIZE];
     uint8_t calib;
     uint8_t landMode;
@@ -90,6 +99,7 @@ private:
     uint8_t calibPrevious;
 
     AP_HAL::UARTDriver *sampler_port;
+    AP_HAL::UARTDriver *fcu_port;
 };
 
 #endif

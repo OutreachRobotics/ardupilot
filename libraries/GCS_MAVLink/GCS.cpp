@@ -42,7 +42,7 @@ const MAV_MISSION_TYPE GCS_MAVLINK::supported_mission_types[] = {
 void GCS::init()
 {
     mavlink_system.sysid = sysid_this_mav();
-    sampler.init();
+    del_comm.init();
     noSDWarning = true;
     platform_orientation = Vector3f(0,0,0);
     platform_reach = Vector2f(0,0);

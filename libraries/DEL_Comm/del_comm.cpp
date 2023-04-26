@@ -1,10 +1,10 @@
-// del_sampler.cpp
+// del_comm.cpp
 
 /***************************************************************************
     Include headers :
 ***************************************************************************/
 
-#include "del_sampler.h"
+#include "del_comm.h"
 #include <AP_Logger/AP_Logger.h>
 
 /***************************************************************************
@@ -17,32 +17,39 @@ extern const AP_HAL::HAL& hal;
 	Function definition :
 ***************************************************************************/
 
-Sampler::Sampler()
+DEL_Comm::DEL_Comm()
 {
-	sampler_port = hal.serial(UART_DELEAVES);
+	sampler_port = hal.serial(UART_SAMPLER);
+    fcu_port = hal.serial(UART_FCU);
 }
 
-void Sampler::init()
+void DEL_Comm::init()
 {
 	memset(comMsg,0,sizeof(comMsg));
+	memset(com2Msg,0,sizeof(com2Msg));
 	memset(statusMsg,0,sizeof(statusMsg));
+
 	sampler_port->begin(57600,10,10);
+	fcu_port->begin(57600,10,10);
+
     calib = 0;
     landMode = 0;
     calibPrevious = 0;
     calibTimer = AP_HAL::millis();
 }
 
-uint8_t Sampler::manageInput()
+uint8_t DEL_Comm::manageSamplerInput()
 {
     while(sampler_port->available()>1)
     {
         uint8_t temp = sampler_port->read();
-        if(temp == StatusMessage && sampler_port->available()>=STATUS_MSG_SIZE-1)
+        if(temp == StatusMessage && sampler_port->available()>=SAMPLER_MSG_SIZE-1)
         {
-            for(uint8_t i=0;i<STATUS_MSG_SIZE-1;i++)
+            hal.console->printf("\r\nSampler Msg\r\n");
+            for(uint8_t i=0;i<SAMPLER_MSG_SIZE-1;i++)
 			{
 				statusMsg[i] = sampler_port->read();
+                hal.console->printf("%d: %d\r\n",i,statusMsg[i]);
 			}    
         }
         else if(temp == TextMessage && sampler_port->available())
@@ -54,7 +61,30 @@ uint8_t Sampler::manageInput()
     return NoMessage;
 }
 
-void Sampler::sendCommand()
+uint8_t DEL_Comm::manageFCUInput()
+{
+    while(fcu_port->available()>1)
+    {
+        uint8_t temp = fcu_port->read();
+        if(temp == StatusMessage && fcu_port->available()>=FCU_MSG_SIZE-1)
+        {
+            // hal.console->printf("\r\nFCU Msg\r\n");
+            for(uint8_t i=0;i<FCU_MSG_SIZE-1;i++)
+			{
+				statusMsg[i+FCU_MSG_OFFSET] = fcu_port->read();
+                // hal.console->printf("%d: %d\r\n",i,statusMsg[i+FCU_MSG_OFFSET]);
+			}    
+        }
+        else if(temp == TextMessage && fcu_port->available())
+        {
+            uint8_t status_message = fcu_port->read();
+            return status_message;           
+        }
+    }
+    return NoMessage;
+}
+
+void DEL_Comm::sendCommand(uint8_t camera)
 {
     uint8_t dyna1Speed = 0;
     uint8_t dyna2Speed = 0;
@@ -102,10 +132,15 @@ void Sampler::sendCommand()
     comMsg[5] = dyna1Speed;
     comMsg[6] = dyna2Speed;
     sampler_port->write(comMsg,COM_MSG_SIZE);
+    hal.console->printf("\r\nCommand: %d %d %d %d %d %d\r\n", comMsg[1],comMsg[2],comMsg[3],comMsg[4],comMsg[5],comMsg[6]);
+
+    com2Msg[0] = COM_HEADER;
+    com2Msg[1] = camera;
+    fcu_port->write(com2Msg,COM2_MSG_SIZE);
 }
 
 
-uint8_t* Sampler::getStatus()
+uint8_t* DEL_Comm::getStatus()
 {
     return statusMsg;
 }
