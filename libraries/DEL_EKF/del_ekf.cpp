@@ -104,7 +104,9 @@ Mat DelEKF::commandLPF(Mat F_in)
 {
 	Mat F_in_filt(3,1);
 
-	F_in_filt = F_in*MOTOR_TF_B + last_F_in*MOTOR_TF_B + last_F_in_filt*MOTOR_TF_A;
+	F_in_filt[0] = F_in[0]*LT_TF_B + last_F_in[0]*LT_TF_B + last_F_in_filt[0]*LT_TF_A;
+	F_in_filt[1] = F_in[1]*FT_TF_B + last_F_in[1]*FT_TF_B + last_F_in_filt[1]*FT_TF_A;
+	F_in_filt[2] = F_in[2]*LT_TF_B + last_F_in[2]*LT_TF_B + last_F_in_filt[2]*LT_TF_A;
 	last_F_in_filt = F_in_filt;
 	last_F_in = F_in;
 

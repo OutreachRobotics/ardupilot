@@ -73,8 +73,6 @@ public:
 
     void deleaves_controller_acro(float lateral, float forward, float yaw, float throttle);
     void deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed);
-    void deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
-    void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed);

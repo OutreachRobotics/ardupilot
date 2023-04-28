@@ -29,6 +29,8 @@
 // spool definition
 #define AP_MOTORS_SPOOL_UP_TIME_DEFAULT 0.5f    // time (in seconds) for throttle to increase from zero to min throttle, and min throttle to full throttle.
 
+#define MOTORS_TUNING_INTERVAL          2000
+
 /// @class      AP_MotorsMulticopter
 class AP_MotorsMulticopter : public AP_Motors {
 public:
@@ -104,6 +106,10 @@ public:
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo        var_info[];
 
+    void                set_battery_voltage(float setter);
+
+    void                set_motors_tuning(bool setter);
+
 protected:
 
     // run spool logic
@@ -147,6 +153,9 @@ protected:
 
     // save parameters as part of disarming
     void                save_params_on_disarm() override;
+
+    void                motors_tuning_pwm();
+
 
     // enum values for HOVER_LEARN parameter
     enum HoverLearn {
@@ -205,4 +214,10 @@ protected:
 
     // array of motor output values
     float _actuator[AP_MOTORS_MAX_NUM_MOTORS];
+    uint16_t _pwm[AP_MOTORS_MAX_NUM_MOTORS];
+
+    float batteryVoltage;
+    bool motors_tuning;
+    uint32_t motors_tuning_time;
+    bool motors_on;
 };

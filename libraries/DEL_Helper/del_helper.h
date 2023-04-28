@@ -21,7 +21,7 @@
 #define LOW_PPM_VALUE                       1000
 
 // RANGEFINDER ///////////////////////////////////////////////////////////
-#define RANGEFINDER_OFFSET                  0.45f
+#define RANGEFINDER_OFFSET                  0.45f // To adjust
 
 // RC CHANNEL ////////////////////////////////////////////////////////////
 #define SEQUENCE_CHANNEL                    CH_12
@@ -34,12 +34,14 @@
 #define YAW_SENSITIVITY                     0.01f
 #define ROLL_SENSITIVITY                    0.003f
 #define PITCH_SENSITIVITY                   0.003f
-#define PMAX_ACTUATOR_THRUST                14.0f
-#define RMAX_ACTUATOR_THRUST                (13.0f*(ROLL_ADJUSTMENT+1.0f)/2.0f)
-#define M_PLATFORM                          3.64f
-#define MAX_PITCH                           0.305f // 17.5°
-#define MAX_ROLL                            (MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
-#define MIN_PITCH                           (-MAX_PITCH)
+#define PMAX_ACTUATOR_THRUST                17.4f
+#define PMIN_ACTUATOR_THRUST                9.0f
+#define RMAX_ACTUATOR_THRUST                8.6f
+#define YMAX_ACTUATOR_MOMENT                ((RMAX_ACTUATOR_THRUST/2) * (LT_BACK_L+LT_FORWARD_L))
+#define M_PLATFORM                          3.02f
+#define MAX_PITCH                           0.4f // 22.9°
+#define MAX_ROLL                            0.2f // 11.45°
+#define MIN_PITCH                           0.0f
 #define MIN_ROLL                            (-MAX_ROLL)
 #define DEADBAND                            0.02f
 
@@ -68,20 +70,58 @@
 #define PITCH_KP                            50.0f
 #define PITCH_KD                            50.0f
 
-// MOTOR //////////////////////////////////////////////////////////////////////
-#define T2PWM_COEF1                         -2.2435f
-#define T2PWM_COEF2                         103.52f
-#define T2PWM_COEF3                         1177.4f
-#define ROLL_ADJUSTMENT                     0.37f
-#define MOTOR_MAX_PPM                       1800
-#define MOTOR_MIN_PPM                       1150
-#define MOTOR_TF_B                          0.1582
-#define MOTOR_TF_A                          0.6835
+// MAIN MOTOR //////////////////////////////////////////////////////////////////////
+
+// FORWARD THRUST
+#define FT2PWM_COEF1_M                      -0.0916f 
+#define FT2PWM_COEF1_B                      2.5263f 
+#define FT2PWM_COEF2_M                      1.2881f 
+#define FT2PWM_COEF2_B                      -38.0520f 
+#define FT2PWM_COEF3_M                      -6.3686f 
+#define FT2PWM_COEF3_B                      228.0061f 
+#define FT2PWM_COEF4_M                      -1.7693f 
+#define FT2PWM_COEF4_B                      1602.27f 
+#define FT_MAX_PPM                          1950
+#define FT_MIN_PPM                          1550
+#define FT_OFF_PPM                          1500
+#define FT_TF_B                             0.2564 
+#define FT_TF_A                             0.4872 
+
+// BACKWARD THRUST
+#define BT2PWM_COEF1_M                      -0.6267f 
+#define BT2PWM_COEF1_B                      17.3241f 
+#define BT2PWM_COEF2_M                      -4.2450f 
+#define BT2PWM_COEF2_B                      127.2179f 
+#define BT2PWM_COEF3_M                      -10.2182f 
+#define BT2PWM_COEF3_B                      384.7325f 
+#define BT2PWM_COEF4_M                      2.3567f 
+#define BT2PWM_COEF4_B                      1373.1471f 
+#define BT_MAX_PPM                          1050
+#define BT_MIN_PPM                          1450
+#define BT_OFF_PPM                          1500
+
+// LATERAL THRUST
+#define LT_BACK_L                           0.245f
+#define LT_FORWARD_L                        0.270f
+#define LT2PWM_COEF1_M                      -0.0167f 
+#define LT2PWM_COEF1_B                      6.3152f 
+#define LT2PWM_COEF2_M                      0.3040f 
+#define LT2PWM_COEF2_B                      -61.8064f 
+#define LT2PWM_COEF3_M                      -1.4008f 
+#define LT2PWM_COEF3_B                      242.7982f 
+#define LT2PWM_COEF4_M                      1.5463f 
+#define LT2PWM_COEF4_B                      1483.0381f 
+#define LT_MAX_PPM                          1900
+#define LT_MIN_PPM                          1100
+#define LT_IDLE_PPM                         1530
+#define LT_OFF_PPM                          1495
+#define LT_TF_B                             0.1667 
+#define LT_TF_A                             0.6667 
 
 // EKF CONSTANT ////////////////////////////////////////////////////////////////
 #define EYE_2                               {1,0,0,1}
 #define EYE_4                               {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1}
-#define P_INI_2                             {1,0,0,1}
+#define P_INI_2                             {1000,0,0,1000}
 #define P_INI_4                             {1000,0,0,0,0,1000,0,0,0,0,1000,0,0,0,0,1000}
 #define C_YAW                               {1,0}
 #define C_ROLL                              {0,0,1,0,0,0,0,1}

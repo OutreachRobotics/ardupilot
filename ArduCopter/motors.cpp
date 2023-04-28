@@ -176,10 +176,12 @@ void Copter::motors_output()
             AP::logger().Write_Event(LogEvent::MOTORS_INTERLOCK_DISABLED);
         }
 
+        uint8_t* delStatus = gcs().getDelCommStatus();
+        uint16_t voltage = ((uint16_t)delStatus[STATUS_BATT_HIGH] << 8) | delStatus[STATUS_BATT_LOW];
+        motors->set_battery_voltage(float(voltage/100.0f));
         // send output signals to motors
         motors->output();
     }
-
     // push all channels
     SRV_Channels::push();
 }
