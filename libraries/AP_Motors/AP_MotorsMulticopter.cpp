@@ -296,12 +296,24 @@ void AP_MotorsMulticopter::motors_tuning_pwm()
         motors_tuning_time = AP_HAL::millis();
     }
 
-    _pwm[0] = motors_on ? FT_MIN_PPM : FT_OFF_PPM;
-    _pwm[1] = motors_on ? FT_MIN_PPM : BT_OFF_PPM;
-    _pwm[2] = motors_on ? FT_MIN_PPM : FT_OFF_PPM;
-    _pwm[3] = motors_on ? FT_MIN_PPM : BT_OFF_PPM;
-    _pwm[4] = motors_on ? LT_IDLE_PPM : LT_OFF_PPM;
-    _pwm[5] = motors_on ? LT_IDLE_PPM : LT_OFF_PPM;
+    if(!armed())
+    {
+        _pwm[0] = FT_OFF_PPM;
+        _pwm[1] = BT_OFF_PPM;
+        _pwm[2] = FT_OFF_PPM;
+        _pwm[3] = BT_OFF_PPM;
+        _pwm[4] = LT_OFF_PPM;
+        _pwm[5] = LT_OFF_PPM;
+    }
+    else
+    {
+        _pwm[0] = motors_on ? FT_MIN_PPM : FT_OFF_PPM;
+        _pwm[1] = motors_on ? FT_MIN_PPM : BT_OFF_PPM;
+        _pwm[2] = motors_on ? FT_MIN_PPM : FT_OFF_PPM;
+        _pwm[3] = motors_on ? FT_MIN_PPM : BT_OFF_PPM;
+        _pwm[4] = motors_on ? LT_IDLE_PPM : LT_OFF_PPM;
+        _pwm[5] = motors_on ? LT_IDLE_PPM : LT_OFF_PPM;
+    }
 }
 
 // output booster throttle, if any

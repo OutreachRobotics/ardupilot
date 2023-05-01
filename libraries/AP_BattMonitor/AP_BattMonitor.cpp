@@ -315,7 +315,7 @@ void AP_BattMonitor::read()
         }
     }
 
-    check_failsafes();
+    // check_failsafes();
     
     checkPoweringOff();
 }
