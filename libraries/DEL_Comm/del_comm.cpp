@@ -124,7 +124,7 @@ void DEL_Comm::sendCommand(uint8_t camera)
     }
     calibPrevious = hal.rcin->read(CALIB_CHANNEL)>MID_PPM_VALUE;
 
-    comMsg[0] = COM_HEADER;
+    comMsg[0] = COM_SAMPLER_HEADER;
     comMsg[1] = hal.rcin->read(SEQUENCE_CHANNEL)>MID_PPM_VALUE;
     comMsg[2] = hal.rcin->read(STEALTH_CHANNEL)>MID_PPM_VALUE;
     comMsg[3] = calib;

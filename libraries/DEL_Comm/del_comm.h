@@ -21,6 +21,7 @@
 
 #define COM_MSG_SIZE        7
 #define COM_HEADER          255
+#define COM_SAMPLER_HEADER  251
 #define COM_SEQUENCE        0
 #define COM_STEALTH         1 
 #define COM_CALIB           2
