@@ -10,6 +10,7 @@
 
 #include "del_mat.h"
 #include <DEL_Helper/del_helper.h>
+#include <AP_HAL/AP_HAL.h>
 
 /***************************************************************************
     Macro :

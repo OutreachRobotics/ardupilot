@@ -12,6 +12,8 @@
 	Global variables declaration :
 ***************************************************************************/
 
+	extern const AP_HAL::HAL& hal;
+
 	double i2[] = EYE_2;
 	double i4[] = EYE_4;
 
