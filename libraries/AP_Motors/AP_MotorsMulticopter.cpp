@@ -236,14 +236,12 @@ AP_MotorsMulticopter::AP_MotorsMulticopter(uint16_t loop_rate, uint16_t speed_hz
 void AP_MotorsMulticopter::output()
 {
     // Actuator are 
-    // 0 => left forward thruster 
-    // 1 => right forward thrust 
-    // 2 => front left (creates a force toward the right of the platform)
-    // 3 => front right (creates a force toward the left of the platform)
-    // 4 => back left (creates a force toward the right of the platform)
-    // 5 => back right (creates a force toward the left of the platform)
-    // 6 => left backward thruster
-    // 7 => right backward thruster
+    // 0 => Left main thruster
+    // 1 => Left secondary thruster
+    // 2 => Right main thruster
+    // 3 => Right secodary thruster
+    // 4 => Back lateral thruster
+    // 5 => Front lateral thruster
     // _throttle_in has no effect on the control
     // _lateral_in is for lateral force
     // _forward_in is for forward force
@@ -260,8 +258,8 @@ void AP_MotorsMulticopter::output()
     _actuator[1] = back;
     _actuator[2] = front;
     _actuator[3] = back;
-    _actuator[4] = lateral_in + yaw_force;
-    _actuator[5] = (LT_BACK_L/LT_FORWARD_L)*lateral_in - yaw_force;
+    _actuator[4] = lateral_in - yaw_force;
+    _actuator[5] = (LT_BACK_L/LT_FORWARD_L)*lateral_in + yaw_force;
 
     if(!motors_tuning)
     {
