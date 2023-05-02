@@ -45,11 +45,9 @@ uint8_t DEL_Comm::manageSamplerInput()
         uint8_t temp = sampler_port->read();
         if(temp == StatusMessage && sampler_port->available()>=SAMPLER_MSG_SIZE-1)
         {
-            hal.console->printf("\r\nSampler Msg\r\n");
             for(uint8_t i=0;i<SAMPLER_MSG_SIZE-1;i++)
 			{
 				statusMsg[i] = sampler_port->read();
-                hal.console->printf("%d: %d\r\n",i,statusMsg[i]);
 			}    
         }
         else if(temp == TextMessage && sampler_port->available())
@@ -68,11 +66,9 @@ uint8_t DEL_Comm::manageFCUInput()
         uint8_t temp = fcu_port->read();
         if(temp == StatusMessage && fcu_port->available()>=FCU_MSG_SIZE-1)
         {
-            // hal.console->printf("\r\nFCU Msg\r\n");
             for(uint8_t i=0;i<FCU_MSG_SIZE-1;i++)
 			{
 				statusMsg[i+FCU_MSG_OFFSET] = fcu_port->read();
-                // hal.console->printf("%d: %d\r\n",i,statusMsg[i+FCU_MSG_OFFSET]);
 			}    
         }
         else if(temp == TextMessage && fcu_port->available())
@@ -132,7 +128,6 @@ void DEL_Comm::sendCommand(uint8_t camera)
     comMsg[5] = dyna1Speed;
     comMsg[6] = dyna2Speed;
     sampler_port->write(comMsg,COM_MSG_SIZE);
-    hal.console->printf("\r\nCommand: %d %d %d %d %d %d\r\n", comMsg[1],comMsg[2],comMsg[3],comMsg[4],comMsg[5],comMsg[6]);
 
     com2Msg[0] = COM_HEADER;
     com2Msg[1] = camera;
