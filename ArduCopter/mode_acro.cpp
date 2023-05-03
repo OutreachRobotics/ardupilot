@@ -21,7 +21,7 @@ void ModeAcro::run()
     // Pitch = 1 -> pitch backward
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
-    lateral_input = (float(channel_roll->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
+    lateral_input = -(float(channel_roll->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
     pitch_input = -(float(channel_pitch->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
     yaw_input = hal.rcin->read(WRIST_CHANNEL) < MID_PPM_VALUE ? (float(channel_yaw->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT : 0.0f;
     thrust_input = float(channel_throttle->percent_input()) / MAX_RC_INPUT;

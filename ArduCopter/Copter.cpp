@@ -478,6 +478,7 @@ void Copter::fifty_hz_logging()
     Log_Write_Attitude();
     Log_Write_MAMBA_EKF();
     logger.Write_RCIN();
+    logger.Write_RCOUT();
     AP::ins().Write_IMU();
     rangefinder.Log_RFND();
     

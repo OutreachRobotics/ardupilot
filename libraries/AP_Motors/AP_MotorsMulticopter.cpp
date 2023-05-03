@@ -247,12 +247,12 @@ void AP_MotorsMulticopter::output()
     // _forward_in is for forward force
 
     float forward_in = _forward_in/2.0f;
-    float lateral_in = _lateral_in/(1.0f+(LT_BACK_L/LT_FORWARD_L));
+    float lateral_in = -_lateral_in/(1.0f+(LT_BACK_L/LT_FORWARD_L));
     float yaw_force = _yaw_in/(1.0f+LT_BACK_L/LT_FORWARD_L)/LT_FORWARD_L;
 
     float front, back;
     front = forward_in>0.0f?forward_in:0.0f;
-    back = forward_in<0.0f?-forward_in:0.0f;
+    back = forward_in<0.0f?forward_in:0.0f;
 
     _actuator[0] = front;
     _actuator[1] = back;
@@ -480,7 +480,7 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
                 (BT2PWM_COEF2_M*batteryVoltage+BT2PWM_COEF2_B)*pow(_actuator[1],2) + 
                 (BT2PWM_COEF3_M*batteryVoltage+BT2PWM_COEF3_B)*_actuator[1] + 
                 (BT2PWM_COEF4_M*batteryVoltage+BT2PWM_COEF4_B);
-        _pwm[1] = constrain_int16(_pwm[1],BT_MIN_PPM,BT_MAX_PPM);
+        _pwm[1] = constrain_int16(_pwm[1],BT_MAX_PPM,BT_MIN_PPM);
 
         _pwm[2] = (FT2PWM_COEF1_M*batteryVoltage+FT2PWM_COEF1_B)*pow(_actuator[2],3) + 
                 (FT2PWM_COEF2_M*batteryVoltage+FT2PWM_COEF2_B)*pow(_actuator[2],2) + 
@@ -492,7 +492,7 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
                 (BT2PWM_COEF2_M*batteryVoltage+BT2PWM_COEF2_B)*pow(_actuator[3],2) + 
                 (BT2PWM_COEF3_M*batteryVoltage+BT2PWM_COEF3_B)*_actuator[3] + 
                 (BT2PWM_COEF4_M*batteryVoltage+BT2PWM_COEF4_B);
-        _pwm[3] = constrain_int16(_pwm[3],BT_MIN_PPM,BT_MAX_PPM);
+        _pwm[3] = constrain_int16(_pwm[3],BT_MAX_PPM,BT_MIN_PPM);
 
         _pwm[4] = (LT2PWM_COEF1_M*batteryVoltage+LT2PWM_COEF1_B)*pow(_actuator[4],3) + 
                 (LT2PWM_COEF2_M*batteryVoltage+LT2PWM_COEF2_B)*pow(_actuator[4],2) + 
