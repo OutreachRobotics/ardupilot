@@ -111,6 +111,14 @@
 #define LT2PWM_COEF3_B                      242.7982f 
 #define LT2PWM_COEF4_M                      1.5463f 
 #define LT2PWM_COEF4_B                      1483.0381f 
+#define LTR2PWM_COEF1_M                     0.1264f 
+#define LTR2PWM_COEF1_B                     2.3487f
+#define LTR2PWM_COEF2_M                     1.0764f
+#define LTR2PWM_COEF2_B                     24.4450f 
+#define LTR2PWM_COEF3_M                     2.8340f
+#define LTR2PWM_COEF3_B                     125.2638f 
+#define LTR2PWM_COEF4_M                     1.1565 
+#define LTR2PWM_COEF4_B                     1432.8023f 
 #define LT_MAX_PPM                          1900
 #define LT_MIN_PPM                          1100
 #define LT_IDLE_PPM                         1530
