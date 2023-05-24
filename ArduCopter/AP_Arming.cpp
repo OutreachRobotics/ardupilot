@@ -949,7 +949,10 @@ bool AP_Arming_Copter::disarm(const AP_Arming::Method method, bool do_disarm_che
 
     copter.ap.in_arming_delay = false;
 
-    gcs().stop_herelink_record();
+    if(method != AP_Arming::Method::PILOT_INPUT_FAILSAFE)
+    {
+        gcs().stop_herelink_record();
+    }
 
     return true;
 }

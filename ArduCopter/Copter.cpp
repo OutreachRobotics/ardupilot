@@ -232,6 +232,12 @@ void Copter::fast_loop()
     attitude_control->updateDelEKF(Vector3f(motors->get_lateral(),
         motors->get_forward(), motors->get_yaw()), gyro, gcs().get_rope_length());
 
+    Vector3f orientation = attitude_control->getDelEKFOrientation();
+    if(abs(orientation.x)>ROLL_FAILSAFE || abs(orientation.y)>PITCH_FAILSAFE)
+    {
+        AP::arming().disarm(AP_Arming::Method::PILOT_INPUT_FAILSAFE, false);
+    }
+
     // run low level rate controllers that only require IMU data
     attitude_control->downSamplingDataFilter();
     

@@ -44,6 +44,8 @@
 #define MIN_PITCH                           0.0f
 #define MIN_ROLL                            (-MAX_ROLL)
 #define DEADBAND                            0.02f
+#define PITCH_FAILSAFE                      0.80f
+#define ROLL_FAILSAFE                       0.50f
 
 // FILTER COEFFICIENTS //////////////////////////////////////////////////////
 // Low pass filter coefficient fc = 15 Hz, Fs = 50 Hz
