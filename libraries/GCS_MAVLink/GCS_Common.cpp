@@ -4772,7 +4772,7 @@ void GCS_MAVLINK::send_attitude() const
     mavlink_msg_attitude_send(
         chan,
         AP_HAL::millis(),
-        (orientation.x/reach.x),
+        -(orientation.x/reach.x),
         (orientation.y/reach.y),
         orientation.z,
         distance,
