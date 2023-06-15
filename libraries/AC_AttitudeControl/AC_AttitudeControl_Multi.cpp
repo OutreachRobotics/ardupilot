@@ -267,9 +267,9 @@ AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_
     yaw_kd = 0.0f;
 
     last_target_forward = 0.0f;
-    last_target_lateral = 0.0f;
+    last_target_lateral = LATERAL_INITIAL_COMMAND;
     filtered_target_forward = 0.0f;
-    filtered_target_lateral = 0.0f;
+    filtered_target_lateral = LATERAL_INITIAL_COMMAND;
 
     yaw_kp = YAW_KP;
     yaw_kd = YAW_KD;
@@ -452,7 +452,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
 
     //Initialize target yaw to the value of yaw when not armed or update it with joystick when armed
     target_yaw = !armed ? ahrs_ang.z : target_yaw + yaw*YAW_SENSITIVITY;
-    target_lateral = 0.0f;
+    target_lateral = LATERAL_INITIAL_COMMAND;
     target_forward = 0.0f;
     yaw_angle_error = target_yaw - ahrs_ang.z ;
 
@@ -571,7 +571,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     {
         target_yaw = ctrl_ang.z;
         target_forward = 0.0f;
-        target_lateral = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
     }
     else
     {
@@ -673,7 +673,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
     {
         target_yaw = states[9];
         target_forward = 0.0f;
-        target_lateral = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
     }
     else
     {
@@ -763,7 +763,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float
     {
         target_yaw = states[9];
         target_forward = 0.0f;
-        target_lateral = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
     }
     else
     {
@@ -839,7 +839,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     lowPassDataFilter();
 
     target_forward = 0.0f;
-    target_lateral = 0.0f;
+    target_lateral = LATERAL_INITIAL_COMMAND;
     lowPassSetPointFilter();
 
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
@@ -933,7 +933,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi_LQR(float yaw, bool arme
     {
         target_yaw = states[9];
         target_forward = 0.0f;
-        target_lateral = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
     }
     else
     {
@@ -943,7 +943,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi_LQR(float yaw, bool arme
             target_yaw += yaw*YAW_SENSITIVITY;
         }
         target_forward = 0.0f;
-        target_lateral = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
     }    
 
 
