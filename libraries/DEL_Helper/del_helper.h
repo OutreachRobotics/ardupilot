@@ -123,7 +123,8 @@
 #define LTR2PWM_COEF4_B                     1432.8023f 
 #define LT_MAX_PPM                          1900
 #define LT_MIN_PPM                          1100
-#define LT_IDLE_PPM                         1530
+#define LT_IDLE_HIGH_PPM                    1530
+#define LT_IDLE_LOW_PPM                     1470
 #define LT_OFF_PPM                          700
 #define LT_TF_B                             0.1667 
 #define LT_TF_A                             0.6667 
