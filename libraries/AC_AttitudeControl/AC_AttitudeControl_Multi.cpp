@@ -729,7 +729,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
 
     if(armed)
     {
-        _motors.set_lateral(lateral_command);
+        _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
         _motors.set_forward(forward_command);
         _motors.set_yaw(yaw_input);
         _motors.set_throttle(throttle);
