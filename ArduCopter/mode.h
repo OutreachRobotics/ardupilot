@@ -1343,6 +1343,7 @@ public:
 
     virtual void run() override;
     bool init(bool ignore_checks) override;
+    void exit() override;
     void get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, int16_t yaw_in, float &roll_out, float &pitch_out, float &yaw_out);
 
 

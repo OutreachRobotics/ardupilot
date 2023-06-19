@@ -442,6 +442,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_acro(float lateral, float for
     _motors.set_forward(forward>0? forward*PMAX_ACTUATOR_THRUST : forward*PMIN_ACTUATOR_THRUST);
     _motors.set_yaw(yaw*YMAX_ACTUATOR_MOMENT);
     _motors.set_throttle(throttle);
+
+    // For logging purpose
+    _ang_vel_body.x = _motors.get_lateral();
+    _ang_vel_body.y = _motors.get_forward();
+    _ang_vel_body.z = _motors.get_yaw();
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 
@@ -1027,5 +1034,10 @@ Mat AC_AttitudeControl_Multi::getDelEKFStates()
 Vector2f AC_AttitudeControl_Multi::getMaxReach()
 {
     return Vector2f(MAX_ROLL,MAX_PITCH);
+}
+
+float AC_AttitudeControl_Multi::getPitchCommand()
+{
+    return filtered_target_forward;
 }
 

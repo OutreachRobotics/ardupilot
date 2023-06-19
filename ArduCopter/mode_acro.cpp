@@ -6,6 +6,7 @@
  */
 bool ModeAcro::init(bool ignore_checks)
 {
+    motors->set_coax_enable(true);
     return true;
 }
 
@@ -44,7 +45,7 @@ void ModeAcro::run()
 
 void ModeAcro::exit()
 {
-
+    motors->set_coax_enable(false);
 }
 
 void ModeAcro::air_mode_aux_changed()

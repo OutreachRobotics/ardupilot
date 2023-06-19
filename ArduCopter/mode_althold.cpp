@@ -10,6 +10,7 @@
 bool ModeAltHold::init(bool ignore_checks)
 {
     counter = 0;
+    motors->set_coax_enable(false);
     return true;
 }
 
@@ -43,14 +44,25 @@ void ModeAltHold::run()
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
     }
 
+
+
     // Only call controller each 8 timestep to have 50Hz
     if (counter>7){
         if(taxi_mode)
         {
+            motors->set_coax_enable(false);
             attitude_control->deleaves_controller_taxi_LQR(yaw_input, motors->armed());
         }
         else
         {
+            if(motors->get_coax_enable() && attitude_control->getPitchCommand()<0.1f)
+            {
+                motors->set_coax_enable(false);
+            }
+            else if(!motors->get_coax_enable() && attitude_control->getDelEKFOrientation().y>0.1f && attitude_control->getPitchCommand()>0.2f)
+            {
+                motors->set_coax_enable(true);
+            }
             attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
         }
         counter=0;

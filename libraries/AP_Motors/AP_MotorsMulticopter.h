@@ -109,6 +109,8 @@ public:
     void                set_battery_voltage(float setter);
 
     void                set_motors_tuning(bool setter);
+    void                set_coax_enable(bool setter);
+    bool                get_coax_enable();
 
 protected:
 
@@ -220,4 +222,5 @@ protected:
     bool motors_tuning;
     uint32_t motors_tuning_time;
     bool motors_on;
+    bool coax_enabled;
 };

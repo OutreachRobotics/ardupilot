@@ -97,6 +97,7 @@ public:
     Vector3f getDelEKFOrientation();
     Vector2f getMaxReach();
     Mat getDelEKFStates();
+    float getPitchCommand();
 
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];

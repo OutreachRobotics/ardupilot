@@ -34,12 +34,14 @@
 #define YAW_SENSITIVITY                     0.01f
 #define ROLL_SENSITIVITY                    0.003f
 #define PITCH_SENSITIVITY                   0.003f
-#define PMAX_ACTUATOR_THRUST                17.4f
+#define PMAX_ACTUATOR_THRUST                36.0f
 #define PMIN_ACTUATOR_THRUST                9.0f
 #define RMAX_ACTUATOR_THRUST                8.6f
 #define YMAX_ACTUATOR_MOMENT                ((RMAX_ACTUATOR_THRUST/2) * (LT_BACK_L+LT_FORWARD_L))
-#define M_PLATFORM                          3.02f
-#define MAX_PITCH                           0.4f // 22.9°
+// #define M_PLATFORM                          3.02f
+#define M_PLATFORM                          4.2f
+// #define MAX_PITCH                           0.4f // 22.9°
+#define MAX_PITCH                           0.5f // 22.9°
 #define MAX_ROLL                            0.2f // 11.45°
 #define MIN_PITCH                           0.0f
 #define MIN_ROLL                            (-MAX_ROLL)
@@ -47,6 +49,7 @@
 #define PITCH_FAILSAFE                      0.80f
 #define ROLL_FAILSAFE                       0.50f
 #define LATERAL_INITIAL_COMMAND             0.0f
+#define COAX_ANGLE                          0.2f
 
 // FILTER COEFFICIENTS //////////////////////////////////////////////////////
 // Low pass filter coefficient fc = 15 Hz, Fs = 50 Hz
@@ -129,6 +132,19 @@
 #define LT_OFF_PPM                          700
 #define LT_TF_B                             0.1667 
 #define LT_TF_A                             0.6667 
+
+// COAX THRUST  ////////////////////////////////////////////////////////////////
+#define COAX2PWM_COEF1_M                      -0.0163f 
+#define COAX2PWM_COEF1_B                      0.4582f 
+#define COAX2PWM_COEF2_M                      0.3982f 
+#define COAX2PWM_COEF2_B                      -11.9685f 
+#define COAX2PWM_COEF3_M                      -3.7588f 
+#define COAX2PWM_COEF3_B                      133.5199f 
+#define COAX2PWM_COEF4_M                      0.7501f 
+#define COAX2PWM_COEF4_B                      1538.9529f 
+#define COAX_MAX_PPM                          1950
+#define COAX_MIN_PPM                          1550
+#define COAX_OFF_PPM                          1500
 
 // EKF CONSTANT ////////////////////////////////////////////////////////////////
 #define EYE_2                               {1,0,0,1}
