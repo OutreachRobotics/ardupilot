@@ -818,7 +818,8 @@ void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float
 
     if(armed)
     {
-        _motors.set_lateral(lateral_command);
+        // _motors.set_lateral(lateral_command);
+        _motors.set_lateral(0.0f);
         _motors.set_forward(forward_command);
         _motors.set_yaw(yaw_input);
         _motors.set_throttle(throttle);

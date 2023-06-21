@@ -38,10 +38,9 @@
 #define PMIN_ACTUATOR_THRUST                9.0f
 #define RMAX_ACTUATOR_THRUST                8.6f
 #define YMAX_ACTUATOR_MOMENT                ((RMAX_ACTUATOR_THRUST/2) * (LT_BACK_L+LT_FORWARD_L))
-// #define M_PLATFORM                          3.02f
-#define M_PLATFORM                          4.2f
-// #define MAX_PITCH                           0.4f // 22.9°
-#define MAX_PITCH                           0.5f // 22.9°
+#define M_PLATFORM                          3.02f
+// #define M_PLATFORM                          4.2f
+#define MAX_PITCH                           0.5f // 30°
 #define MAX_ROLL                            0.2f // 11.45°
 #define MIN_PITCH                           0.0f
 #define MIN_ROLL                            (-MAX_ROLL)
@@ -49,7 +48,8 @@
 #define PITCH_FAILSAFE                      0.80f
 #define ROLL_FAILSAFE                       0.50f
 #define LATERAL_INITIAL_COMMAND             0.0f
-#define COAX_ANGLE                          0.2f
+#define COAX_ANGLE_MIN                      0.1f
+#define COAX_ANGLE_MAX                      0.2f
 
 // FILTER COEFFICIENTS //////////////////////////////////////////////////////
 // Low pass filter coefficient fc = 15 Hz, Fs = 50 Hz

@@ -17,6 +17,7 @@ bool ModeSport::init(bool ignore_checks)
     forwardSequenceStart = AP_HAL::micros();
     approachSequenceArmed = false;
     approachSequenceStart = AP_HAL::micros();
+    motors->set_coax_enable(false);
     return true;
 }
 
@@ -138,7 +139,7 @@ void ModeSport::run()
         else
         {
             lateral_target = 0.0f;
-            forward_target = 0.5f;
+            forward_target = 0.8f;
         }
     }
     else if(approachSequenceArmed)
@@ -195,6 +196,14 @@ void ModeSport::run()
     if (counter>7){
         if(lateralSequenceArmed || forwardSequenceArmed)
         {
+            if(motors->get_coax_enable() && attitude_control->getPitchCommand()<COAX_ANGLE_MIN)
+            {
+                motors->set_coax_enable(false);
+            }
+            else if(!motors->get_coax_enable() && attitude_control->getDelEKFOrientation().y>COAX_ANGLE_MIN && attitude_control->getPitchCommand()>COAX_ANGLE_MAX)
+            {
+                motors->set_coax_enable(true);
+            }
             attitude_control->deleaves_controller_step_LQR(lateral_target, forward_target, yaw_input, thrust_input, motors->armed());
         }
         else

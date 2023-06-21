@@ -55,11 +55,11 @@ void ModeAltHold::run()
         }
         else
         {
-            if(motors->get_coax_enable() && attitude_control->getPitchCommand()<0.1f)
+            if(motors->get_coax_enable() && attitude_control->getPitchCommand()<COAX_ANGLE_MIN)
             {
                 motors->set_coax_enable(false);
             }
-            else if(!motors->get_coax_enable() && attitude_control->getDelEKFOrientation().y>0.1f && attitude_control->getPitchCommand()>0.2f)
+            else if(!motors->get_coax_enable() && attitude_control->getDelEKFOrientation().y>COAX_ANGLE_MIN && attitude_control->getPitchCommand()>COAX_ANGLE_MAX)
             {
                 motors->set_coax_enable(true);
             }
