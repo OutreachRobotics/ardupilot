@@ -253,6 +253,11 @@ Mat Mat::t()
     return t;
 }
 
+double* Mat::getLength(uint8_t line)
+{
+    return &content[(line-1)*col];
+}
+
 Mat Mat::operator*(const Mat& other)
 {
     Mat ret(row,other.col);

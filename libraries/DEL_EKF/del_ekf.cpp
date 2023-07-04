@@ -27,6 +27,12 @@
 
 	double R_roll [] = R_ROLL;
 	double R_pitch [] = R_PITCH;
+
+	double f_roll_array[] = F_ROLL;
+	double b_roll_array[] = B_ROLL;
+	double f_pitch_array[] = F_PITCH;
+	double b_pitch_array[] = B_PITCH;
+    double k_lqr_array[] = K_LQR;
 	
 
 /***************************************************************************
@@ -49,6 +55,11 @@ DelEKF::DelEKF()
 	P_roll_prop = Mat(4,4);
 	P_pitch_prop = Mat(4,4);
 	P_yaw_prop = Mat(4,4);
+
+	F_roll_multi = Mat(NUMBER_OF_LENGTH,16,f_roll_array);
+	F_pitch_multi = Mat(NUMBER_OF_LENGTH,16,f_pitch_array);
+	B_roll_multi = Mat(NUMBER_OF_LENGTH,4,b_roll_array);
+	B_pitch_multi = Mat(NUMBER_OF_LENGTH,4,b_roll_array);
 	
 	F_roll = Mat(4,4,i4);
 	F_pitch = Mat(4,4,i4);
@@ -238,8 +249,8 @@ Mat DelEKF::getLQRgain()
 
 Mat DelEKF::getLQRgain_taxi()
 {
-	double k_lqr_array[] = K_LQR_TAXI;
-	return Mat(3,10,k_lqr_array);
+	double k_lqr_taxi[] = K_LQR_TAXI;
+	return Mat(3,10,k_lqr_taxi);
 }
 
 Mat DelEKF::createCommandMat(Vector3f orientation)
@@ -261,59 +272,25 @@ void DelEKF::update_R_coeff(float r_value)
 
 void DelEKF::update_length(float length)
 {
-	if(length<6.0f)
-	{
-		double froll [] = F_ROLL_6M;
-		double fpitch [] = F_PITCH_6M;
-		double fyaw [] = F_YAW_6M;		
-		double broll [] = B_ROLL_6M;
-		double bpitch [] = B_PITCH_6M;
-		double byaw [] = B_YAW_6M;
-		double k_lqr_array[] = K_LQR_6M;
+	double fyaw [] = F_YAW;
+	double byaw [] = B_YAW;
+	F_yaw = Mat(2,2,fyaw);		
+	B_yaw = Mat(2,1,byaw);
 
-		F_roll = Mat(4,4,froll);
-		F_pitch = Mat(4,4,fpitch);
-		F_yaw = Mat(2,2,fyaw);		
-		B_roll = Mat(4,1,broll);
-		B_pitch = Mat(4,1,bpitch);
-		B_yaw = Mat(2,1,byaw);
-		k_lqr = Mat(3,10,k_lqr_array);
-	}
-	else if(length<12.0f)
+	if(round(length)>=MIN_LENGTH && round(length)<=MAX_LENGTH)
 	{
-		double froll [] = F_ROLL_10M;
-		double fpitch [] = F_PITCH_10M;
-		double fyaw [] = F_YAW_10M;		
-		double broll [] = B_ROLL_10M;
-		double bpitch [] = B_PITCH_10M;
-		double byaw [] = B_YAW_10M;
-		double k_lqr_array[] = K_LQR_10M;
-	
-		F_roll = Mat(4,4,froll);
-		F_pitch = Mat(4,4,fpitch);
-		F_yaw = Mat(2,2,fyaw);		
-		B_roll = Mat(4,1,broll);
-		B_pitch = Mat(4,1,bpitch);
-		B_yaw = Mat(2,1,byaw);
-		k_lqr = Mat(3,10,k_lqr_array);
+		F_roll = Mat(4,4,F_roll_multi.getLength(uint8_t(round(length))));
+		F_pitch = Mat(4,4,F_pitch_multi.getLength(uint8_t(round(length))));
+		B_roll = Mat(4,1,B_roll_multi.getLength(uint8_t(round(length))));
+		B_pitch = Mat(4,1,B_pitch_multi.getLength(uint8_t(round(length))));
+		k_lqr = Mat(3,10,k_lqr_multi.getLength(uint8_t(round(length))));
 	}
 	else
 	{
-		double froll [] = F_ROLL_15M;
-		double fpitch [] = F_PITCH_15M;
-		double fyaw [] = F_YAW_15M;		
-		double broll [] = B_ROLL_15M;
-		double bpitch [] = B_PITCH_15M;
-		double byaw [] = B_YAW_15M;
-		double k_lqr_array[] = K_LQR_15M;
-
-		F_roll = Mat(4,4,froll);
-		F_pitch = Mat(4,4,fpitch);
-		F_yaw = Mat(2,2,fyaw);		
-		B_roll = Mat(4,1,broll);
-		B_pitch = Mat(4,1,bpitch);
-		B_yaw = Mat(2,1,byaw);
-		k_lqr = Mat(3,10,k_lqr_array);
+		F_roll = Mat(4,4,F_roll_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
+		F_pitch = Mat(4,4,F_pitch_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
+		B_roll = Mat(4,1,B_roll_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
+		B_pitch = Mat(4,1,B_pitch_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
+		k_lqr = Mat(3,10,k_lqr_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
 	}
-
 }

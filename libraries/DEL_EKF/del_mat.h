@@ -38,6 +38,7 @@ public:
     float det();
     Mat inv();
     Mat t();
+    double* getLength(uint8_t line);
     Mat operator*(const Mat& other);
     Mat operator*(double other);
     Mat operator+(const Mat& other);

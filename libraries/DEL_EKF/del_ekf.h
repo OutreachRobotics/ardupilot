@@ -72,6 +72,11 @@ private:
     Mat P_pitch_prop;
     Mat P_yaw_prop;
 
+    Mat F_roll_multi;
+    Mat F_pitch_multi;
+    Mat B_roll_multi;
+    Mat B_pitch_multi;
+
     Mat F_roll;
     Mat F_pitch;
     Mat F_yaw;
@@ -103,7 +108,8 @@ private:
     Mat H_roll;
     Mat H_pitch;
     Mat H_yaw;
-
+    
+    Mat k_lqr_multi;
     Mat k_lqr;    
 };
 
