@@ -241,32 +241,31 @@ void AP_MotorsMulticopter::output()
     // 1 => Left secondary thruster
     // 2 => Right main thruster
     // 3 => Right secodary thruster
-    // 4 => Back left lateral thruster (creates a force towards the right)
-    // 5 => Back right lateral thruster (creates a force towards the left)
-    // 6 => Front left lateral thruster (creates a force towards the right)
-    // 7 => Front right lateral thruster (creates a force towards the left)
+    // 4 => Front left lateral thruster (creates a force towards the right)
+    // 5 => Front right lateral thruster (creates a force towards the left)
     // _throttle_in has no effect on the control
     // _lateral_in is for lateral force
     // _forward_in is for forward force
 
-    float lateral_in = -_lateral_in/(1.0f+(LT_BACK_L/LT_FORWARD_L));
-    float yaw_force = _yaw_in/(1.0f+LT_BACK_L/LT_FORWARD_L)/LT_FORWARD_L;
-
+    float lateral_in = -_lateral_in;
+    // Todo adjust the yaw formula for the main thrusters
+    float yaw_force = _yaw_in/(2.0f/FT_FORWARD_L);
     float forward_in = _forward_in/2.0f;
-    float front, back, left, right;
-    front = forward_in>0.0f?forward_in:0.0f;
-    back = forward_in<0.0f?forward_in:0.0f;
+
+    float motor01, motor23;
+    float left, right;
     left = lateral_in>0.0f?lateral_in:0.0f;
     right = lateral_in<0.0f?-lateral_in:0.0f; 
 
-    _actuator[0] = front;
-    _actuator[1] = coax_enabled ? front : back;
-    _actuator[2] = front;
-    _actuator[3] = coax_enabled ? front : back;
-    _actuator[4] = right - yaw_force;
-    _actuator[5] = left + yaw_force;
-    _actuator[6] = (LT_BACK_L/LT_FORWARD_L)*right + yaw_force;
-    _actuator[7] = (LT_BACK_L/LT_FORWARD_L)*left - yaw_force;
+    motor01 = forward_in + yaw_force;
+    motor23 = forward_in - yaw_force;
+
+    _actuator[0] = motor01>0.0f ? abs(motor01) : 0.0f;
+    _actuator[1] = (coax_enabled ? motor01>0.0f ? abs(motor01) : 0.0f : motor01<0.0f ? abs(motor01) : 0.0f);
+    _actuator[2] = motor23>0.0f ? abs(motor23) : 0.0f;
+    _actuator[3] = (coax_enabled ? motor23>0.0f ? abs(motor23) : 0.0f : motor23<0.0f ? abs(motor23) : 0.0f);
+    _actuator[4] = right;
+    _actuator[5] = left;
 
     if(!motors_tuning)
     {
@@ -548,14 +547,6 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
                     (LT2PWM_COEF4_M*batteryVoltage+LT2PWM_COEF4_B);
             _pwm[4] = constrain_int16(_pwm[4],LT_IDLE_HIGH_PPM,LT_MAX_PPM);
         }
-        else
-        {
-            _pwm[4] = (LTR2PWM_COEF1_M*batteryVoltage+LTR2PWM_COEF1_B)*pow(_actuator[4],3) + 
-                    (LTR2PWM_COEF2_M*batteryVoltage+LTR2PWM_COEF2_B)*pow(_actuator[4],2) + 
-                    (LTR2PWM_COEF3_M*batteryVoltage+LTR2PWM_COEF3_B)*_actuator[4] + 
-                    (LTR2PWM_COEF4_M*batteryVoltage+LTR2PWM_COEF4_B);
-            _pwm[4] = constrain_int16(_pwm[4],LT_MIN_PPM,LT_IDLE_LOW_PPM);            
-        }
 
         if(_actuator[5]>=0.0f)
         {
@@ -564,14 +555,6 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
                     (LT2PWM_COEF3_M*batteryVoltage+LT2PWM_COEF3_B)*_actuator[5] + 
                     (LT2PWM_COEF4_M*batteryVoltage+LT2PWM_COEF4_B);
             _pwm[5] = constrain_int16(_pwm[5],LT_IDLE_HIGH_PPM,LT_MAX_PPM);
-        }
-        else
-        {
-            _pwm[5] = (LTR2PWM_COEF1_M*batteryVoltage+LTR2PWM_COEF1_B)*pow(_actuator[5],3) + 
-            (LTR2PWM_COEF2_M*batteryVoltage+LTR2PWM_COEF2_B)*pow(_actuator[5],2) + 
-            (LTR2PWM_COEF3_M*batteryVoltage+LTR2PWM_COEF3_B)*_actuator[5] + 
-            (LTR2PWM_COEF4_M*batteryVoltage+LTR2PWM_COEF4_B);
-            _pwm[5] = constrain_int16(_pwm[5],LT_MIN_PPM,LT_IDLE_LOW_PPM);
         }
     }
 

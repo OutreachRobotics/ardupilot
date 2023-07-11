@@ -20,7 +20,7 @@
 #define AP_MOTORS_MOT_11 10U
 #define AP_MOTORS_MOT_12 11U
 
-#define AP_MOTORS_MAX_NUM_MOTORS 12
+#define AP_MOTORS_MAX_NUM_MOTORS 8
 
 // motor update rate
 #define AP_MOTORS_SPEED_DEFAULT     490 // default output rate to the motors

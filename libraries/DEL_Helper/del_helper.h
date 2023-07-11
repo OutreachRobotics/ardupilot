@@ -91,6 +91,7 @@
 #define FT_OFF_PPM                          1500
 #define FT_TF_B                             0.2564 
 #define FT_TF_A                             0.4872 
+#define FT_FORWARD_L                        0.1f
 
 // BACKWARD THRUST
 #define BT2PWM_COEF1_M                      -0.6267f 
