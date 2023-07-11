@@ -241,8 +241,10 @@ void AP_MotorsMulticopter::output()
     // 1 => Left secondary thruster
     // 2 => Right main thruster
     // 3 => Right secodary thruster
-    // 4 => Back lateral thruster
-    // 5 => Front lateral thruster
+    // 4 => Back left lateral thruster (creates a force towards the right)
+    // 5 => Back right lateral thruster (creates a force towards the left)
+    // 6 => Front left lateral thruster (creates a force towards the right)
+    // 7 => Front right lateral thruster (creates a force towards the left)
     // _throttle_in has no effect on the control
     // _lateral_in is for lateral force
     // _forward_in is for forward force
@@ -251,16 +253,20 @@ void AP_MotorsMulticopter::output()
     float yaw_force = _yaw_in/(1.0f+LT_BACK_L/LT_FORWARD_L)/LT_FORWARD_L;
 
     float forward_in = _forward_in/2.0f;
-    float front, back;
+    float front, back, left, right;
     front = forward_in>0.0f?forward_in:0.0f;
     back = forward_in<0.0f?forward_in:0.0f;
+    left = lateral_in>0.0f?lateral_in:0.0f;
+    right = lateral_in<0.0f?-lateral_in:0.0f; 
 
     _actuator[0] = front;
     _actuator[1] = coax_enabled ? front : back;
     _actuator[2] = front;
     _actuator[3] = coax_enabled ? front : back;
-    _actuator[4] = lateral_in - yaw_force;
-    _actuator[5] = (LT_BACK_L/LT_FORWARD_L)*lateral_in + yaw_force;
+    _actuator[4] = right - yaw_force;
+    _actuator[5] = left + yaw_force;
+    _actuator[6] = (LT_BACK_L/LT_FORWARD_L)*right + yaw_force;
+    _actuator[7] = (LT_BACK_L/LT_FORWARD_L)*left - yaw_force;
 
     if(!motors_tuning)
     {
