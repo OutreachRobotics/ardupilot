@@ -80,60 +80,17 @@ uint8_t DEL_Comm::manageFCUInput()
     return NoMessage;
 }
 
-void DEL_Comm::sendCommand(uint8_t camera)
+void DEL_Comm::sendCommand()
 {
-    uint8_t dyna1Speed = 0;
-    uint8_t dyna2Speed = 0;
-
-    if(hal.rcin->read(WRIST_CHANNEL)>MID_PPM_VALUE && abs(hal.rcin->read(CH_3)-MID_PPM_VALUE)>WRIST_DEADBAND)
-    {
-        dyna1Speed = ((hal.rcin->read(CH_3)-MID_PPM_VALUE) / WRIST_SPEED_FACTOR) + MAMBA_DYNA_OFFSET;
-    }
-    else 
-    {
-        dyna1Speed = 0 + MAMBA_DYNA_OFFSET;
-    }
-    
-    if(hal.rcin->read(WRIST_CHANNEL)>MID_PPM_VALUE && abs(hal.rcin->read(CH_4)-MID_PPM_VALUE)>WRIST_DEADBAND)
-    {
-        dyna2Speed = ((hal.rcin->read(CH_4)-MID_PPM_VALUE) / WRIST_SPEED_FACTOR) + MAMBA_DYNA_OFFSET;
-    }
-    else 
-    {
-        dyna2Speed = 0 + MAMBA_DYNA_OFFSET;
-    }
-    
-    if(hal.rcin->read(CALIB_CHANNEL)>MID_PPM_VALUE && !calibPrevious)
-    {
-        calibTimer = AP_HAL::millis();
-    }
-    else if(hal.rcin->read(CALIB_CHANNEL)<MID_PPM_VALUE && calibPrevious)
-    {
-        if(AP_HAL::millis() - calibTimer > CALIB_TIME)
-        {
-            calib = calib ? 0 : 1;
-        }
-        else
-        {
-            landMode = landMode ? 0 : 1;
-        }
-    }
-    calibPrevious = hal.rcin->read(CALIB_CHANNEL)>MID_PPM_VALUE;
 
     comMsg[0] = COM_SAMPLER_HEADER;
     comMsg[1] = hal.rcin->read(SEQUENCE_CHANNEL)>MID_PPM_VALUE;
-    comMsg[2] = hal.rcin->read(STEALTH_CHANNEL)>MID_PPM_VALUE;
-    comMsg[3] = calib;
-    comMsg[4] = landMode;
-    comMsg[5] = dyna1Speed;
-    comMsg[6] = dyna2Speed;
     sampler_port->write(comMsg,COM_MSG_SIZE);
 
-    com2Msg[0] = COM_HEADER;
-    com2Msg[1] = camera;
-    fcu_port->write(com2Msg,COM2_MSG_SIZE);
+    // com2Msg[0] = COM_HEADER;
+    // com2Msg[1] = camera;
+    // fcu_port->write(com2Msg,COM2_MSG_SIZE);
 }
-
 
 uint8_t* DEL_Comm::getStatus()
 {

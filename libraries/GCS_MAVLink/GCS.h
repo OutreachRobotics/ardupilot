@@ -1020,8 +1020,16 @@ public:
     MAV_RESULT set_camera_switch(uint8_t setter);
     MAV_RESULT set_rope_length(uint8_t setter);
 
+    MAV_RESULT set_led_state(float led0,float led1,float led2,float led3,float led4,float led5);
+    uint8_t* get_led_state();
+
+    void set_camera_angle(uint16_t setter);
+    uint16_t get_camera_angle();
+
     void start_herelink_record();
     void stop_herelink_record();
+
+    int32_t get_winch_altitude();
 
 protected:
 
@@ -1037,6 +1045,9 @@ protected:
     uint8_t rope_length;
     uint8_t camera_switch;
     bool record_flag;
+    Int16_union winch_altitude;
+    uint8_t led_state[NUMBER_OF_LED];
+    uint16_t camera_angle;
 
     virtual uint8_t sysid_this_mav() const = 0;
 

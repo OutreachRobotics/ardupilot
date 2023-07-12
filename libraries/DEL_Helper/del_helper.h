@@ -14,6 +14,10 @@
     Macro :
 ***************************************************************************/
 
+// LED  ////////////////////////////////////////////////////////////////////
+
+#define NUMBER_OF_LED                       6
+
 // MODE ///////////////////////////////////////////////////////////////////
 #define MAX_RC_INPUT                        100.0f
 #define MID_RC_INPUT                        50.0f
@@ -77,6 +81,8 @@
 
 // MAIN MOTOR //////////////////////////////////////////////////////////////////////
 
+#define NUMBER_OF_MOTOR                     6
+
 // FORWARD THRUST
 #define FT2PWM_COEF1_M                      -0.0916f 
 #define FT2PWM_COEF1_B                      2.5263f 
@@ -106,7 +112,7 @@
 #define BT_MIN_PPM                          1450
 #define BT_OFF_PPM                          1500
 
-// IQ LATERAL THRUST
+// ANTAGONIST LATERAL THRUST
 #define LT_BACK_L                           0.245f
 #define LT_FORWARD_L                        0.270f
 #define LT2PWM_COEF1_M                      -0.0167f 
@@ -117,38 +123,11 @@
 #define LT2PWM_COEF3_B                      242.7982f 
 #define LT2PWM_COEF4_M                      1.5463f 
 #define LT2PWM_COEF4_B                      1483.0381f 
-#define LTR2PWM_COEF1_M                     0.1264f 
-#define LTR2PWM_COEF1_B                     2.3487f
-#define LTR2PWM_COEF2_M                     1.0764f
-#define LTR2PWM_COEF2_B                     24.4450f 
-#define LTR2PWM_COEF3_M                     2.8340f
-#define LTR2PWM_COEF3_B                     125.2638f 
-#define LTR2PWM_COEF4_M                     1.1565 
-#define LTR2PWM_COEF4_B                     1432.8023f 
 #define LT_MAX_PPM                          1900
 #define LT_MIN_PPM                          1100
-#define LT_IDLE_HIGH_PPM                    1494
-#define LT_IDLE_LOW_PPM                     1496
-#define LT_OFF_PPM                          700
+#define LT_OFF_PPM                          1000
 #define LT_TF_B                             0.1667 
 #define LT_TF_A                             0.6667 
-
-// // ANTAGONIST LATERAL THRUST
-// #define LT_BACK_L                           0.245f
-// #define LT_FORWARD_L                        0.270f
-// #define LT2PWM_COEF1_M                      -0.0167f 
-// #define LT2PWM_COEF1_B                      6.3152f 
-// #define LT2PWM_COEF2_M                      0.3040f 
-// #define LT2PWM_COEF2_B                      -61.8064f 
-// #define LT2PWM_COEF3_M                      -1.4008f 
-// #define LT2PWM_COEF3_B                      242.7982f 
-// #define LT2PWM_COEF4_M                      1.5463f 
-// #define LT2PWM_COEF4_B                      1483.0381f 
-// #define LT_MAX_PPM                          1900
-// #define LT_MIN_PPM                          1100
-// #define LT_OFF_PPM                          700
-// #define LT_TF_B                             0.1667 
-// #define LT_TF_A                             0.6667 
 
 // COAX THRUST  ////////////////////////////////////////////////////////////////
 #define COAX2PWM_COEF1_M                      -0.0163f 

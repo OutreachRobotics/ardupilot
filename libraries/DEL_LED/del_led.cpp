@@ -16,12 +16,12 @@ extern const AP_HAL::HAL& hal;
 	Function definition :
 ***************************************************************************/
 
-DelLed::DelLed()
+DEL_LED::DEL_LED()
 {
     
 }
 
-void DelLed::init()
+void DEL_LED::init()
 {
     _dev = hal.i2c_mgr->get_device(I2C_BUS, I2C_ADDRESS);
     if (!_dev) {
@@ -37,11 +37,9 @@ void DelLed::init()
     {
         ledPower[i] = 0;
     }
-    batteryVoltage.voltage = 0;
-    ledCtr = 0;
 }
 
-void DelLed::setLedPower(uint8_t* ledCommand)
+void DEL_LED::setLedPower(uint8_t* ledCommand)
 {
     for(uint8_t i=0;i<7;i++)
     {
@@ -49,23 +47,13 @@ void DelLed::setLedPower(uint8_t* ledCommand)
     }
 }
 
-int16_t DelLed::getBatteryVoltage()
+void DEL_LED::manage()
 {
-    return int16_t(batteryVoltage.voltage*10);
-}
-
-void DelLed::manage()
-{
-    if(!_dev->get_semaphore()->take(2) || !_dev){
+    if(!_dev->get_semaphore()->take(2) || !_dev)
+    {
         return;
     }
-    if(ledCtr++<1)
-    {
-        _dev->transfer(ledPower,LED_COUNT,nullptr,0);
-    }
-    else
-    {
-        ledCtr = 0;
-        _dev->transfer(nullptr,0,&batteryVoltage.bytes.lsb,sizeof(batteryVoltage.voltage));
-    }
+
+    _dev->transfer(ledPower,LED_COUNT,nullptr,0);
+
 }

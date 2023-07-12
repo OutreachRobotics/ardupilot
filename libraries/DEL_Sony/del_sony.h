@@ -41,6 +41,7 @@ class DEL_Sony
 {
 public:
     DEL_Sony();
+    void init();
     void manage();
     void handle_rc_input();
     void set_pwm_action();

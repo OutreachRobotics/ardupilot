@@ -11,69 +11,39 @@
 #include <AP_HAL/AP_HAL.h>
 #include <RC_Channel/RC_Channel.h>
 #include <stdint.h>
+#include <SRV_Channel/SRV_Channel.h>
+
 
 /***************************************************************************
     Macro :
 ***************************************************************************/
 
-#define WINCH_UART 2
-#define WINCH_HEADER 0xFE
-#define WINCH_FOOTER 0xDE
+#define WINCH_MID_CHANNEL       1500
+#define WINCH_DEADBAND          0.05f
+#define WINCH_RANGE             500.0f
 
-#define TX_BUFFER_LEN 4
-#define RX_BUFFER_LEN 7
+#define WINCH_MAX_SPEED         50
 
-#define WINCH_MID_CHANNEL 1500.0f
-#define WINCH_DEADBAND 0.05f
-#define WINCH_RANGE 500.0f
-
-#define WINCH_MAX_SPEED 50
-
+#define WINCH_CH                SRV_Channel::k_winch
 
 /***************************************************************************
 	Enumerations :
 ***************************************************************************/
 
-enum Direction
-{
-    Neutral,
-    Up,
-    Down
-};
-
-union PositionRead
-{
-    int16_t pos;
-    uint8_t byte[2];
-};
 
 /***************************************************************************
 	Class :
 ***************************************************************************/
 
-class DelWinch
+class DEL_Winch
 {
 public:
-    DelWinch();
+    DEL_Winch();
     void init();
     void manage();
-    int16_t getPosition();
-    uint8_t getSpeed();
-    uint8_t getSpeedCommand();
-    uint8_t getDirection();
-    uint8_t getError();
-    uint8_t getCurrent();
 
 private:
-    AP_HAL::UARTDriver *_winch_port;
-    uint8_t tx_buffer[TX_BUFFER_LEN];
-    PositionRead position_read;
-    uint8_t speed_read;
-    uint8_t direction_read;
-    uint8_t current;
-    uint8_t error;
     uint8_t speed;
-    Direction direction;
     float winch_input;
 
 };

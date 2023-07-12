@@ -185,7 +185,7 @@ void GCS::handleDelComm()
     textMessage = (TextMessageID)del_comm.manageFCUInput();
     handleDelMessage(textMessage);
     
-    del_comm.sendCommand(camera_switch);  
+    del_comm.sendCommand();  
 }
 
 void GCS::handleDelMessage(TextMessageID msg)
@@ -277,6 +277,40 @@ float GCS::get_rangefinder_distance()
 uint8_t GCS::get_rope_length()
 {
     return rope_length;
+}
+
+int32_t GCS::get_winch_altitude()
+{
+    winch_altitude.bytes.LSB = del_comm.getStatus()[STATUS_LENGTH_LOW];
+    winch_altitude.bytes.MSB = del_comm.getStatus()[STATUS_LENGTH_HIGH];
+    
+    return winch_altitude.value;
+}
+
+MAV_RESULT GCS::set_led_state(float led0,float led1,float led2,float led3,float led4,float led5)
+{
+    led_state[0] = uint8_t(led0*255);
+    led_state[1] = uint8_t(led1*255);
+    led_state[2] = uint8_t(led2*255);
+    led_state[3] = uint8_t(led3*255);
+    led_state[4] = uint8_t(led4*255);
+    led_state[5] = uint8_t(led5*255);
+    return MAV_RESULT_ACCEPTED;
+}
+
+uint8_t* GCS::get_led_state()
+{
+    return led_state;
+}
+
+void GCS::set_camera_angle(uint16_t setter)
+{
+    camera_angle = setter;
+}
+
+uint16_t GCS::get_camera_angle()
+{
+    return camera_angle;
 }
 
 void GCS::start_herelink_record()
@@ -4357,6 +4391,8 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
         result = gcs().set_rope_length(uint8_t(packet.param1));
         break;
     case MAV_CMD_DO_SET_RELAY:
+        result = gcs().set_led_state(packet.param1,packet.param2,packet.param3,packet.param4,packet.param5,packet.param6);
+        break;
     case MAV_CMD_DO_REPEAT_RELAY:
         result = handle_servorelay_message(packet);
         break;
@@ -4739,7 +4775,7 @@ void GCS_MAVLINK::send_sys_status()
 
     mavlink_msg_sys_status_send(
         chan,
-        static_cast<uint32_t>(_status_msg[STATUS_CUTTING]),
+        gcs().get_camera_angle(),
         taxi_mode,
         wrist_mode,
         static_cast<uint16_t>(AP::scheduler().load_average() * 1000),
@@ -4829,7 +4865,7 @@ void GCS_MAVLINK::send_global_position_int()
         global_position_current_loc.lat, // in 1E7 degrees
         global_position_current_loc.lng, // in 1E7 degrees
         global_position_int_alt(),       // millimeters above ground/sea level
-        global_position_int_relative_alt(), // millimeters above home
+        gcs().get_winch_altitude()*10,     // millimeters above home
         vel.x * 100,                     // X speed cm/s (+ve North)
         vel.y * 100,                     // Y speed cm/s (+ve East)
         vel.z * 100,                     // Z speed cm/s (+ve Down)

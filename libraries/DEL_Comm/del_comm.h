@@ -19,21 +19,15 @@
 #define UART_SAMPLER        4
 #define UART_FCU            2
 
-#define COM_MSG_SIZE        7
+#define COM_MSG_SIZE        2
 #define COM_HEADER          255
 #define COM_SAMPLER_HEADER  251
 #define COM_SEQUENCE        0
-#define COM_STEALTH         1 
-#define COM_CALIB           2
-#define COM_LANDMODE        3
-#define COM_DYNA1           4
-#define COM_DYNA2           5
 #define COM2_MSG_SIZE       2
 #define COM_HDMI            1
 
-#define STATUS_MSG_SIZE     9
 #define SAMPLER_MSG_SIZE    7
-#define FCU_MSG_SIZE        4
+#define FCU_MSG_SIZE        8
 #define FCU_MSG_OFFSET      6
 #define STATUS_CUTTING      0
 #define STATUS_WRIST1       1
@@ -41,9 +35,17 @@
 #define STATUS_SAW          3
 #define STATUS_GRASP        4
 #define STATUS_ARM          5
+
 #define STATUS_BATT_LOW     6
 #define STATUS_BATT_HIGH    7
 #define STATUS_BATT_SOC     8
+#define STATUS_LENGTH_LOW   9
+#define STATUS_LENGTH_HIGH  10
+#define STATUS_SPEED_LOW    11
+#define STATUS_SPEED_HIGH   12
+
+#define STATUS_MSG_SIZE     (SAMPLER_MSG_SIZE+FCU_MSG_SIZE-2)
+
 
 #define CALIB_TIME          3000
 // Need to offset the received dyna speed to fit in uint8_t
@@ -76,6 +78,42 @@ enum TextMessageID
 };
 
 /***************************************************************************
+	Union :
+***************************************************************************/
+
+struct Bytes_2
+{
+  uint8_t LSB;
+  uint8_t MSB;
+};
+
+struct Bytes_4
+{
+  uint8_t byte0;
+  uint8_t byte1;
+  uint8_t byte2;
+  uint8_t byte3;
+};
+
+union Uint16_union
+{
+  uint16_t value;
+  Bytes_2 bytes;
+};
+
+union Int16_union
+{
+  int16_t value;
+  Bytes_2 bytes;
+};
+
+union Int32_union
+{
+  int32_t value;
+  Bytes_4 bytes;
+};
+
+/***************************************************************************
 	Class :
 ***************************************************************************/
 
@@ -86,7 +124,7 @@ public:
     void init();
     uint8_t manageSamplerInput();
     uint8_t manageFCUInput();
-    void sendCommand(uint8_t camera);
+    void sendCommand();
 
     uint8_t* getStatus();
 

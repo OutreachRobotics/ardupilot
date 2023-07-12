@@ -476,6 +476,11 @@ void Copter::ten_hz_logging_loop()
         Log_Write_PLANT();
     }
     Log_Write_SAMPLER();
+    del_sony.manage();
+    del_winch.manage();
+    del_led.setLedPower(gcs().get_led_state());
+    del_led.manage();
+    gcs().set_camera_angle(del_sony.get_camera_angle());
 }
 
 // fifty_hz_logging - should be run at 50hz

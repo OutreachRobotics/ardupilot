@@ -21,7 +21,10 @@ DEL_Sony::DEL_Sony()
     rec_ch3_pwm = SONY_MAN_MID_VALUE;
     rec_ch4_pwm = SONY_MID_VALUE;
     servo_pwm = SONY_MID_VALUE;
+}
 
+void DEL_Sony::init()
+{
     power_time = AP_HAL::millis();
     photo_time = AP_HAL::millis();
     movie_time = AP_HAL::millis();
@@ -32,6 +35,7 @@ DEL_Sony::DEL_Sony()
     SRV_Channels::set_output_pwm(SONY_PWR_CH, rec_ch4_pwm);
     SRV_Channels::set_output_pwm(SONY_SERVO_CH, servo_pwm);
 }
+
 void DEL_Sony::manage()
 {
     handle_rc_input();
@@ -74,15 +78,15 @@ void DEL_Sony::handle_rc_input()
         here_photo_btn = false;
     }
 
-    if(hal.rcin->read(HERE_MOVIE_CH) > HERE_MID_VALUE && !here_movie_btn)
-    {
-        here_movie_btn = true;
-        movie_time = AP_HAL::millis();
-    }
-    else if(AP_HAL::millis() - movie_time > 1500)
-    {   
-        here_movie_btn = false;
-    }
+    // if(hal.rcin->read(HERE_MOVIE_CH) > HERE_MID_VALUE && !here_movie_btn)
+    // {
+    //     here_movie_btn = true;
+    //     movie_time = AP_HAL::millis();
+    // }
+    // else if(AP_HAL::millis() - movie_time > 1500)
+    // {   
+    //     here_movie_btn = false;
+    // }
 }
 
 void DEL_Sony::set_pwm_action()
