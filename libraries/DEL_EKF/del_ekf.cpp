@@ -60,6 +60,7 @@ DelEKF::DelEKF()
 	F_pitch_multi = Mat(NUMBER_OF_LENGTH,16,f_pitch_array);
 	B_roll_multi = Mat(NUMBER_OF_LENGTH,4,b_roll_array);
 	B_pitch_multi = Mat(NUMBER_OF_LENGTH,4,b_roll_array);
+	k_lqr_multi = Mat(NUMBER_OF_LENGTH,30,k_lqr_array);
 	
 	F_roll = Mat(4,4,i4);
 	F_pitch = Mat(4,4,i4);

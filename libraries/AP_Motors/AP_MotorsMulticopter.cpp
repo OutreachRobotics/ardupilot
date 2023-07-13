@@ -256,8 +256,8 @@ void AP_MotorsMulticopter::output()
     float front, back, left, right;
     front = forward_in>0.0f?forward_in:0.0f;
     back = forward_in<0.0f?forward_in:0.0f;
-    left = lateral_in>0.0f?lateral_in:0.0f;
-    right = lateral_in<0.0f?-lateral_in:0.0f; 
+    right = lateral_in>0.0f?lateral_in:0.0f;
+    left = lateral_in<0.0f?-lateral_in:0.0f; 
 
     _actuator[0] = front;
     _actuator[1] = coax_enabled ? front : back;
@@ -490,8 +490,8 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
         _pwm[3] = BT_OFF_PPM;
         _pwm[4] = LT_OFF_PPM;
         _pwm[5] = LT_OFF_PPM;
-        _pwm[4] = LT_OFF_PPM;
-        _pwm[5] = LT_OFF_PPM;
+        _pwm[6] = LT_OFF_PPM;
+        _pwm[7] = LT_OFF_PPM;
     } else {
         if(coax_enabled)
         {

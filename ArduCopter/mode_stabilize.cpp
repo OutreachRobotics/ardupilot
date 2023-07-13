@@ -10,7 +10,7 @@
 
 bool ModeStabilize::init(bool ignore_checks){
     counter=0;
-    motors->set_coax_enable(true);
+    motors->set_coax_enable(false);
     return true;
 }
 
