@@ -279,6 +279,16 @@ uint8_t GCS::get_rope_length()
     return rope_length;
 }
 
+bool GCS::get_taxi_mode()
+{
+    return taxi_mode;
+}
+
+void GCS::set_taxi_mode(bool setter)
+{
+    taxi_mode = setter;
+}
+
 void GCS::start_herelink_record()
 {
     for(int i=0;i<num_gcs();i++)
@@ -4733,7 +4743,7 @@ void GCS_MAVLINK::send_sys_status()
     const uint16_t errors4 = AP::internalerror().count() & 0xffff;
 
     uint8_t* _status_msg = gcs().getDelCommStatus();
-    uint32_t taxi_mode = hal.rcin->read(TAXI_CHANNEL)>MID_PPM_VALUE;
+    uint32_t taxi_mode = gcs().get_taxi_mode();
     uint32_t wrist_mode = hal.rcin->read(WRIST_CHANNEL)>MID_PPM_VALUE;
     uint16_t voltage = ((uint16_t)_status_msg[STATUS_BATT_HIGH] << 8) | _status_msg[STATUS_BATT_LOW];
 

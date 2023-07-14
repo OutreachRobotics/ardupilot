@@ -10,6 +10,7 @@
 bool ModeAltHold::init(bool ignore_checks)
 {
     counter = 0;
+    taxi_mode_ctr = 0;
     motors->set_coax_enable(false);
     return true;
 }
@@ -19,7 +20,6 @@ bool ModeAltHold::init(bool ignore_checks)
 void ModeAltHold::run()
 {
     float lateral_input, pitch_input, yaw_input, thrust_input;
-    bool taxi_mode;
 
     // We use a NED frame as per the UAV standard
     // Roll, pitch, yaw channel are between -1 and 1
@@ -28,7 +28,15 @@ void ModeAltHold::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
 
-    taxi_mode = hal.rcin->read(TAXI_CHANNEL) > MID_PPM_VALUE;
+    Vector3f orientation = attitude_control->getDelEKFOrientation();
+    if(abs(orientation.x)>ROLL_FAILSAFE || abs(orientation.y)>PITCH_FAILSAFE)
+    {
+        taxi_mode = true;
+    }
+
+    taxi_mode_ctr = hal.rcin->read(TAXI_CHANNEL) > MID_PPM_VALUE ? taxi_mode_ctr+1 : 0;
+    taxi_mode = taxi_mode_ctr==10 ? !taxi_mode : taxi_mode;
+    gcs().set_taxi_mode(taxi_mode);
 
     lateral_input = -(float(channel_roll->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
     pitch_input = -(float(channel_pitch->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;

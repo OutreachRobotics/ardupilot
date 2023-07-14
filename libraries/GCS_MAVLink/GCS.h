@@ -1020,6 +1020,9 @@ public:
     MAV_RESULT set_camera_switch(uint8_t setter);
     MAV_RESULT set_rope_length(uint8_t setter);
 
+    bool get_taxi_mode();
+    void set_taxi_mode(bool setter);
+
     void start_herelink_record();
     void stop_herelink_record();
 
@@ -1037,6 +1040,7 @@ protected:
     uint8_t rope_length;
     uint8_t camera_switch;
     bool record_flag;
+    bool taxi_mode;
 
     virtual uint8_t sysid_this_mav() const = 0;
 

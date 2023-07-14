@@ -343,6 +343,8 @@ protected:
     int counter;
     bool sequenceArmed;
     uint32_t sequenceStart;
+    bool taxi_mode;
+    uint32_t taxi_mode_ctr;
 private:
 
 };
