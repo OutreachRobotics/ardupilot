@@ -253,20 +253,29 @@ void AP_MotorsMulticopter::output()
     float yaw_force = _yaw_in/(1.0f+LT_BACK_L/LT_FORWARD_L)/LT_FORWARD_L;
 
     float forward_in = _forward_in/2.0f;
-    float front, back, left, right;
+    float front, back, left, right, front_right, front_left, front_lat, rear_lat;
     front = forward_in>0.0f?forward_in:0.0f;
     back = forward_in<0.0f?forward_in:0.0f;
     right = lateral_in>0.0f?lateral_in:0.0f;
+    front_right = lateral_in>0.0f?(LT_BACK_L/LT_FORWARD_L)*lateral_in:0.0;
     left = lateral_in<0.0f?-lateral_in:0.0f; 
+    front_left = lateral_in<0.0f?-(LT_BACK_L/LT_FORWARD_L)*lateral_in:0.0;
+
+    rear_lat = lateral_in - yaw_force;
+    front_lat = (LT_BACK_L/LT_FORWARD_L)*lateral_in + yaw_force;  
 
     _actuator[0] = front;
     _actuator[1] = coax_enabled ? front : back;
     _actuator[2] = front;
     _actuator[3] = coax_enabled ? front : back;
-    _actuator[4] = right - yaw_force;
-    _actuator[5] = left + yaw_force;
-    _actuator[6] = (LT_BACK_L/LT_FORWARD_L)*right + yaw_force;
-    _actuator[7] = (LT_BACK_L/LT_FORWARD_L)*left - yaw_force;
+    _actuator[4] = rear_lat > 0.0f ? right - yaw_force : 0.0f;
+    _actuator[5] = rear_lat < 0.0f ? left + yaw_force : 0.0f;
+    _actuator[6] = front_lat > 0.0f ? front_right + yaw_force : 0.0f;
+    _actuator[7] = front_lat < 0.0f ? front_left - yaw_force : 0.0f;
+    // _actuator[4] = right - yaw_force;
+    // _actuator[5] = left + yaw_force;
+    // _actuator[6] = (LT_BACK_L/LT_FORWARD_L)*right + yaw_force;
+    // _actuator[7] = (LT_BACK_L/LT_FORWARD_L)*left - yaw_force;
 
     if(!motors_tuning)
     {
