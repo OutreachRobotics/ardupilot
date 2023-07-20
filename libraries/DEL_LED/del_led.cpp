@@ -53,7 +53,5 @@ void DEL_LED::manage()
     {
         return;
     }
-
     _dev->transfer(ledPower,LED_COUNT,nullptr,0);
-
 }

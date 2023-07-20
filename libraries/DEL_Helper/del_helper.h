@@ -38,12 +38,12 @@
 #define YAW_SENSITIVITY                     0.01f
 #define ROLL_SENSITIVITY                    0.003f
 #define PITCH_SENSITIVITY                   0.003f
-#define PMAX_ACTUATOR_THRUST                32.0f
-#define PMIN_ACTUATOR_THRUST                9.0f    // For negative thrust
-#define RMAX_ACTUATOR_THRUST                8.6f
-#define YMAX_ACTUATOR_MOMENT                ((RMAX_ACTUATOR_THRUST/2) * (LT_BACK_L+LT_FORWARD_L))
-#define M_PLATFORM                          3.02f
-#define MAX_PITCH                           0.5f // 30°
+#define PMAX_ACTUATOR_THRUST                24.0f
+#define PMIN_ACTUATOR_THRUST                5.6f    // For negative thrust
+#define RMAX_ACTUATOR_THRUST                9.0f
+#define YMAX_ACTUATOR_MOMENT                ((PMAX_ACTUATOR_THRUST/2) * (FT_FORWARD_L+FT_FORWARD_L))
+#define M_PLATFORM                          4.00f
+#define MAX_PITCH                           0.4f // 30°
 #define MAX_ROLL                            0.2f // 11.45°
 #define MIN_PITCH                           0.0f
 #define MIN_ROLL                            (-MAX_ROLL)
@@ -84,60 +84,58 @@
 #define NUMBER_OF_MOTOR                     6
 
 // FORWARD THRUST
-#define FT2PWM_COEF1_M                      -0.0916f 
-#define FT2PWM_COEF1_B                      2.5263f 
-#define FT2PWM_COEF2_M                      1.2881f 
-#define FT2PWM_COEF2_B                      -38.0520f 
-#define FT2PWM_COEF3_M                      -6.3686f 
-#define FT2PWM_COEF3_B                      228.0061f 
-#define FT2PWM_COEF4_M                      -1.7693f 
-#define FT2PWM_COEF4_B                      1602.27f 
+#define FT2PWM_COEF1_M                      -1.545958e-01f 
+#define FT2PWM_COEF1_B                      4.200895e+00f 
+#define FT2PWM_COEF2_M                      1.875216e+00f 
+#define FT2PWM_COEF2_B                      -5.422406e+01f 
+#define FT2PWM_COEF3_M                      -7.957148e+00f 
+#define FT2PWM_COEF3_B                      2.775472e+02f 
+#define FT2PWM_COEF4_M                      -8.345725e-02f 
+#define FT2PWM_COEF4_B                       1.559977e+03f 
 #define FT_MAX_PPM                          1950
 #define FT_MIN_PPM                          1550
 #define FT_OFF_PPM                          1500
-#define FT_TF_B                             0.2564 
-#define FT_TF_A                             0.4872 
-#define FT_FORWARD_L                        0.1f
+#define FT_TF_B                             0.2564 //todo
+#define FT_TF_A                             0.4872 //todo
+#define FT_FORWARD_L                        0.1f   //todo
 
 // BACKWARD THRUST
-#define BT2PWM_COEF1_M                      -0.6267f 
-#define BT2PWM_COEF1_B                      17.3241f 
-#define BT2PWM_COEF2_M                      -4.2450f 
-#define BT2PWM_COEF2_B                      127.2179f 
-#define BT2PWM_COEF3_M                      -10.2182f 
-#define BT2PWM_COEF3_B                      384.7325f 
-#define BT2PWM_COEF4_M                      2.3567f 
-#define BT2PWM_COEF4_B                      1373.1471f 
+#define BT2PWM_COEF1_M                      2.586303e+00f 
+#define BT2PWM_COEF1_B                      -6.970486e+01f 
+#define BT2PWM_COEF2_M                      -1.184289e+01f 
+#define BT2PWM_COEF2_B                      3.385178e+02f 
+#define BT2PWM_COEF3_M                      2.036201e+01f 
+#define BT2PWM_COEF3_B                      -6.924157e+02f 
+#define BT2PWM_COEF4_M                      -1.139923e+00f 
+#define BT2PWM_COEF4_B                      1.452331e+03f 
 #define BT_MAX_PPM                          1050
 #define BT_MIN_PPM                          1450
 #define BT_OFF_PPM                          1500
 
 // ANTAGONIST LATERAL THRUST
-#define LT_BACK_L                           0.245f
-#define LT_FORWARD_L                        0.270f
-#define LT2PWM_COEF1_M                      -0.0167f 
-#define LT2PWM_COEF1_B                      6.3152f 
-#define LT2PWM_COEF2_M                      0.3040f 
-#define LT2PWM_COEF2_B                      -61.8064f 
-#define LT2PWM_COEF3_M                      -1.4008f 
-#define LT2PWM_COEF3_B                      242.7982f 
-#define LT2PWM_COEF4_M                      1.5463f 
-#define LT2PWM_COEF4_B                      1483.0381f 
+#define LT2PWM_COEF1_M                      -8.869120e-01f 
+#define LT2PWM_COEF1_B                      2.457233e+01f 
+#define LT2PWM_COEF2_M                      7.638251e+00f 
+#define LT2PWM_COEF2_B                      -2.268773e+02f 
+#define LT2PWM_COEF3_M                      -2.305635e+01f 
+#define LT2PWM_COEF3_B                      8.277015e+02f 
+#define LT2PWM_COEF4_M                      5.030542e-01f 
+#define LT2PWM_COEF4_B                      1.077304e+03f 
 #define LT_MAX_PPM                          1900
-#define LT_MIN_PPM                          1100
+#define LT_MIN_PPM                          1050
 #define LT_OFF_PPM                          1000
-#define LT_TF_B                             0.1667 
-#define LT_TF_A                             0.6667 
+#define LT_TF_B                             0.3521f
+#define LT_TF_A                             0.2958f 
 
 // COAX THRUST  ////////////////////////////////////////////////////////////////
-#define COAX2PWM_COEF1_M                      -0.0163f 
-#define COAX2PWM_COEF1_B                      0.4582f 
-#define COAX2PWM_COEF2_M                      0.3982f 
-#define COAX2PWM_COEF2_B                      -11.9685f 
-#define COAX2PWM_COEF3_M                      -3.7588f 
-#define COAX2PWM_COEF3_B                      133.5199f 
-#define COAX2PWM_COEF4_M                      0.7501f 
-#define COAX2PWM_COEF4_B                      1538.9529f 
+#define COAX2PWM_COEF1_M                      -3.320711e-02f 
+#define COAX2PWM_COEF1_B                      9.109298e-01f 
+#define COAX2PWM_COEF2_M                      6.286960e-01f 
+#define COAX2PWM_COEF2_B                      -1.846751e+01f 
+#define COAX2PWM_COEF3_M                      -4.515677e+00f 
+#define COAX2PWM_COEF3_B                      1.605115e+02f 
+#define COAX2PWM_COEF4_M                      -1.929223e-01f 
+#define COAX2PWM_COEF4_B                      1.559968e+03f 
 #define COAX_MAX_PPM                          1950
 #define COAX_MIN_PPM                          1550
 #define COAX_OFF_PPM                          1500
