@@ -55,7 +55,7 @@ public:
     Mat getLQRgain_taxi();
     Mat createCommandMat(Vector3f orientation);
     void update_R_coeff(float r_value);
-    void update_length(float length);
+    void update_length(float length, uint8_t controller_mode);
 
 private:
     Mat x_roll;
@@ -109,7 +109,8 @@ private:
     Mat H_pitch;
     Mat H_yaw;
     
-    Mat k_lqr_multi;
+    Mat k_lqr_pos_multi;
+    Mat k_lqr_damp_multi;
     Mat k_lqr;    
 };
 

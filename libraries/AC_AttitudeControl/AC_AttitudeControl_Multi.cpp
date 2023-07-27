@@ -591,13 +591,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         // Forward control, velocity on move, angular on hold
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*PITCH_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
+            target_forward += forward*PITCH_SENSITIVITY/((gcs().get_winch_altitude_m()/uint8_t(5))+1);
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*ROLL_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
+            target_lateral += lateral*ROLL_SENSITIVITY/((gcs().get_winch_altitude_m()/uint8_t(5))+1);
         }
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
@@ -693,13 +693,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
         // Forward control, velocity on move, angular on hold
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*PITCH_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
+            target_forward += forward*PITCH_SENSITIVITY/((gcs().get_winch_altitude_m()/uint8_t(5))+1);
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*ROLL_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
+            target_lateral += lateral*ROLL_SENSITIVITY/((gcs().get_winch_altitude_m()/uint8_t(5))+1);
         }
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
@@ -736,7 +736,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
 
     if(armed)
     {
-        _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
+        _motors.set_lateral(lateral_command);
         _motors.set_forward(forward_command);
         _motors.set_yaw(yaw_input);
         _motors.set_throttle(throttle);
@@ -1014,9 +1014,9 @@ void AC_AttitudeControl_Multi::constrainCommand()
     forward_command=constrain_float(forward_command,-PMIN_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
 }
 
-void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure, uint8_t rope_length)
+void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure, float rope_length, uint8_t controller_mode)
 {
-    delEKF.update_length(float(rope_length));
+    delEKF.update_length(rope_length, controller_mode);
     delEKF.linearDynamicsEstimation(F_in, measure, ahrs_ang);
     mamba_orientation = delEKF.getPlatformOrientation();
     mamba_states = delEKF.getEKFStates();

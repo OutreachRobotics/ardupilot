@@ -176,7 +176,7 @@ void GCS::handleDelComm()
     AP_Logger *logger = AP_Logger::get_singleton();
     if(!logger->CardInserted() && noSDWarning && AP_HAL::millis()>30000)
     {
-        gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
+        // gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
 		noSDWarning = false;
     }
 
@@ -247,16 +247,21 @@ void GCS::set_rangefinder_distance(float setter)
     last_range_read = setter;
 }
 
-MAV_RESULT GCS::set_rope_length(uint8_t setter)
-{
-    rope_length = setter;
-    return MAV_RESULT_ACCEPTED;
-}
-
 MAV_RESULT GCS::set_camera_switch(uint8_t setter)
 {
     camera_switch = setter;
     return MAV_RESULT_ACCEPTED;
+}
+
+MAV_RESULT GCS::set_controller_mode(uint8_t setter)
+{
+    controller_mode = setter;
+    return MAV_RESULT_ACCEPTED;
+}
+
+uint8_t GCS::get_controller_mode()
+{
+    return controller_mode;
 }
 
 Vector3f GCS::get_platform_orientation()
@@ -274,17 +279,30 @@ float GCS::get_rangefinder_distance()
     return rangefinder_distance;
 }
 
-uint8_t GCS::get_rope_length()
-{
-    return rope_length;
-}
-
 int32_t GCS::get_winch_altitude()
 {
     winch_altitude.bytes.LSB = del_comm.getStatus()[STATUS_LENGTH_LOW];
     winch_altitude.bytes.MSB = del_comm.getStatus()[STATUS_LENGTH_HIGH];
-    
-    return winch_altitude.value;
+
+    return winch_altitude.value - winch_altitude_offset;
+}
+
+float GCS::get_winch_altitude_m()
+{
+    winch_altitude.bytes.LSB = del_comm.getStatus()[STATUS_LENGTH_LOW];
+    winch_altitude.bytes.MSB = del_comm.getStatus()[STATUS_LENGTH_HIGH];
+
+    return 5.0f;
+    // return float(winch_altitude.value - winch_altitude_offset)/100.0f;
+}
+
+MAV_RESULT GCS::reset_winch_altitude()
+{
+    winch_altitude.bytes.LSB = del_comm.getStatus()[STATUS_LENGTH_LOW];
+    winch_altitude.bytes.MSB = del_comm.getStatus()[STATUS_LENGTH_HIGH];
+    winch_altitude_offset = winch_altitude.value;
+
+    return MAV_RESULT_ACCEPTED;
 }
 
 MAV_RESULT GCS::set_led_state(float led0,float led1,float led2,float led3,float led4,float led5)
@@ -4388,13 +4406,13 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
         result = gcs().set_camera_switch(uint8_t(packet.param1));
         break;
     case MAV_CMD_DO_REPEAT_SERVO:
-        result = gcs().set_rope_length(uint8_t(packet.param1));
+        result = gcs().set_controller_mode(uint8_t(packet.param1));
         break;
     case MAV_CMD_DO_SET_RELAY:
         result = gcs().set_led_state(packet.param1,packet.param2,packet.param3,packet.param4,packet.param5,packet.param6);
         break;
     case MAV_CMD_DO_REPEAT_RELAY:
-        result = handle_servorelay_message(packet);
+        result = gcs().reset_winch_altitude();
         break;
 
     case MAV_CMD_DO_FLIGHTTERMINATION:
@@ -4799,7 +4817,7 @@ void GCS_MAVLINK::send_attitude() const
 {
     Vector2f reach = gcs().get_platform_reach();
     Vector3f orientation = gcs().get_platform_orientation();
-    float length = float(gcs().get_rope_length());
+    float length = float(gcs().get_winch_altitude_m());
     float distance = gcs().get_rangefinder_distance();
     distance = distance>RANGEFINDER_OFFSET?distance-RANGEFINDER_OFFSET:0.0f;
 
@@ -4865,7 +4883,7 @@ void GCS_MAVLINK::send_global_position_int()
         global_position_current_loc.lat, // in 1E7 degrees
         global_position_current_loc.lng, // in 1E7 degrees
         global_position_int_alt(),       // millimeters above ground/sea level
-        gcs().get_winch_altitude()*10,     // millimeters above home
+        gcs().get_winch_altitude()*10,   // millimeters above home
         vel.x * 100,                     // X speed cm/s (+ve North)
         vel.y * 100,                     // Y speed cm/s (+ve East)
         vel.z * 100,                     // Z speed cm/s (+ve Down)

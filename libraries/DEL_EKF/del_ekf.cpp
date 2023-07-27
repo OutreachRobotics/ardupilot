@@ -32,7 +32,8 @@
 	double b_roll_array[] = B_ROLL;
 	double f_pitch_array[] = F_PITCH;
 	double b_pitch_array[] = B_PITCH;
-    double k_lqr_array[] = K_LQR;
+    double k_lqr_pos_array[] = K_LQR_POS;
+    double k_lqr_damp_array[] = K_LQR_DAMP;
 	
 
 /***************************************************************************
@@ -60,7 +61,9 @@ DelEKF::DelEKF()
 	F_pitch_multi = Mat(NUMBER_OF_LENGTH,16,f_pitch_array);
 	B_roll_multi = Mat(NUMBER_OF_LENGTH,4,b_roll_array);
 	B_pitch_multi = Mat(NUMBER_OF_LENGTH,4,b_roll_array);
-	
+	k_lqr_damp_multi = Mat(NUMBER_OF_LENGTH,30,k_lqr_damp_array);
+	k_lqr_pos_multi = Mat(NUMBER_OF_LENGTH,30,k_lqr_pos_array);
+
 	F_roll = Mat(4,4,i4);
 	F_pitch = Mat(4,4,i4);
 	F_yaw = Mat(2,2,i4);
@@ -119,7 +122,7 @@ Mat DelEKF::commandLPF(Mat F_in)
 
 	F_in_filt[0] = F_in[0]*LT_TF_B + last_F_in[0]*LT_TF_B + last_F_in_filt[0]*LT_TF_A;
 	F_in_filt[1] = F_in[1]*FT_TF_B + last_F_in[1]*FT_TF_B + last_F_in_filt[1]*FT_TF_A;
-	F_in_filt[2] = F_in[2]*LT_TF_B + last_F_in[2]*LT_TF_B + last_F_in_filt[2]*LT_TF_A;
+	F_in_filt[2] = F_in[2]*FT_TF_B + last_F_in[2]*FT_TF_B + last_F_in_filt[2]*FT_TF_A;
 	last_F_in_filt = F_in_filt;
 	last_F_in = F_in;
 
@@ -270,7 +273,7 @@ void DelEKF::update_R_coeff(float r_value)
 	Re_yaw = 0.1f;		
 }
 
-void DelEKF::update_length(float length)
+void DelEKF::update_length(float length, uint8_t controller_mode)
 {
 	double fyaw [] = F_YAW;
 	double byaw [] = B_YAW;
@@ -283,7 +286,8 @@ void DelEKF::update_length(float length)
 		F_pitch = Mat(4,4,F_pitch_multi.getLength(uint8_t(round(length))));
 		B_roll = Mat(4,1,B_roll_multi.getLength(uint8_t(round(length))));
 		B_pitch = Mat(4,1,B_pitch_multi.getLength(uint8_t(round(length))));
-		k_lqr = Mat(3,10,k_lqr_multi.getLength(uint8_t(round(length))));
+		k_lqr = controller_mode ? Mat(3,10,k_lqr_pos_multi.getLength(uint8_t(round(length)))) : 
+			Mat(3,10,k_lqr_damp_multi.getLength(uint8_t(round(length))));
 	}
 	else
 	{
@@ -291,6 +295,7 @@ void DelEKF::update_length(float length)
 		F_pitch = Mat(4,4,F_pitch_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
 		B_roll = Mat(4,1,B_roll_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
 		B_pitch = Mat(4,1,B_pitch_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
-		k_lqr = Mat(3,10,k_lqr_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
+		k_lqr = controller_mode ? Mat(3,10,k_lqr_pos_multi.getLength(LENGTH_DEFAULT_VALUE)) : 
+			Mat(3,10,k_lqr_damp_multi.getLength(LENGTH_DEFAULT_VALUE));
 	}
 }

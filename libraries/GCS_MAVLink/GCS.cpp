@@ -50,10 +50,10 @@ void GCS::init()
     last_range_read = 0.0f;
     last_pitch_read = 0.0f;
     last_roll_read = 0.0f;
-    rope_length = 5.0f;
     camera_switch = 0;
     winch_altitude.value = 0;
     camera_angle = 0;
+    controller_mode = 0;
     memset(led_state,0,sizeof(led_state));
 }
 

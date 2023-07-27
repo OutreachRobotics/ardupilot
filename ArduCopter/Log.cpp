@@ -185,7 +185,7 @@ void Copter::Log_Write_MAMBA_EKF()
         phi2p       : (float)states[7],
         phi3p_dt    : (float)states[8],
         phi3p       : (float)states[9],
-        length      : (float)gcs().get_rope_length(),
+        length      : gcs().get_winch_altitude_m(),
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 };

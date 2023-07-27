@@ -1011,14 +1011,14 @@ public:
     Vector3f get_platform_orientation();
     Vector2f get_platform_reach();
     float get_rangefinder_distance();
-    uint8_t get_rope_length();
 
     void set_platform_orientation(Vector3f setter);
     void set_platform_reach(Vector2f setter);
     void set_rangefinder_distance(float setter);
 
     MAV_RESULT set_camera_switch(uint8_t setter);
-    MAV_RESULT set_rope_length(uint8_t setter);
+    MAV_RESULT set_controller_mode(uint8_t setter);
+    uint8_t get_controller_mode();
 
     MAV_RESULT set_led_state(float led0,float led1,float led2,float led3,float led4,float led5);
     uint8_t* get_led_state();
@@ -1026,10 +1026,13 @@ public:
     void set_camera_angle(uint16_t setter);
     uint16_t get_camera_angle();
 
+    int32_t get_winch_altitude();
+    float get_winch_altitude_m();
+    MAV_RESULT reset_winch_altitude();
+
     void start_herelink_record();
     void stop_herelink_record();
 
-    int32_t get_winch_altitude();
 
 protected:
 
@@ -1042,12 +1045,13 @@ protected:
     float last_range_read;
     float last_pitch_read;
     float last_roll_read;
-    uint8_t rope_length;
     uint8_t camera_switch;
     bool record_flag;
     Int16_union winch_altitude;
+    int16_t winch_altitude_offset;
     uint8_t led_state[NUMBER_OF_LED];
     uint16_t camera_angle;
+    uint8_t controller_mode;
 
     virtual uint8_t sysid_this_mav() const = 0;
 

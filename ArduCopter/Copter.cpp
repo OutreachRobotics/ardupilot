@@ -230,7 +230,8 @@ void Copter::fast_loop()
     // motors->get_yaw();     return yaw moment
     Vector3f gyro = ahrs.get_gyro();
     attitude_control->updateDelEKF(Vector3f(motors->get_lateral(),
-        motors->get_forward(), motors->get_yaw()), gyro, gcs().get_rope_length());
+        motors->get_forward(), motors->get_yaw()), gyro, gcs().get_winch_altitude_m(),
+        gcs().get_controller_mode());
 
     Vector3f orientation = attitude_control->getDelEKFOrientation();
     if(abs(orientation.x)>ROLL_FAILSAFE || abs(orientation.y)>PITCH_FAILSAFE)

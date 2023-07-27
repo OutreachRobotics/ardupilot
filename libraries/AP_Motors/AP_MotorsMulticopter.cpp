@@ -248,24 +248,25 @@ void AP_MotorsMulticopter::output()
     // _forward_in is for forward force
 
     float lateral_in = -_lateral_in;
-    // Todo adjust the yaw formula for the main thrusters
-    float yaw_force = _yaw_in/2.0f/FT_FORWARD_L;
-    float forward_in = _forward_in/2.0f;
+    float lateral_yaw = lateral_in*LT_DIST_CDM;
+
+    float yaw_force = (_yaw_in-lateral_yaw)/(FT_LATERAL_L + FT_LATERAL_R);
+    float forward_in = _forward_in/(1.0f+(FT_LATERAL_L/FT_LATERAL_R));
 
     float motor01, motor23;
     float left, right;
-    left = lateral_in>0.0f?lateral_in:0.0f;
-    right = lateral_in<0.0f?-lateral_in:0.0f; 
+    right = lateral_in>0.0f?lateral_in:0.0f;
+    left = lateral_in<0.0f?-lateral_in:0.0f; 
 
     motor01 = forward_in + yaw_force;
-    motor23 = forward_in - yaw_force;
+    motor23 = (FT_LATERAL_L/FT_LATERAL_R)*forward_in - yaw_force;
 
     _actuator[0] = motor01>0.0f ? motor01 : 0.0f;
     _actuator[1] = (coax_enabled ? motor01>0.0f ? motor01 : 0.0f : motor01<0.0f ? abs(motor01) : 0.0f);
     _actuator[2] = motor23>0.0f ? motor23 : 0.0f;
     _actuator[3] = (coax_enabled ? motor23>0.0f ? motor23 : 0.0f : motor23<0.0f ? abs(motor23) : 0.0f);
-    _actuator[4] = left;
-    _actuator[5] = right;
+    _actuator[4] = right;
+    _actuator[5] = left;
 
     if(!motors_tuning)
     {
