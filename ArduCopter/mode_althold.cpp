@@ -47,7 +47,8 @@ void ModeAltHold::run()
 
 
     // Only call controller each 8 timestep to have 50Hz
-    if (counter>7){
+    if (counter>7)
+    {
         if(taxi_mode)
         {
             motors->set_coax_enable(false);
@@ -63,6 +64,7 @@ void ModeAltHold::run()
             {
                 motors->set_coax_enable(true);
             }
+            motors->set_coax_enable(false);
             attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
         }
         counter=0;

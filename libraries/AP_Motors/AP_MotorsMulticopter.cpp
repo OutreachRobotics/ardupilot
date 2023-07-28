@@ -228,7 +228,8 @@ AP_MotorsMulticopter::AP_MotorsMulticopter(uint16_t loop_rate, uint16_t speed_hz
 
     batteryVoltage = 0.0f;
     motors_tuning = false;
-    motors_on = false;
+    nextMotor = false;
+    motorCtr = 0;
     motors_tuning_time = AP_HAL::millis();
     coax_enabled = false;
 };
@@ -308,7 +309,7 @@ void AP_MotorsMulticopter::motors_tuning_pwm()
 {
     if(AP_HAL::millis() - motors_tuning_time > MOTORS_TUNING_INTERVAL)
     {
-        motors_on = !motors_on;
+        nextMotor = true;
         motors_tuning_time = AP_HAL::millis();
     }
 
@@ -323,12 +324,19 @@ void AP_MotorsMulticopter::motors_tuning_pwm()
     }
     else
     {
-        _pwm[0] = motors_on ? FT_MIN_PPM : FT_OFF_PPM;
-        _pwm[1] = motors_on ? FT_MIN_PPM : BT_OFF_PPM;
-        _pwm[2] = motors_on ? FT_MIN_PPM : FT_OFF_PPM;
-        _pwm[3] = motors_on ? FT_MIN_PPM : BT_OFF_PPM;
-        _pwm[4] = motors_on ? LT_MIN_PPM : LT_OFF_PPM;
-        _pwm[5] = motors_on ? LT_MIN_PPM : LT_OFF_PPM;
+        if(nextMotor)
+        {
+            nextMotor = false;
+            motorCtr = motorCtr+1>NUMBER_OF_MOTOR ? 0 : motorCtr+1;
+        }
+        _pwm[0] = FT_OFF_PPM;
+        _pwm[1] = FT_OFF_PPM;
+        _pwm[2] = FT_OFF_PPM;
+        _pwm[3] = FT_OFF_PPM;
+        _pwm[4] = LT_OFF_PPM;
+        _pwm[5] = LT_OFF_PPM;
+        
+        _pwm[motorCtr] = motorCtr<4?FT_MIN_PPM:LT_MIN_PPM;
     }
 }
 
@@ -522,11 +530,17 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
                     (FT2PWM_COEF4_M*batteryVoltage+FT2PWM_COEF4_B);
             _pwm[0] = constrain_int16(_pwm[0],FT_MIN_PPM,FT_MAX_PPM);
 
-            _pwm[1] = (BT2PWM_COEF1_M*batteryVoltage+BT2PWM_COEF1_B)*pow(_actuator[1],3) + 
-                    (BT2PWM_COEF2_M*batteryVoltage+BT2PWM_COEF2_B)*pow(_actuator[1],2) + 
-                    (BT2PWM_COEF3_M*batteryVoltage+BT2PWM_COEF3_B)*_actuator[1] + 
-                    (BT2PWM_COEF4_M*batteryVoltage+BT2PWM_COEF4_B);
-            _pwm[1] = constrain_int16(_pwm[1],BT_MAX_PPM,BT_MIN_PPM);
+            // _pwm[1] = (BT2PWM_COEF1_M*batteryVoltage+BT2PWM_COEF1_B)*pow(_actuator[1],3) + 
+            //         (BT2PWM_COEF2_M*batteryVoltage+BT2PWM_COEF2_B)*pow(_actuator[1],2) + 
+            //         (BT2PWM_COEF3_M*batteryVoltage+BT2PWM_COEF3_B)*_actuator[1] + 
+            //         (BT2PWM_COEF4_M*batteryVoltage+BT2PWM_COEF4_B);
+            // _pwm[1] = constrain_int16(_pwm[1],BT_MAX_PPM,BT_MIN_PPM);
+
+            _pwm[1] = (FT2PWM_COEF1_M*batteryVoltage+FT2PWM_COEF1_B)*pow(_actuator[1],3) + 
+                    (FT2PWM_COEF2_M*batteryVoltage+FT2PWM_COEF2_B)*pow(_actuator[1],2) + 
+                    (FT2PWM_COEF3_M*batteryVoltage+FT2PWM_COEF3_B)*_actuator[1] + 
+                    (FT2PWM_COEF4_M*batteryVoltage+FT2PWM_COEF4_B);
+            _pwm[1] = constrain_int16(_pwm[1],FT_MIN_PPM,FT_MAX_PPM);
 
             _pwm[2] = (FT2PWM_COEF1_M*batteryVoltage+FT2PWM_COEF1_B)*pow(_actuator[2],3) + 
                     (FT2PWM_COEF2_M*batteryVoltage+FT2PWM_COEF2_B)*pow(_actuator[2],2) + 
@@ -534,11 +548,17 @@ int16_t AP_MotorsMulticopter::output_to_pwm(float actuator)
                     (FT2PWM_COEF4_M*batteryVoltage+FT2PWM_COEF4_B);
             _pwm[2] = constrain_int16(_pwm[2],FT_MIN_PPM,FT_MAX_PPM);
 
-            _pwm[3] = (BT2PWM_COEF1_M*batteryVoltage+BT2PWM_COEF1_B)*pow(_actuator[3],3) + 
-                    (BT2PWM_COEF2_M*batteryVoltage+BT2PWM_COEF2_B)*pow(_actuator[3],2) + 
-                    (BT2PWM_COEF3_M*batteryVoltage+BT2PWM_COEF3_B)*_actuator[3] + 
-                    (BT2PWM_COEF4_M*batteryVoltage+BT2PWM_COEF4_B);
-            _pwm[3] = constrain_int16(_pwm[3],BT_MAX_PPM,BT_MIN_PPM);
+            // _pwm[3] = (BT2PWM_COEF1_M*batteryVoltage+BT2PWM_COEF1_B)*pow(_actuator[3],3) + 
+            //         (BT2PWM_COEF2_M*batteryVoltage+BT2PWM_COEF2_B)*pow(_actuator[3],2) + 
+            //         (BT2PWM_COEF3_M*batteryVoltage+BT2PWM_COEF3_B)*_actuator[3] + 
+            //         (BT2PWM_COEF4_M*batteryVoltage+BT2PWM_COEF4_B);
+            // _pwm[3] = constrain_int16(_pwm[3],BT_MAX_PPM,BT_MIN_PPM);
+
+            _pwm[3] = (FT2PWM_COEF1_M*batteryVoltage+FT2PWM_COEF1_B)*pow(_actuator[3],3) + 
+                    (FT2PWM_COEF2_M*batteryVoltage+FT2PWM_COEF2_B)*pow(_actuator[3],2) + 
+                    (FT2PWM_COEF3_M*batteryVoltage+FT2PWM_COEF3_B)*_actuator[3] + 
+                    (FT2PWM_COEF4_M*batteryVoltage+FT2PWM_COEF4_B);
+            _pwm[3] = constrain_int16(_pwm[3],FT_MIN_PPM,FT_MAX_PPM);
         }
 
         _pwm[4] = (LT2PWM_COEF1_M*batteryVoltage+LT2PWM_COEF1_B)*pow(_actuator[4],3) + 

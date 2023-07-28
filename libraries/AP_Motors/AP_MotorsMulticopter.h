@@ -221,6 +221,7 @@ protected:
     float batteryVoltage;
     bool motors_tuning;
     uint32_t motors_tuning_time;
-    bool motors_on;
+    bool nextMotor;
+    uint8_t motorCtr;
     bool coax_enabled;
 };

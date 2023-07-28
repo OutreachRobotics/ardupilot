@@ -292,8 +292,8 @@ float GCS::get_winch_altitude_m()
     winch_altitude.bytes.LSB = del_comm.getStatus()[STATUS_LENGTH_LOW];
     winch_altitude.bytes.MSB = del_comm.getStatus()[STATUS_LENGTH_HIGH];
 
-    return 5.0f;
-    // return float(winch_altitude.value - winch_altitude_offset)/100.0f;
+    // return 5.0f;
+    return float(winch_altitude.value - winch_altitude_offset)/100.0f;
 }
 
 MAV_RESULT GCS::reset_winch_altitude()
