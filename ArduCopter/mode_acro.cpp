@@ -15,7 +15,7 @@ bool ModeAcro::init(bool ignore_checks)
 void ModeAcro::run()
 {
     float lateral_input, pitch_input, yaw_input, thrust_input;
-    motors->set_coax_enable(false);
+    motors->set_coax_enable(true);
 
     // We use a NED frame as per the UAV standard
     // Roll, pitch, yaw are between -1 and 1

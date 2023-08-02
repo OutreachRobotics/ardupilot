@@ -64,7 +64,7 @@ void ModeAltHold::run()
             {
                 motors->set_coax_enable(true);
             }
-            motors->set_coax_enable(false);
+            motors->set_coax_enable(true);
             attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
         }
         counter=0;

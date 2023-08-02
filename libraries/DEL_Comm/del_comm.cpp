@@ -85,6 +85,9 @@ void DEL_Comm::sendCommand()
 
     comMsg[0] = COM_SAMPLER_HEADER;
     comMsg[1] = hal.rcin->read(SEQUENCE_CHANNEL)>MID_PPM_VALUE;
+    comMsg[2] = hal.rcin->read(STEALTH_CHANNEL)>MID_PPM_VALUE;
+    comMsg[3] = hal.rcin->read(CALIB_CHANNEL)>MID_PPM_VALUE;
+    comMsg[4] = hal.rcin->read(TAXI_CHANNEL)>MID_PPM_VALUE;
     sampler_port->write(comMsg,COM_MSG_SIZE);
 
     // com2Msg[0] = COM_HEADER;

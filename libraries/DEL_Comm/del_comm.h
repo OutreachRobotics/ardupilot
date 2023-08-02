@@ -19,7 +19,7 @@
 #define UART_SAMPLER        4
 #define UART_FCU            2
 
-#define COM_MSG_SIZE        2
+#define COM_MSG_SIZE        5
 #define COM_HEADER          255
 #define COM_SAMPLER_HEADER  251
 #define COM_SEQUENCE        0
