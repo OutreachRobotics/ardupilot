@@ -294,6 +294,7 @@ void AP_Proximity::detect_instance(uint8_t instance)
             return;
         }
         break;
+
     case Type::MAV:
         state[instance].instance = instance;
         drivers[instance] = new AP_Proximity_MAV(*this, state[instance]);

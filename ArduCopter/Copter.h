@@ -67,6 +67,7 @@
 #include <AC_Sprayer/AC_Sprayer.h>
 #include <AP_ADSB/AP_ADSB.h>
 #include <AP_WindSensor/AP_ModernDevice.h>
+#include <LIDAR/RPLidarS2.h>
 
 // Configuration
 #include "defines.h"
@@ -230,6 +231,8 @@ private:
 
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::MultiCopter aparm;
+
+    RPLidarS2 Lidar;
 
     // Global parameters are all contained within the 'g' class.
     Parameters g;
