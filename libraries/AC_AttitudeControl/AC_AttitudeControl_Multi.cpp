@@ -456,30 +456,46 @@ void AC_AttitudeControl_Multi::deleaves_controller_acro(float lateral, float for
 void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed)
 {
     //run at 50Hz
+    Mat states = delEKF.getEKFStates();
+
 
     //Initialize target yaw to the value of yaw when not armed or update it with joystick when armed
-    target_yaw = !armed ? ahrs_ang.z : target_yaw + yaw*YAW_SENSITIVITY;
+    target_yaw = !armed ? states[9] : target_yaw + yaw*YAW_SENSITIVITY;
     target_lateral = LATERAL_INITIAL_COMMAND;
     target_forward = 0.0f;
-    yaw_angle_error = target_yaw - ahrs_ang.z ;
+    yaw_angle_error = target_yaw - states[9] ;
 
     //Correction for target angle more than half-turn away
     if (yaw_angle_error>M_PI){
         target_yaw=target_yaw-2*M_PI;
-        yaw_angle_error= target_yaw-ahrs_ang.z ;
+        yaw_angle_error= target_yaw-states[9];
         yaw_angle_error_last=yaw_angle_error_last-2*M_PI;
     }
 
     if (yaw_angle_error<-M_PI){
         target_yaw=target_yaw+2*M_PI;
-        yaw_angle_error= target_yaw-ahrs_ang.z;
+        yaw_angle_error= target_yaw-states[9];
         yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
     }
     lowPassSetPointFilter();
 
-    yaw_angle_error_dt=(yaw_angle_error-yaw_angle_error_last)*50; //50 Hz
-    yaw_input= yaw_kp*yaw_angle_error+yaw_kd*yaw_angle_error_dt;
-    yaw_angle_error_last=yaw_angle_error; //assign new error to last
+    Mat command = delEKF.createCommandMat(Vector3f(0,0,target_yaw));
+    Mat k_lqr = delEKF.getLQRgain();
+
+    // LQR control    
+    if (yaw_angle_error>M_PI){
+        target_yaw=target_yaw-2*M_PI;
+    }
+    if (yaw_angle_error<-M_PI){
+        target_yaw=target_yaw+2*M_PI;
+    }
+
+    double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
+    Mat ff = Mat(3,1,ff_array);
+    Mat out = (k_lqr * (command - states)) + ff;
+    yaw_input = out[2];
+
+    constrainCommand();
 
     // For logging purpose
     _euler_angle_target.x = 0.0f;
@@ -1016,6 +1032,7 @@ void AC_AttitudeControl_Multi::constrainCommand()
 
 void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure, float rope_length, uint8_t controller_mode)
 {
+    rope_length = 5.0f;
     delEKF.update_length(rope_length, controller_mode);
     delEKF.linearDynamicsEstimation(F_in, measure, ahrs_ang);
     mamba_orientation = delEKF.getPlatformOrientation();
