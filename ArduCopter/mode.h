@@ -315,6 +315,15 @@ private:
 };
 #endif
 
+enum ProbingState
+{
+    MoveForward,
+    Probing,
+    Detach,
+    MoveBackward,
+    Standby
+};
+
 
 class ModeAltHold : public Mode {
 
@@ -343,6 +352,8 @@ protected:
     int counter;
     bool sequenceArmed;
     uint32_t sequenceStart;
+    ProbingState probingState;
+    float detachCommand;
 private:
 
 };

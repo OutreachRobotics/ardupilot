@@ -1059,3 +1059,10 @@ float AC_AttitudeControl_Multi::getPitchCommand()
     return filtered_target_forward;
 }
 
+void AC_AttitudeControl_Multi::setForwardTarget(float setter)
+{
+    filtered_target_forward = setter;
+    target_forward = setter;
+    last_target_forward = setter;
+}
+

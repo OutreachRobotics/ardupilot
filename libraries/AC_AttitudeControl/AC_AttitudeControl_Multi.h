@@ -98,6 +98,7 @@ public:
     Vector2f getMaxReach();
     Mat getDelEKFStates();
     float getPitchCommand();
+    void setForwardTarget(float setter);
 
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];

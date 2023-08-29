@@ -265,7 +265,7 @@ void AP_MotorsMulticopter::output()
     _actuator[0] = motor01>0.0f ? motor01 : 0.0f;
     _actuator[1] = (coax_enabled ? motor01>0.0f ? motor01 : 0.0f : motor01<0.0f ? abs(motor01) : 0.0f);
     _actuator[2] = motor23>0.0f ? motor23 : 0.0f;
-    _actuator[3] = (coax_enabled ? motor23>0.0f ? motor23 : 0.0f : motor23<0.0f ? abs(motor23) : 0.0f);
+    _actuator[3] = (coax_enabled ? motor23>0.0f ? motor23 : 0.0f : motor23<0.0f ? abs(motor23*BT_3_ADJ) : 0.0f);
     _actuator[4] = right;
     _actuator[5] = left;
 

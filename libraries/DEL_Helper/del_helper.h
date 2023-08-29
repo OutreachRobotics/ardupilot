@@ -39,9 +39,9 @@
 #define ROLL_SENSITIVITY                    0.003f
 #define PITCH_SENSITIVITY                   0.003f
 #define PMAX_ACTUATOR_THRUST                24.0f
-#define PMIN_ACTUATOR_THRUST                7.6f    // For negative thrust
-#define RMAX_ACTUATOR_THRUST                5.0f
-#define YMAX_ACTUATOR_MOMENT                ((PMIN_ACTUATOR_THRUST/2.5f) * (FT_LATERAL_L+FT_LATERAL_R))
+#define PMIN_ACTUATOR_THRUST                6.0f    // For negative thrust
+#define RMAX_ACTUATOR_THRUST                3.0f
+#define YMAX_ACTUATOR_MOMENT                ((PMIN_ACTUATOR_THRUST/3.0f) * (FT_LATERAL_L+FT_LATERAL_R))
 #define M_PLATFORM                          5.02f
 #define MAX_PITCH                           0.4f // 22.91°
 #define MAX_ROLL                            0.1f // 5.73°
@@ -112,6 +112,7 @@
 #define BT_MAX_PPM                          1050
 #define BT_MIN_PPM                          1450
 #define BT_OFF_PPM                          1500
+#define BT_3_ADJ                            1.1f
 
 // ANTAGONIST LATERAL THRUST
 #define LT2PWM_COEF1_M                      -8.869120e-01f 
@@ -142,6 +143,15 @@
 #define COAX_MIN_PPM                        1550
 #define COAX_OFF_PPM                        1500
 
+// GRINDING SEQUENCE ////////////////////////////////////////////////////////////
+#define SEQ_DETACH_INCREMENT                0.007f
+#define SEQ_MAX_ANGLE                       0.25f
+#define SEQ_MIN_ANGLE                       0.02f
+#define SEQ_MOVING_PITCH_COMMAND            0.30f
+#define SEQ_PROBING_PITCH_COMMAND           1.0f
+#define SEQ_DETACH_LIMIT                    0.65f
+#define SEQ_PITCH_OFFSET                    0.02f
+
 // EKF CONSTANT ////////////////////////////////////////////////////////////////
 #define EYE_2                               {1,0,0,1}
 #define EYE_4                               {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1}
@@ -152,9 +162,9 @@
 #define C_PITCH                             {0,0,1,0,0,0,0,1}
 
 // EKF TUNING ///////////////////////////////////////////////////////////////////
-#define R_ROLL                              {0.1f,0,0,1e-4}
-#define R_PITCH                             {0.1f,0,0,1e-4}
-#define R_YAW_GYRO                          0.1f
+#define R_ROLL                              {1e-10f,0,0,1e-6f}
+#define R_PITCH                             {1e-10f,0,0,1e-6f}
+#define R_YAW_GYRO                          100.0f
 #define LENGTH_DEFAULT_VALUE                5.0f
 #define MIN_LENGTH                          1.0f
 #define MAX_LENGTH                          80.0f

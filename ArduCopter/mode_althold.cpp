@@ -10,6 +10,7 @@
 bool ModeAltHold::init(bool ignore_checks)
 {
     counter = 0;
+    probingState = Standby;
     motors->set_coax_enable(false);
     return true;
 }
@@ -19,7 +20,7 @@ bool ModeAltHold::init(bool ignore_checks)
 void ModeAltHold::run()
 {
     float lateral_input, pitch_input, yaw_input, thrust_input;
-    bool taxi_mode;
+    bool alt_hold_mode, sequence_on;
 
     // We use a NED frame as per the UAV standard
     // Roll, pitch, yaw channel are between -1 and 1
@@ -28,7 +29,8 @@ void ModeAltHold::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
 
-    taxi_mode = hal.rcin->read(TAXI_CHANNEL) > MID_PPM_VALUE;
+    alt_hold_mode = hal.rcin->read(TAXI_CHANNEL) > MID_PPM_VALUE;
+    sequence_on = hal.rcin->read(WRIST_CHANNEL) > MID_PPM_VALUE;
 
     lateral_input = -(float(channel_roll->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
     pitch_input = -(float(channel_pitch->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
@@ -44,28 +46,70 @@ void ModeAltHold::run()
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
     }
 
-
-
     // Only call controller each 8 timestep to have 50Hz
     if (counter>7)
     {
-        if(taxi_mode)
+        ProbingState nextProbingState = Standby;
+        switch (probingState)
         {
-            motors->set_coax_enable(false);
-            attitude_control->deleaves_controller_taxi_LQR(yaw_input, motors->armed());
-        }
-        else
-        {
-            if(motors->get_coax_enable() && attitude_control->getPitchCommand()<COAX_ANGLE_MIN)
+        case Standby:
             {
-                motors->set_coax_enable(false);
+                if(alt_hold_mode)
+                {
+                    motors->set_coax_enable(true);
+                    attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
+                }
+                else
+                {
+                    motors->set_coax_enable(false);
+                    attitude_control->deleaves_controller_stabilize(lateral_input, pitch_input, yaw_input, thrust_input,motors->armed());
+                }
+                nextProbingState = sequence_on ? MoveForward : Standby;
             }
-            else if(!motors->get_coax_enable() && attitude_control->getDelEKFOrientation().y>COAX_ANGLE_MIN && attitude_control->getPitchCommand()>COAX_ANGLE_MAX)
+            break;
+
+        case MoveForward:
+            {
+                float des_pitch = attitude_control->get_att_target_euler_rad().y;
+                motors->set_coax_enable(true);
+                attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, SEQ_MOVING_PITCH_COMMAND, yaw_input, thrust_input, motors->armed());
+                nextProbingState = sequence_on ? des_pitch>=SEQ_MAX_ANGLE ? Probing : MoveForward : MoveBackward;
+            }
+            break;
+
+        case Probing:
             {
                 motors->set_coax_enable(true);
+                attitude_control->deleaves_controller_acro(0.0f, SEQ_PROBING_PITCH_COMMAND, yaw_input, thrust_input);
+                attitude_control->setForwardTarget(constrain_float(attitude_control->getDelEKFOrientation().y-SEQ_PITCH_OFFSET,0.0f,MAX_PITCH));
+                detachCommand = 1.0f;
+                nextProbingState = sequence_on ? Probing : Detach;
             }
-            attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
+            break;
+
+        case Detach:
+            {
+                motors->set_coax_enable(true);
+                detachCommand -= SEQ_DETACH_INCREMENT;
+                attitude_control->deleaves_controller_acro(0.0f, detachCommand, yaw_input, thrust_input);
+                nextProbingState = detachCommand <= SEQ_DETACH_LIMIT ? MoveBackward : Detach;
+            }
+            break;
+
+        case MoveBackward:
+            {
+                float des_pitch = attitude_control->get_att_target_euler_rad().y;
+                motors->set_coax_enable(true);
+                attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, -SEQ_MOVING_PITCH_COMMAND, yaw_input, thrust_input, motors->armed());
+                nextProbingState = des_pitch<=SEQ_MIN_ANGLE ? Standby : MoveBackward;
+            }
+            break;
+        
+        default:
+            nextProbingState = Standby;
+            break;
         }
+        probingState = nextProbingState;
         counter=0;
     }
     counter++;
