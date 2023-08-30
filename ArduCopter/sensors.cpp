@@ -1,5 +1,10 @@
 #include "Copter.h"
 
+void Copter::read_lidar()
+{
+    Lidar.update();
+}
+
 // return barometric altitude in centimeters
 void Copter::read_barometer(void)
 {
