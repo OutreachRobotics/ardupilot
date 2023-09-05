@@ -297,6 +297,12 @@ sl_result RPLidarS2::stop()
 // Manage UART connection and reading, run at 50Hz
 void RPLidarS2::get_readings()
 {
+
+    if ( (AP_HAL::millis() - _update_debug2) > 2000){
+        Debug(1, "Still doing Lidar.get_readings()");
+        _update_debug2 = AP_HAL::millis();
+    }
+
     switch (_state)
     {
         case initial:
@@ -315,6 +321,7 @@ void RPLidarS2::get_readings()
         case scanning:
             // Read available bytes from the UART
             // Eliminate the descriptor message and save the data packets
+            break;
             {
                 uint32_t nbytes = _uart->available();
 
@@ -366,7 +373,7 @@ void RPLidarS2::get_readings()
 
                         // When fully loaded, parse data to usable measures
                         if (_byte_count == _payload_length) {
-                            Debug(2, "LIDAR MEASUREMENT CATCHED");
+                            //Debug(2, "LIDAR MEASUREMENT CATCHED");
                             parse_response();
                             _byte_count = 0;
                         }
@@ -384,7 +391,7 @@ void RPLidarS2::get_readings()
 
                         // When fully loaded, parse data to usable measures
                         if (_byte_count == _payload_length) {
-                            Debug(2, "LIDAR MEASUREMENT CATCHED");
+                            //Debug(2, "LIDAR MEASUREMENT CATCHED");
                             parse_response();
                             _byte_count = 0;
                         }
@@ -395,11 +402,6 @@ void RPLidarS2::get_readings()
         
         default:
             break;
-    }
-
-        if ( (AP_HAL::millis() - _update_debug2) > 2000){
-        Debug(1, "Still doing Lidar.get_readings()");
-        _update_debug2 = AP_HAL::millis();
     }
 
 }
