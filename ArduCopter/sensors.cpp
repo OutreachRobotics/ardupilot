@@ -2,6 +2,11 @@
 
 void Copter::read_lidar()
 {
+    Lidar.get_readings();
+}
+
+void Copter::update_lidar()
+{
     Lidar.update();
 }
 

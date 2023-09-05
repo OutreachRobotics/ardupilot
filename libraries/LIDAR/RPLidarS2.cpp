@@ -30,6 +30,7 @@
 #include "RPLidarS2.h"
 #include <ctype.h>
 #include <stdio.h>
+#include <vector>
 
 #define RP_DEBUG_LEVEL 2
 
@@ -157,7 +158,7 @@ void RPLidarS2::update(void)
 
     case resetting: 
         // wait 600 ms
-        if(AP_HAL::millis() - _last_reset_ms == 600) _state = idle;
+        if(AP_HAL::millis() - _last_reset_ms >= 600) _state = idle;
         break;
 
     case idle:
@@ -168,6 +169,7 @@ void RPLidarS2::update(void)
         break;
 
     case scanning:
+        //run_algo();
         break;
 
     default:
@@ -395,8 +397,14 @@ void RPLidarS2::get_readings()
             break;
     }
 
+        if ( (AP_HAL::millis() - _update_debug2) > 2000){
+        Debug(1, "Still doing Lidar.get_readings()");
+        _update_debug2 = AP_HAL::millis();
+    }
+
 }
 
+// Decode angle and distance from a data packet
 void RPLidarS2::parse_response()
 {
     // Parse angle from data packet
@@ -407,8 +415,89 @@ void RPLidarS2::parse_response()
     if( (pointNumber- std::roundf(response_angle / 1.8)) < 0.001 && (pointNumber- std::roundf(response_angle / 1.8)) > -0.001)
     {
         int pos = static_cast<int>(pointNumber);
-        pointArray[pos].angle = response_angle;
-        pointArray[pos].distance = static_cast<float>(payload.sensor_scan.distance_q2)/4.0;
+        polarArray[pos].angle = response_angle;
+        polarArray[pos].distance = static_cast<float>(payload.sensor_scan.distance_q2)/4.0;
     }
 
+}
+
+// Convert polar coordinates to Cartesian coordinates
+cartesian_coord RPLidarS2::polar_to_cartesian(const polar_coord& polar) 
+{
+    cartesian_coord cartesian;
+    cartesian.x = polar.distance * cosf(M_PI * polar.angle / 180.0);
+    cartesian.y = polar.distance * sinf(M_PI * polar.angle / 180.0);
+    return cartesian;
+}
+
+// Calculate the distance between two Cartesian points
+float RPLidarS2::calculate_distance(const cartesian_coord& p1, const cartesian_coord& p2) 
+{
+    return safe_sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y));
+}
+
+// Calculates num_points points with the same linear distance along the perimeter 
+void RPLidarS2::equidistant_points(struct polar_coord* polar_coords, size_t num_coord, struct cartesian_coord* points, size_t num_points) 
+{
+    cartesian_coord cartesian_coords[num_coord];
+    
+
+    // Convert polar coordinates to Cartesian coordinates
+    for (int i = 0 ; i < num_coord ; i++) {
+        cartesian_coords[i] = polar_to_cartesian(polar_coords[i]);
+    }
+
+    // Calculate total perimeter
+    float total_perimeter = 0.0;
+    for (size_t i = 0; i < num_coord - 1; ++i) {
+        total_perimeter += calculate_distance(cartesian_coords[i], cartesian_coords[i + 1]);
+    }
+
+    // Calculate equidistant points
+    float spacing = total_perimeter / static_cast<float>(num_points);
+    int incrementor = 0;
+
+    for (float dist = 0.0; dist < total_perimeter; dist += spacing) {
+        for (size_t i = 0; i < num_coord - 1; ++i) {
+            float segment_distance = calculate_distance(cartesian_coords[i], cartesian_coords[i + 1]);
+
+            if (dist <= segment_distance) {
+                float ratio = dist / segment_distance;
+                points[incrementor].x = cartesian_coords[i].x + ratio * (cartesian_coords[i + 1].x - cartesian_coords[i].x);
+                points[incrementor].y = cartesian_coords[i].y + ratio * (cartesian_coords[i + 1].y - cartesian_coords[i].y);
+                break;
+            }
+
+            dist -= segment_distance;
+        }
+        incrementor++;
+    }
+
+}
+
+// Find the centroid of a xy points array
+cartesian_coord RPLidarS2::find_centroid(struct cartesian_coord* points, size_t num_points) 
+{
+    cartesian_coord centroid;
+    centroid.x = 0.0;
+    centroid.y = 0.0;
+    float total_x = 0.0;
+    float total_y = 0.0;
+
+    for (int i = 0 ; i < num_points ; i++) {
+        total_x += points[i].x;
+        total_y += points[i].y;
+    }
+
+    centroid.x = total_x / static_cast<float>(num_points);
+    centroid.y = total_y / static_cast<float>(num_points);
+
+    return centroid;
+}
+
+// Find the center of the shape read by lidar
+void RPLidarS2::run_algo()
+{
+    equidistant_points(polarArray, coord_lenght, pointsArray, points_lenght);
+    center_goal = find_centroid(pointsArray, points_lenght);
 }

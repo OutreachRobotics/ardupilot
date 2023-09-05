@@ -858,6 +858,7 @@ private:
     void init_proximity();
     void update_proximity();
     void read_lidar();
+    void update_lidar();
 
     // RC_Channel.cpp
     void save_trim();

@@ -36,6 +36,18 @@ typedef uint32_t sl_result;
 #define SL_RESULT_OK                     (sl_result)0
 #define SL_RESULT_FAIL_BIT               (sl_result)0x80000000
 
+struct polar_coord
+{
+    float angle;
+    float distance;
+};
+
+struct cartesian_coord 
+{
+    float x;
+    float y;
+};
+
 class RPLidarS2 
 {
 
@@ -48,6 +60,8 @@ public:
     // Manage UART connection and reading, run at 50Hz
     void get_readings();
 
+    // Output for localisation
+    cartesian_coord center_goal;
 
 protected:
 
@@ -88,11 +102,7 @@ private:
         _sensor_scan sensor_scan;
     } payload;
 
-    struct lidar_point
-    {
-        float angle;
-        float distance;
-    };
+
     
     // Methods
     //-----------------------------------------
@@ -107,6 +117,15 @@ private:
     sl_result connect();
     sl_result _sendCommand(uint8_t cmd, const void * cmdPayload, size_t payloadsize);
     void parse_response();
+
+    // Algorithm
+    float calculate_distance(const cartesian_coord& p1, const cartesian_coord& p2);
+    cartesian_coord polar_to_cartesian(const polar_coord& polar);
+    void equidistant_points(struct polar_coord* polar_coords, size_t num_coord, struct cartesian_coord* points, size_t num_points);
+    cartesian_coord find_centroid(struct cartesian_coord* points, size_t num_points);
+    void run_algo();
+
+
 
     // Attributes
     //-----------------------------------------
@@ -123,8 +142,14 @@ private:
     // request related variables
     uint32_t  _last_reset_ms;
     uint32_t   _update_debug;
+    uint32_t   _update_debug2;
 
     // List of selected points to use for localisation
-    lidar_point pointArray[100];
+    
+    static const size_t coord_lenght = 200;
+    polar_coord polarArray[coord_lenght];
+
+    static const size_t points_lenght = 100;
+    cartesian_coord pointsArray[points_lenght];
 
 };
