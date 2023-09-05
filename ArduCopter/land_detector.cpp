@@ -119,7 +119,7 @@ void Copter::set_land_complete(bool b)
     
     // trigger disarm-on-land if configured
     bool disarm_on_land_configured = (g.throttle_behavior & THR_BEHAVE_DISARM_ON_LAND_DETECT) != 0;
-    const bool mode_disarms_on_land = flightmode->allows_arming(false) && !flightmode->has_manual_throttle();
+    const bool mode_disarms_on_land = flightmode->allows_arming(AP_Arming::Method::LANDING) && !flightmode->has_manual_throttle();
 
     if (ap.land_complete && motors->armed() && disarm_on_land_configured && mode_disarms_on_land) {
         arming.disarm(AP_Arming::Method::LANDED);
@@ -172,8 +172,8 @@ void Copter::update_throttle_mix()
         // check for large acceleration - falling or high turbulence
         const bool accel_moving = (land_accel_ef_filter.get().length() > LAND_CHECK_ACCEL_MOVING);
 
-        // check for requested decent
-        bool descent_not_demanded = pos_control->get_desired_velocity().z >= 0.0f;
+        // check for requested descent
+        bool descent_not_demanded = pos_control->get_vel_desired_cms().z >= 0.0f;
 
         // check if landing
         const bool landing = flightmode->is_landing();

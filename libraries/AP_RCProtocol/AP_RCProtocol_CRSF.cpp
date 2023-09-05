@@ -97,8 +97,9 @@ static const char* get_frame_type(uint8_t byte)
 # define debug(fmt, args...)	do {} while(0)
 #endif
 
-#define CRSF_MAX_FRAME_TIME_US      1100U // 700us + 400us for potential ad-hoc request
-#define CRSF_INTER_FRAME_TIME_US_150HZ    6667U // At fastest, frames are sent by the transmitter every 6.667 ms, 150 Hz
+#define CRSF_FRAME_TIMEOUT_US      10000U // 10ms to account for scheduling delays
+#define CRSF_INTER_FRAME_TIME_US_250HZ    4000U // At fastest, frames are sent by the transmitter every 4 ms, 250 Hz
+#define CRSF_INTER_FRAME_TIME_US_150HZ    6667U // At medium, frames are sent by the transmitter every 6.667 ms, 150 Hz
 #define CRSF_INTER_FRAME_TIME_US_50HZ    20000U // At slowest, frames are sent by the transmitter every 20ms, 50 Hz
 #define CSRF_HEADER_LEN     2
 
@@ -144,8 +145,9 @@ void AP_RCProtocol_CRSF::process_pulse(uint32_t width_s0, uint32_t width_s1)
 void AP_RCProtocol_CRSF::_process_byte(uint32_t timestamp_us, uint8_t byte)
 {
     //debug("process_byte(0x%x)", byte);
-    // we took too long decoding, start again - the RX will only send complete frames so this is unlikely to fail
-    if (_frame_ofs > 0 && (timestamp_us - _start_frame_time_us) > CRSF_MAX_FRAME_TIME_US) {
+    // we took too long decoding, start again - the RX will only send complete frames so this is unlikely to fail,
+    // however thread scheduling can introduce longer delays even when the data has been received
+    if (_frame_ofs > 0 && (timestamp_us - _start_frame_time_us) > CRSF_FRAME_TIMEOUT_US) {
         _frame_ofs = 0;
     }
 
@@ -187,12 +189,6 @@ void AP_RCProtocol_CRSF::_process_byte(uint32_t timestamp_us, uint8_t byte)
     if (_frame_ofs == _frame.length + CSRF_HEADER_LEN) {
         log_data(AP_RCProtocol::CRSF, timestamp_us, (const uint8_t*)&_frame, _frame_ofs - CSRF_HEADER_LEN);
 
-        if ((timestamp_us - _last_frame_time_us) <= CRSF_INTER_FRAME_TIME_US_150HZ + CRSF_MAX_FRAME_TIME_US) {
-            _fast_telem = true;
-        } else {
-            _fast_telem = false;
-        }
-
         // we consumed the partial frame, reset
         _frame_ofs = 0;
 
@@ -208,10 +204,10 @@ void AP_RCProtocol_CRSF::_process_byte(uint32_t timestamp_us, uint8_t byte)
 
         _last_frame_time_us = timestamp_us;
         // decode here
-        if (decode_csrf_packet()) {
-            add_input(MAX_CHANNELS, _channels, false, _current_rssi);
+        if (decode_crsf_packet()) {
+            add_input(MAX_CHANNELS, _channels, false, _link_status.rssi);
         }
-    }    
+    }
 }
 
 void AP_RCProtocol_CRSF::update(void)
@@ -236,7 +232,7 @@ void AP_RCProtocol_CRSF::update(void)
 
     // never received RC frames, but have received CRSF frames so make sure we give the telemetry opportunity to run
     uint32_t now = AP_HAL::micros();
-    if (_last_frame_time_us > 0 && !get_rc_frame_count() && now - _last_frame_time_us > CRSF_INTER_FRAME_TIME_US_150HZ) {
+    if (_last_frame_time_us > 0 && !get_rc_frame_count() && now - _last_frame_time_us > CRSF_INTER_FRAME_TIME_US_250HZ) {
         process_telemetry(false);
         _last_frame_time_us = now;
     }
@@ -273,7 +269,7 @@ void AP_RCProtocol_CRSF::write_frame(Frame* frame)
 #endif
 }
 
-bool AP_RCProtocol_CRSF::decode_csrf_packet()
+bool AP_RCProtocol_CRSF::decode_crsf_packet()
 {
 #ifdef CRSF_DEBUG
     hal.console->printf("CRSF: received %s:", get_frame_type(_frame.type));
@@ -298,7 +294,6 @@ bool AP_RCProtocol_CRSF::decode_csrf_packet()
         default:
             break;
     }
-
 #if HAL_CRSF_TELEM_ENABLED && !APM_BUILD_TYPE(APM_BUILD_iofirmware)
     if (AP_CRSF_Telem::process_frame(FrameType(_frame.type), (uint8_t*)&_frame.payload)) {
         process_telemetry();
@@ -328,19 +323,6 @@ bool AP_RCProtocol_CRSF::process_telemetry(bool check_constraint)
         return false;
 #endif
     }
-    /*
-      check that we haven't been too slow in responding to the new
-      UART data. If we respond too late then we will corrupt the next
-      incoming control frame
-     */
-    uint64_t tend = uart->receive_time_constraint_us(1);
-    uint64_t now = AP_HAL::micros64();
-    uint64_t tdelay = now - tend;
-    if (tdelay > CRSF_MAX_FRAME_TIME_US && check_constraint) {
-        // we've been too slow in responding
-        return false;
-    }
-
     write_frame(&_telemetry_frame);
     // get fresh telem_data in the next call
     telem_available = false;
@@ -361,13 +343,15 @@ void AP_RCProtocol_CRSF::process_link_stats_frame(const void* data)
     }
      // AP rssi: -1 for unknown, 0 for no link, 255 for maximum link
     if (rssi_dbm < 50) {
-        _current_rssi = 255;
+        _link_status.rssi = 255;
     } else if (rssi_dbm > 120) {
-        _current_rssi = 0;
+        _link_status.rssi = 0;
     } else {
         // this is an approximation recommended by Remo from TBS
-        _current_rssi = int16_t(roundf((1.0f - (rssi_dbm - 50.0f) / 70.0f) * 255.0f));
+        _link_status.rssi = int16_t(roundf((1.0f - (rssi_dbm - 50.0f) / 70.0f) * 255.0f));
     }
+
+    _link_status.rf_mode = static_cast<RFMode>(MIN(link->rf_mode, 3U));
 }
 
 // process a byte provided by a uart
@@ -386,7 +370,6 @@ void AP_RCProtocol_CRSF::start_uart()
     _uart->configure_parity(0);
     _uart->set_stop_bits(1);
     _uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
-    _uart->set_unbuffered_writes(true);
     _uart->set_blocking_writes(false);
     _uart->set_options(_uart->get_options() & ~AP_HAL::UARTDriver::OPTION_RXINV);
     _uart->begin(CRSF_BAUDRATE, 128, 128);
@@ -397,4 +380,3 @@ namespace AP {
         return AP_RCProtocol_CRSF::get_singleton();
     }
 };
-

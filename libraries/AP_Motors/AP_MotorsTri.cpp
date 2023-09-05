@@ -54,6 +54,8 @@ void AP_MotorsTri::init(motor_frame_class frame_class, motor_frame_type frame_ty
         _pitch_reversed = true;
     }
 
+    _mav_type = MAV_TYPE_TRICOPTER;
+
     // record successful initialisation if what we setup was the desired frame_class
     set_initialised_ok(frame_class == MOTOR_FRAME_TRI);
 }
@@ -127,8 +129,7 @@ uint16_t AP_MotorsTri::get_motor_mask()
     // tri copter uses channels 1,2,4 and 7
     uint16_t motor_mask = (1U << AP_MOTORS_MOT_1) |
                           (1U << AP_MOTORS_MOT_2) |
-                          (1U << AP_MOTORS_MOT_4) |
-                          (1U << AP_MOTORS_CH_TRI_YAW);
+                          (1U << AP_MOTORS_MOT_4);
     uint16_t mask = motor_mask_to_srv_channel_mask(motor_mask);
 
     // add parent's mask

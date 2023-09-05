@@ -9,6 +9,7 @@
 #include <AP_Baro/AP_Baro.h>
 #include <AP_Common/Location.h>
 #include <AP_Compass/AP_Compass.h>
+#include <AP_InertialSensor/AP_InertialSensor.h>
 #include "SIM_Buzzer.h"
 #include "SIM_Gripper_EPM.h"
 #include "SIM_Gripper_Servo.h"
@@ -19,6 +20,7 @@
 #include "SIM_ToneAlarm.h"
 #include "SIM_EFI_MegaSquirt.h"
 #include "SIM_RichenPower.h"
+#include "SIM_FETtecOneWireESC.h"
 #include "SIM_IntelligentEnergy24.h"
 #include "SIM_Ship.h"
 #include <AP_RangeFinder/AP_RangeFinder.h>
@@ -80,6 +82,8 @@ struct sitl_fdm {
         float speed;
         float direction;
     } wind_vane_apparent;
+
+    bool is_lock_step_scheduled;
 };
 
 // number of rc output channels
@@ -98,6 +102,7 @@ public:
         AP_Param::setup_object_defaults(this, var_info3);
         AP_Param::setup_object_defaults(this, var_gps);
         AP_Param::setup_object_defaults(this, var_mag);
+        AP_Param::setup_object_defaults(this, var_ins);
 #ifdef SFML_JOYSTICK
         AP_Param::setup_object_defaults(this, var_sfml_joystick);
 #endif // SFML_JOYSTICK
@@ -136,6 +141,12 @@ public:
         GPS_TYPE_SBP2   = 9,
     };
 
+    enum GPSHeading {
+        GPS_HEADING_NONE = 0,
+        GPS_HEADING_HDT  = 1,
+        GPS_HEADING_THS  = 2,
+    };
+
     struct sitl_fdm state;
 
     // loop update rate in Hz
@@ -152,6 +163,7 @@ public:
     static const struct AP_Param::GroupInfo var_info3[];
     static const struct AP_Param::GroupInfo var_gps[];
     static const struct AP_Param::GroupInfo var_mag[];
+    static const struct AP_Param::GroupInfo var_ins[];
 #ifdef SFML_JOYSTICK
     static const struct AP_Param::GroupInfo var_sfml_joystick[];
 #endif //SFML_JOYSTICK
@@ -159,14 +171,6 @@ public:
     // Board Orientation (and inverse)
     Matrix3f ahrs_rotation;
     Matrix3f ahrs_rotation_inv;
-
-    // noise levels for simulated sensors
-    AP_Float gyro_noise;  // in degrees/second
-    AP_Vector3f gyro_scale;  // percentage
-    AP_Float accel_noise; // in m/s/s
-    AP_Float accel2_noise; // in m/s/s
-    AP_Vector3f accel_bias; // in m/s/s
-    AP_Vector3f accel2_bias; // in m/s/s
 
     AP_Float arspd_noise[2];  // pressure noise
     AP_Float arspd_fail[2];   // airspeed value in m/s to fail to
@@ -208,9 +212,13 @@ public:
     AP_Float gps_accuracy[2];
     AP_Vector3f gps_vel_err[2]; // Velocity error offsets in NED (x = N, y = E, z = D)
 
+    // initial offset on GPS lat/lon, used to shift origin
+    AP_Float gps_init_lat_ofs;
+    AP_Float gps_init_lon_ofs;
+    AP_Float gps_init_alt_ofs;
+
     AP_Float batt_voltage; // battery voltage base
     AP_Float batt_capacity_ah; // battery capacity in Ah
-    AP_Float accel_fail;  // accelerometer failure value
     AP_Int8  rc_fail;     // fail RC input
     AP_Int8  rc_chancount; // channel count
     AP_Int8  float_exception; // enable floating point exception checks
@@ -324,10 +332,6 @@ public:
     // minimum throttle for addition of ins noise
     AP_Float ins_noise_throttle_min;
 
-    // gyro and accel fail masks
-    AP_Int8 gyro_fail_mask;
-    AP_Int8 accel_fail_mask;
-
     struct {
         AP_Float x;
         AP_Float y;
@@ -386,7 +390,8 @@ public:
 
     time_t start_time_UTC;
 
-    void simstate_send(mavlink_channel_t chan);
+    void simstate_send(mavlink_channel_t chan) const;
+    void sim_state_send(mavlink_channel_t chan) const;
 
     void Log_Write_SIMSTATE();
 
@@ -417,6 +422,10 @@ public:
     SIM_Precland precland_sim;
     RichenPower richenpower_sim;
     IntelligentEnergy24 ie24_sim;
+    FETtecOneWireESC fetteconewireesc_sim;
+
+    // ESC telemetry
+    AP_Int8 esc_telem;
 
     struct {
         // LED state, for serial LED emulation
@@ -443,8 +452,31 @@ public:
     float get_rangefinder(uint8_t instance);
 
     // get the apparent wind speed and direction as set by external physics backend
-    float get_apparent_wind_dir(){return state.wind_vane_apparent.direction;}
-    float get_apparent_wind_spd(){return state.wind_vane_apparent.speed;}
+    float get_apparent_wind_dir() const{return state.wind_vane_apparent.direction;}
+    float get_apparent_wind_spd() const{return state.wind_vane_apparent.speed;}
+
+    // IMU temperature calibration params
+    AP_Float imu_temp_start;
+    AP_Float imu_temp_end;
+    AP_Float imu_temp_tconst;
+    AP_Float imu_temp_fixed;
+    AP_InertialSensor::TCal imu_tcal[INS_MAX_INSTANCES];
+
+    // IMU control parameters
+    AP_Float gyro_noise[INS_MAX_INSTANCES];  // in degrees/second
+    AP_Vector3f gyro_scale[INS_MAX_INSTANCES];  // percentage
+    AP_Float accel_noise[INS_MAX_INSTANCES]; // in m/s/s
+    AP_Vector3f accel_bias[INS_MAX_INSTANCES]; // in m/s/s
+    AP_Vector3f accel_scale[INS_MAX_INSTANCES]; // in m/s/s
+    AP_Vector3f accel_trim;
+    AP_Float accel_fail[INS_MAX_INSTANCES];  // accelerometer failure value
+    // gyro and accel fail masks
+    AP_Int8 gyro_fail_mask;
+    AP_Int8 accel_fail_mask;
+
+    // Sailboat sim only
+    AP_Int8 sail_type;
+
 };
 
 } // namespace SITL

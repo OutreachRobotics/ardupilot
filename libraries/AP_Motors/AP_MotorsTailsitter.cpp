@@ -53,6 +53,8 @@ void AP_MotorsTailsitter::init(motor_frame_class frame_class, motor_frame_type f
     SRV_Channels::set_aux_channel_default(SRV_Channel::k_tiltMotorLeft, CH_4);
     SRV_Channels::set_angle(SRV_Channel::k_tiltMotorLeft, SERVO_OUTPUT_RANGE);
 
+    _mav_type = MAV_TYPE_COAXIAL;
+
     // record successful initialisation if what we setup was the desired frame_class
     set_initialised_ok(frame_class == MOTOR_FRAME_TAILSITTER);
 }
@@ -84,23 +86,30 @@ void AP_MotorsTailsitter::output_to_motors()
 
     switch (_spool_state) {
         case SpoolState::SHUT_DOWN:
-            SRV_Channels::set_output_pwm(SRV_Channel::k_throttleLeft, get_pwm_output_min());
-            SRV_Channels::set_output_pwm(SRV_Channel::k_throttleRight, get_pwm_output_min());
+            _actuator[0] = 0.0f;
+            _actuator[1] = 0.0f;
+            _actuator[2] = 0.0f;
             break;
         case SpoolState::GROUND_IDLE:
+            set_actuator_with_slew(_actuator[0], actuator_spin_up_to_ground_idle());
             set_actuator_with_slew(_actuator[1], actuator_spin_up_to_ground_idle());
-            SRV_Channels::set_output_pwm(SRV_Channel::k_throttleLeft, output_to_pwm(actuator_spin_up_to_ground_idle()));
-            SRV_Channels::set_output_pwm(SRV_Channel::k_throttleRight, output_to_pwm(actuator_spin_up_to_ground_idle()));
+            set_actuator_with_slew(_actuator[2], actuator_spin_up_to_ground_idle());
             break;
         case SpoolState::SPOOLING_UP:
         case SpoolState::THROTTLE_UNLIMITED:
         case SpoolState::SPOOLING_DOWN:
-            SRV_Channels::set_output_pwm(SRV_Channel::k_throttleLeft, output_to_pwm(thrust_to_actuator(_thrust_left)));
-            SRV_Channels::set_output_pwm(SRV_Channel::k_throttleRight, output_to_pwm(thrust_to_actuator(_thrust_right)));
+            set_actuator_with_slew(_actuator[0], thrust_to_actuator(_thrust_left));
+            set_actuator_with_slew(_actuator[1], thrust_to_actuator(_thrust_right));
+            set_actuator_with_slew(_actuator[2], thrust_to_actuator(_throttle));
             break;
     }
 
-    // Always output to tilt servos
+    SRV_Channels::set_output_pwm(SRV_Channel::k_throttleLeft, output_to_pwm(_actuator[0]));
+    SRV_Channels::set_output_pwm(SRV_Channel::k_throttleRight, output_to_pwm(_actuator[1]));
+
+    // use set scaled to allow a different PWM range on plane forward throttle, throttle range is 0 to 100
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, _actuator[2]*100);
+
     SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft, _tilt_left*SERVO_OUTPUT_RANGE);
     SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, _tilt_right*SERVO_OUTPUT_RANGE);
 

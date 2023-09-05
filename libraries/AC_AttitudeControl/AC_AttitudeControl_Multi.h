@@ -5,6 +5,8 @@
 
 #include "AC_AttitudeControl.h"
 #include <AP_Motors/AP_MotorsMulticopter.h>
+#include <DEL_EKF/del_ekf.h>
+#include <DEL_Helper/del_helper.h>
 
 // default rate controller PID gains
 #ifndef AC_ATC_MULTI_RATE_RP_P
@@ -38,53 +40,6 @@
  # define AC_ATC_MULTI_RATE_YAW_FILT_HZ     2.5f
 #endif
 
-#define YAW_SENSITIVITY                     0.01f // reach pi/4 in 1 second at 50 hz-> (pi/4)*(1/50)=0.0157
-#define PMAX_ACTUATOR_THRUST                13.0f
-#define RMAX_ACTUATOR_THRUST                (13.0f*(ROLL_ADJUSTMENT+1.0f)/2.0f)
-
-#define M_PLATFORM                          3.24f
-#define MAX_PITCH                           0.305f // 17.5° - 10 N to keep that angle
-#define MAX_ROLL                            (MAX_PITCH*(1.0f+ROLL_ADJUSTMENT)/2.0f)
-#define MIN_PITCH                           (-MAX_PITCH)
-#define MIN_ROLL                            (-MAX_ROLL)
-#define DEADBAND                            0.02f
-
-// Low pass filter coefficient fc = 15 Hz, Fs = 50 Hz
-#define B1_LP                                  0.5792
-#define B0_LP                                  0.5792
-#define A0_LP                                  0.1584
-
-// Low pass filter coefficient fc = 10 Hz, Fs = 400 Hz
-// #define B1_DS                                  0.0730
-// #define B0_DS                                  0.0730
-// #define A0_DS                                  -0.8541
-
-// Low pass filter coefficient fc = 15 Hz, Fs = 400 Hz
-// #define B1_DS                                  0.1058
-// #define B0_DS                                  0.1058
-// #define A0_DS                                  -0.7883
-
-// Low pass filter coefficient fc = 20 Hz, Fs = 400 Hz
-// #define B1_DS                                  0.1367
-// #define B0_DS                                  0.1367
-// #define A0_DS                                  -0.7265
-
-// Low pass filter coefficient fc = 25 Hz, Fs = 400 Hz
-#define B1_DS                                  0.1659
-#define B0_DS                                  0.1659
-#define A0_DS                                 -0.6682
-
-// Low pass filter coefficient fc = 1 Hz, Fs = 50 Hz
-#define B1_SP                                  0.0592
-#define B0_SP                                  0.0592
-#define A0_SP                                 -0.8816
-
-enum Control_Type
-{
-  pd_control,
-  tach_control,
-  LQR_control
-};
 
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
 public:
@@ -118,11 +73,12 @@ public:
 
     void deleaves_controller_acro(float lateral, float forward, float yaw, float throttle);
     void deleaves_controller_stabilize(float lateral, float forward, float yaw, float throttle, bool armed);
-    void deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
-    void deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed);
     void deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed);
+    void deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed);
+    void deleaves_controller_step_LQR(float lateral, float forward, float yaw, float throttle, bool armed);
     void deleaves_controller_taxi(float yaw, bool armed);
+    void deleaves_controller_taxi_LQR(float yaw, bool armed);
     void constrainCommand();
 
     // are we producing min throttle?
@@ -136,9 +92,12 @@ public:
 
     // sanity check parameters.  should be called once before take-off
     void parameter_sanity_check() override;
-    float get_mamba_length();
-    float get_sensitivity_coeff();
 
+    void updateDelEKF(Vector3f F_in, Vector3f measure, float rope_length, uint8_t controller_mode);
+    Vector3f getDelEKFOrientation();
+    Vector2f getMaxReach();
+    Mat getDelEKFStates();
+    float getPitchCommand();
 
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -161,6 +120,8 @@ protected:
     AP_Float              _thr_mix_min;     // throttle vs attitude control prioritisation used when landing (higher values mean we prioritise attitude control over throttle)
     AP_Float              _thr_mix_max;     // throttle vs attitude control prioritisation used during active flight (higher values mean we prioritise attitude control over throttle)
 
+    DelEKF delEKF;
+
     Vector3f ahrs_ang, last_ahrs_ang, ds_filtered_ang, last_ds_filtered_ang, ctrl_ang;
     Vector3f ang_vel, last_ang_vel, ds_filtered_ang_vel, last_ds_filtered_ang_vel, ctrl_ang_vel;
 
@@ -170,5 +131,4 @@ protected:
     float last_target_lateral, last_target_forward;
     float filtered_target_lateral, filtered_target_forward;
     float roll_kp, roll_kd, pitch_kp, pitch_kd, yaw_kp, yaw_kd;
-    float pitch_sensitivity, roll_sensitivity;
 };

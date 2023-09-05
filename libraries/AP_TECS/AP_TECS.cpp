@@ -43,7 +43,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: THR_DAMP
     // @DisplayName: Controller throttle damping
-    // @Description: Damping gain for throttle demand loop. Slows the throttle response to correct for speed and height oscillations.
+    // @Description: Damping gain for throttle demand loop. Increase to add throttle activity to dampen oscillations in speed and height.
     // @Range: 0.1 1.0
     // @Increment: 0.1
     // @User: Advanced
@@ -83,7 +83,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: RLL2THR
     // @DisplayName: Bank angle compensation gain
-    // @Description: Gain from bank angle to throttle to compensate for loss of airspeed from drag in turns. Set to approximately 10x the sink rate in m/s caused by a 45-degree turn. High efficiency models may need less while less efficient aircraft may need more. Should be tuned in an automatic mission with waypoints and turns greater than 90 degrees. Tune with PTCH2SV_RLL and KFF_RDDRMIX to achieve constant airspeed, constant altitude turns.
+    // @Description: Gain from bank angle to throttle to compensate for loss of airspeed from drag in turns. Set to approximately 10x the sink rate in m/s caused by a 45-degree turn. High efficiency models may need less while less efficient aircraft may need more. Should be tuned in an automatic mission with waypoints and turns greater than 90 degrees. Tune with PTCH2SRV_RLL and KFF_RDDRMIX to achieve constant airspeed, constant altitude turns.
     // @Range: 5.0 30.0
     // @Increment: 1.0
     // @User: Advanced
@@ -205,7 +205,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: LAND_TDAMP
     // @DisplayName: Controller throttle damping when landing
-    // @Description: This is the damping gain for the throttle demand loop during and auto-landing. Same as TECS_THR_DAMP but only in effect during an auto-land. Increase to add damping to correct for oscillations in speed and height. When set to 0 landing throttle damp is controlled by TECS_THR_DAMP.
+    // @Description: Damping gain for the throttle demand loop during an auto-landing. Same as TECS_THR_DAMP but only in effect during an auto-land. Increase to add throttle activity to dampen oscillations in speed and height. When set to 0 landing throttle damping is controlled by TECS_THR_DAMP.
     // @Range: 0.1 1.0
     // @Increment: 0.1
     // @User: Advanced
@@ -770,6 +770,7 @@ void AP_TECS::_update_throttle_without_airspeed(int16_t throttle_nudge)
     if (_flags.is_gliding)
     {
         _throttle_dem = 0.0f;
+        return;
     }
 
     // Calculate additional throttle for turn drag compensation including throttle nudging

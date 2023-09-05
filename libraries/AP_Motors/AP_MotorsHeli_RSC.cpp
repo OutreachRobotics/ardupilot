@@ -237,7 +237,7 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
             // set rotor ramp to decrease speed to zero
             update_rotor_ramp(0.0f, dt);
 
-            if (_in_autorotaion) {
+            if (_in_autorotation) {
                 // if in autorotation and using an external governor, set the output to tell the governor to use bailout ramp
                 _control_output = constrain_float( _rsc_arot_bailout_pct/100.0f , 0.0f, 0.4f);
             } else {
@@ -382,6 +382,8 @@ void AP_MotorsHeli_RSC::update_rotor_runup(float dt)
     if (_runup_complete && (get_rotor_speed() <= get_critical_speed())) {
         _runup_complete = false;
     }
+    // if rotor estimated speed is zero, then spooldown has been completed
+    if (get_rotor_speed() <= 0.0f) { _spooldown_complete = true; } else { _spooldown_complete = false; }
 }
 
 // get_rotor_speed - gets rotor speed either as an estimate, or (ToDO) a measured value

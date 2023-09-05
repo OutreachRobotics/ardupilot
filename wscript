@@ -7,12 +7,15 @@ import os.path
 import os
 import sys
 import subprocess
+import json
+import fnmatch
 sys.path.insert(0, 'Tools/ardupilotwaf/')
 
 import ardupilotwaf
 import boards
 
 from waflib import Build, ConfigSet, Configure, Context, Utils
+from waflib.Configure import conf
 
 # TODO: implement a command 'waf help' that shows the basic tasks a
 # developer might want to do: e.g. how to configure a board, compile a
@@ -40,6 +43,9 @@ def _set_build_context_variant(board):
         c.variant = board
 
 def init(ctx):
+    # Generate Task List, so that VS Code extension can keep track
+    # of changes to possible build targets
+    generate_tasklist(ctx, False)
     env = ConfigSet.ConfigSet()
     try:
         p = os.path.join(Context.out_dir, Build.CACHE_DIR, Build.CACHE_SUFFIX)
@@ -76,6 +82,11 @@ def options(opt):
         default=False,
         help='Configure as debug variant.')
 
+    g.add_option('--coverage',
+                 action='store_true',
+                 default=False,
+                 help='Configure coverage flags.')
+
     g.add_option('--Werror',
         action='store_true',
         default=False,
@@ -100,6 +111,11 @@ def options(opt):
         action='store_true',
         default=False,
         help='enable malloc guard regions.')
+
+    g.add_option('--enable-stats',
+        action='store_true',
+        default=False,
+        help='enable OS level thread statistics.')
     
     g.add_option('--bootloader',
         action='store_true',
@@ -235,12 +251,27 @@ configuration in order to save typing.
         action='store_true',
         default=False,
         help='Configure without EKF3.')
+
+    g.add_option('--ekf-double',
+        action='store_true',
+        default=False,
+        help='Configure EKF as double precision.')
+
+    g.add_option('--ekf-single',
+        action='store_true',
+        default=False,
+        help='Configure EKF as single precision.')
     
     g.add_option('--static',
         action='store_true',
         default=False,
         help='Force a static build')
 
+    g.add_option('--postype-single',
+        action='store_true',
+        default=False,
+        help='force single precision postype_t')
+    
 def _collect_autoconfig_files(cfg):
     for m in sys.modules.values():
         paths = []
@@ -273,6 +304,7 @@ def configure(cfg):
         
     cfg.env.BOARD = cfg.options.board
     cfg.env.DEBUG = cfg.options.debug
+    cfg.env.COVERAGE = cfg.options.coverage
     cfg.env.AUTOCONFIG = cfg.options.autoconfig
 
     _set_build_context_variant(cfg.env.BOARD)
@@ -280,9 +312,11 @@ def configure(cfg):
 
     cfg.env.BOARD = cfg.options.board
     cfg.env.DEBUG = cfg.options.debug
+    cfg.env.COVERAGE = cfg.options.coverage
     cfg.env.ENABLE_ASSERTS = cfg.options.enable_asserts
     cfg.env.BOOTLOADER = cfg.options.bootloader
     cfg.env.ENABLE_MALLOC_GUARD = cfg.options.enable_malloc_guard
+    cfg.env.ENABLE_STATS = cfg.options.enable_stats
 
     cfg.env.OPTIONS = cfg.options.__dict__
 
@@ -350,6 +384,18 @@ def configure(cfg):
     else:
         cfg.end_msg('disabled', color='YELLOW')
 
+    cfg.start_msg('Debug build')
+    if cfg.env.DEBUG:
+        cfg.end_msg('enabled')
+    else:
+        cfg.end_msg('disabled', color='YELLOW')
+
+    cfg.start_msg('Coverage build')
+    if cfg.env.COVERAGE:
+        cfg.end_msg('enabled')
+    else:
+        cfg.end_msg('disabled', color='YELLOW')
+
     cfg.env.append_value('GIT_SUBMODULES', 'mavlink')
 
     cfg.env.prepend_value('INCLUDES', [
@@ -398,6 +444,42 @@ def collect_dirs_to_recurse(bld, globs, **kw):
 
 def list_boards(ctx):
     print(*boards.get_boards_names())
+
+def list_ap_periph_boards(ctx):
+    print(*boards.get_ap_periph_boards())
+
+@conf
+def ap_periph_boards(ctx):
+    return boards.get_ap_periph_boards()
+
+def generate_tasklist(ctx, do_print=True):
+    boardlist = boards.get_boards_names()
+    ap_periph_targets = boards.get_ap_periph_boards()
+    tasks = []
+    with open(os.path.join(Context.top_dir, "tasklist.json"), "w") as tlist:
+        for board in boardlist:
+            task = {}
+            task['configure'] = board
+            if board in ap_periph_targets:
+                if 'sitl' not in board:
+                    # we only support AP_Periph and bootloader builds
+                    task['targets'] = ['AP_Periph', 'bootloader']
+                else:
+                    task['targets'] = ['AP_Periph']
+            elif 'iofirmware' in board:
+                task['targets'] = ['iofirmware', 'bootloader']
+            else:
+                if 'sitl' in board or 'SITL' in board:
+                    task['targets'] = ['antennatracker', 'copter', 'heli', 'plane', 'rover', 'sub', 'replay']
+                elif 'linux' in board:
+                    task['targets'] = ['antennatracker', 'copter', 'heli', 'plane', 'rover', 'sub']
+                else:
+                    task['targets'] = ['antennatracker', 'copter', 'heli', 'plane', 'rover', 'sub', 'bootloader']
+                    task['buildOptions'] = '--upload'
+            tasks.append(task)
+        tlist.write(json.dumps(tasks))
+        if do_print:
+            print(json.dumps(tasks))
 
 def board(ctx):
     env = ConfigSet.ConfigSet()
@@ -594,7 +676,7 @@ ardupilotwaf.build_command('check-all',
     doc='shortcut for `waf check --alltests`',
 )
 
-for name in ('antennatracker', 'copter', 'heli', 'plane', 'rover', 'sub', 'bootloader','iofirmware','AP_Periph','replay'):
+for name in ('antennatracker', 'copter', 'heli', 'plane', 'rover', 'sub', 'blimp', 'bootloader','iofirmware','AP_Periph','replay'):
     ardupilotwaf.build_command(name,
         program_group_list=name,
         doc='builds %s programs' % name,

@@ -2,6 +2,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include "RC_Channel.h"
+#include <AP_Proximity/AP_Proximity.h>
 
 #if GRIPPER_ENABLED == ENABLED
  # include <AP_Gripper/AP_Gripper.h>
@@ -99,10 +100,10 @@ public:
         k_param_throttle_accel_enabled,     // deprecated - remove
         k_param_wp_yaw_behavior,
         k_param_acro_trainer,
-        k_param_pilot_speed_up,    // renamed from k_param_pilot_velocity_z_max
-        k_param_circle_rate,                // deprecated - remove
-        k_param_rangefinder_gain,
-        k_param_ch8_option_old, // deprecated
+        k_param_pilot_speed_up,         // renamed from k_param_pilot_velocity_z_max
+        k_param_circle_rate,            // deprecated - remove
+        k_param_rangefinder_gain,       // deprecated - remove
+        k_param_ch8_option_old,         // deprecated
         k_param_arming_check_old,       // deprecated - remove
         k_param_sprayer,
         k_param_angle_max,
@@ -392,19 +393,20 @@ public:
     AP_Int16        throttle_behavior;
     AP_Float        pilot_takeoff_alt;
 
+#if MODE_RTL_ENABLED == ENABLED
     AP_Int16        rtl_altitude;
     AP_Int16        rtl_speed_cms;
     AP_Float        rtl_cone_slope;
-#if RANGEFINDER_ENABLED == ENABLED
-    AP_Float        rangefinder_gain;
+    AP_Int16        rtl_alt_final;
+    AP_Int16        rtl_climb_min;              // rtl minimum climb in cm
+    AP_Int32        rtl_loiter_time;
+    AP_Int8         rtl_alt_type;
 #endif
 
     AP_Int8         failsafe_gcs;               // ground station failsafe behavior
     AP_Int16        gps_hdop_good;              // GPS Hdop value at or below this value represent a good position
 
     AP_Int8         super_simple;
-    AP_Int16        rtl_alt_final;
-    AP_Int16        rtl_climb_min;              // rtl minimum climb in cm
 
     AP_Int8         wp_yaw_behavior;            // controls how the autopilot controls yaw during missions
 
@@ -415,7 +417,6 @@ public:
 
     // Waypoints
     //
-    AP_Int32        rtl_loiter_time;
     AP_Int16        land_speed;
     AP_Int16        land_speed_high;
     AP_Int16        pilot_speed_up;    // maximum vertical ascending velocity the pilot may request
@@ -456,8 +457,6 @@ public:
 #if MODE_THROW_ENABLED == ENABLED
     AP_Enum<ModeThrow::PreThrowMotorState>         throw_motor_start;
 #endif
-
-    AP_Int8         rtl_alt_type;
 
     AP_Int16                rc_speed; // speed of fast RC Channels in Hz
 
@@ -518,7 +517,7 @@ public:
     AP_Beacon beacon;
 #endif
 
-#if PROXIMITY_ENABLED == ENABLED
+#if HAL_PROXIMITY_ENABLED
     // proximity (aka object avoidance) library
     AP_Proximity proximity;
 #endif
@@ -640,6 +639,15 @@ public:
     AP_Int32 rtl_options;
 #endif
 
+    AP_Int32 flight_options;
+
+#if RANGEFINDER_ENABLED == ENABLED
+    AP_Float rangefinder_filt;
+#endif
+
+#if MODE_GUIDED_ENABLED == ENABLED
+    AP_Float guided_timeout;
+#endif
 };
 
 extern const AP_Param::Info        var_info[];

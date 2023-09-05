@@ -78,9 +78,6 @@ public:
     void            update(bool skip_ins_update=false) override;
     void            reset(bool recover_eulers = false) override;
 
-    // reset the current attitude, used on new IMU calibration
-    void reset_attitude(const float &roll, const float &pitch, const float &yaw) override;
-
     // dead-reckoning support
     bool get_position(struct Location &loc) const override;
 
@@ -151,10 +148,10 @@ public:
     // set the EKF's origin location in 10e7 degrees.  This should only
     // be called when the EKF has no absolute position reference (i.e. GPS)
     // from which to decide the origin on its own
-    bool set_origin(const Location &loc) override;
+    bool set_origin(const Location &loc) override WARN_IF_UNUSED;
 
     // returns the inertial navigation origin in lat/lon/alt
-    bool get_origin(Location &ret) const override;
+    bool get_origin(Location &ret) const override WARN_IF_UNUSED;
 
     bool have_inertial_nav() const override;
 
@@ -185,8 +182,8 @@ public:
     // write body odometry measurements to the EKF
     void writeBodyFrameOdom(float quality, const Vector3f &delPos, const Vector3f &delAng, float delTime, uint32_t timeStamp_ms, uint16_t delay_ms, const Vector3f &posOffset);
 
-    // Writes the default equivalent airspeed in m/s to be used in forward flight if a measured airspeed is required and not available.
-    void writeDefaultAirSpeed(float airspeed);
+    // Writes the default equivalent airspeed and its 1-sigma uncertainty in m/s to be used in forward flight if a measured airspeed is required and not available.
+    void writeDefaultAirSpeed(float airspeed, float uncertainty);
 
     // Write position and quaternion data from an external navigation system
     void writeExtNavData(const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint16_t delay_ms, uint32_t resetTime_ms) override;
@@ -194,16 +191,16 @@ public:
     // Write velocity data from an external navigation system
     void writeExtNavVelData(const Vector3f &vel, float err, uint32_t timeStamp_ms, uint16_t delay_ms) override;
 
-    // get speed limit
+    // get speed limits and controller scaling
     void getEkfControlLimits(float &ekfGndSpdLimit, float &ekfNavVelGainScaler) const;
-
-    void set_ekf_use(bool setting);
+    float getEkfControlScaleZ(void) const;
 
     // is the AHRS subsystem healthy?
     bool healthy() const override;
 
     // returns false if we fail arming checks, in which case the buffer will be populated with a failure message
-    bool pre_arm_check(char *failure_msg, uint8_t failure_msg_len) const override;
+    // requires_position should be true if horizontal position configuration should be checked
+    bool pre_arm_check(bool requires_position, char *failure_msg, uint8_t failure_msg_len) const override;
 
     // true if the AHRS has completed initialisation
     bool initialised() const override;
@@ -263,6 +260,9 @@ public:
     // An out of range instance (eg -1) returns data for the primary instance
     bool get_innovations(Vector3f &velInnov, Vector3f &posInnov, Vector3f &magInnov, float &tasInnov, float &yawInnov) const override;
 
+    // returns true when the state estimates are significantly degraded by vibration
+    bool is_vibration_affected() const;
+
     // get_variances - provides the innovations normalised using the innovation variance where a value of 0
     // indicates perfect consistency between the measurement and the EKF solution and a value of of 1 is the maximum
     // inconsistency that will be accepted by the filter
@@ -278,9 +278,6 @@ public:
 
     // returns the estimated magnetic field offsets in body frame
     bool get_mag_field_correction(Vector3f &ret) const override;
-
-    void setTakeoffExpected(bool val);
-    void setTouchdownExpected(bool val);
 
     bool getGpsGlitchStatus() const;
 
@@ -348,6 +345,10 @@ private:
     };
     EKFType active_EKF_type(void) const;
 
+    // if successful returns true and sets secondary_ekf_type to None (for DCM), EKF3 or EKF3
+    // returns false if no secondary (i.e. only using DCM)
+    bool get_secondary_EKF_type(EKFType &secondary_ekf_type) const;
+
     bool always_use_EKF() const {
         return _ekf_flags & FLAG_ALWAYS_USE_EKF;
     }
@@ -385,8 +386,7 @@ private:
         True = 1,
         UNKNOWN = 3,
     };
-    TriState touchdownExpectedState = TriState::UNKNOWN;
-    TriState takeoffExpectedState = TriState::UNKNOWN;
+
     TriState terrainHgtStableState = TriState::UNKNOWN;
 
     EKFType last_active_ekf_type;

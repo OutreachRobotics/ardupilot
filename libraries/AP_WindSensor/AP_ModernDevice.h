@@ -65,6 +65,4 @@ private:
     AP_HAL::AnalogSource *_speed_analog_source;
     AP_HAL::AnalogSource *_temp_analog_source;
 
-    // low pass filters for speed
-    LowPassFilterFloat _speed_filt = LowPassFilterFloat(2.0f);
 };

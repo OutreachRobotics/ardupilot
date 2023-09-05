@@ -24,14 +24,12 @@
 #define AP_MOTORS_BATT_VOLT_FILT_HZ     0.5f    // battery voltage filtered at 0.5hz
 #define AP_MOTORS_SLEW_TIME_DEFAULT     0.0f    // slew rate limit for thrust output
 #define AP_MOTORS_SAFE_TIME_DEFAULT     1.0f    // Time for the esc when transitioning between zero pwm to minimum
-#define T2PWM_COEF1                     -2.2435f
-#define T2PWM_COEF2                     103.52f
-#define T2PWM_COEF3                     1177.4f
-#define MAX_ACTUATOR_THRUST             6.5f
-#define ROLL_ADJUSTMENT                 0.37f
+
 
 // spool definition
 #define AP_MOTORS_SPOOL_UP_TIME_DEFAULT 0.5f    // time (in seconds) for throttle to increase from zero to min throttle, and min throttle to full throttle.
+
+#define MOTORS_TUNING_INTERVAL          2000
 
 /// @class      AP_MotorsMulticopter
 class AP_MotorsMulticopter : public AP_Motors {
@@ -55,14 +53,14 @@ public:
 
     // update estimated throttle required to hover
     void                update_throttle_hover(float dt);
-    virtual float       get_throttle_hover() const override { return _throttle_hover; }
+    virtual float       get_throttle_hover() const override { return constrain_float(_throttle_hover, AP_MOTORS_THST_HOVER_MIN, AP_MOTORS_THST_HOVER_MAX); }
 
     // passes throttle directly to all motors for ESC calibration.
     //   throttle_input is in the range of 0 ~ 1 where 0 will send get_pwm_output_min() and 1 will send get_pwm_output_max()
     void                set_throttle_passthrough_for_esc_calibration(float throttle_input);
 
     // get_lift_max - get maximum lift ratio - for logging purposes only
-    float               get_lift_max() { return _lift_max; }
+    float               get_lift_max() const { return _lift_max; }
 
     // get_batt_voltage_filt - get battery voltage ratio - for logging purposes only
     float               get_batt_voltage_filt() const { return _batt_voltage_filt.get(); }
@@ -108,6 +106,12 @@ public:
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo        var_info[];
 
+    void                set_battery_voltage(float setter);
+
+    void                set_motors_tuning(bool setter);
+    void                set_coax_enable(bool setter);
+    bool                get_coax_enable();
+
 protected:
 
     // run spool logic
@@ -151,6 +155,9 @@ protected:
 
     // save parameters as part of disarming
     void                save_params_on_disarm() override;
+
+    void                motors_tuning_pwm();
+
 
     // enum values for HOVER_LEARN parameter
     enum HoverLearn {
@@ -209,4 +216,12 @@ protected:
 
     // array of motor output values
     float _actuator[AP_MOTORS_MAX_NUM_MOTORS];
+    uint16_t _pwm[AP_MOTORS_MAX_NUM_MOTORS];
+
+    float batteryVoltage;
+    bool motors_tuning;
+    uint32_t motors_tuning_time;
+    bool nextMotor;
+    uint8_t motorCtr;
+    bool coax_enabled;
 };

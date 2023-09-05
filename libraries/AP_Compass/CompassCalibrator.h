@@ -67,6 +67,7 @@ public:
         Rotation original_orientation;
         Rotation orientation;
         float scale_factor;
+        bool check_orientation;
     } cal_report;
 
     // Structure setup to set calibration run settings
@@ -114,7 +115,7 @@ private:
     // compact class for approximate attitude, to save memory
     class AttitudeSample {
     public:
-        Matrix3f get_rotmat();
+        Matrix3f get_rotmat() const;
         void set_from_ahrs();
     private:
         int8_t roll;
@@ -145,7 +146,7 @@ private:
     bool accept_sample(const CompassSample &sample, uint16_t skip_index = UINT16_MAX);
 
     // returns true if fit is acceptable
-    bool fit_acceptable();
+    bool fit_acceptable() const;
 
     // clear sample buffer and reset offsets and scaling to their defaults
     void reset_state();

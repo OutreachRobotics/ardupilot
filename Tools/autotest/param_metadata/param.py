@@ -6,18 +6,23 @@ class Parameter(object):
 
 
 class Vehicle(object):
-    def __init__(self, name, path, truename=None):
-        if truename is not None:
-            self.truename = truename
+    def __init__(self, name, path, reference=None):
         self.name = name
         self.path = path
+        self.reference = reference
+        if reference is None:
+            self.reference = self.truename
         self.params = []
 
 
 class Library(object):
     def __init__(self, name):
-        self.name = name
+        self.set_name(name)
         self.params = []
+
+    def set_name(self, name):
+        self.name = name
+        self.reference = name
 
 known_param_fields = [
              'Description',
@@ -108,7 +113,6 @@ known_units = {
              'octal'   : 'octal'                 ,
              'RPM'     : 'Revolutions Per Minute',
              'kg/m/m'  : 'kilograms per square meter', # metre is the SI unit name, meter is the american spelling of it
-             'kg/m.m'  : 'kilogram per meter squared'
              }
 
 required_param_fields = [

@@ -4,7 +4,7 @@
    Authors:    Doug Weibel, Jose Julio, Jordi Munoz, Jason Short, Randy Mackay, Pat Hickey, John Arne Birkeland, Olivier Adler, Amilcar Lucas, Gregory Fletcher, Paul Riseborough, Brandon Jones, Jon Challinger, Tom Pittenger
    Thanks to:  Chris Anderson, Michael Oborne, Paul Mather, Bill Premerlani, James Cohen, JB from rotorFX, Automatik, Fefenin, Peter Meister, Remzibi, Yury Smirnov, Sandro Benigno, Max Levine, Roberto Navoni, Lorenz Meier, Yury MonZon
 
-   Please contribute your ideas! See https://dev.ardupilot.org for details
+   Please contribute your ideas! See https://ardupilot.org/dev for details
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -58,6 +58,9 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_BattMonitor, &plane.battery, read, 10, 300),
     SCHED_TASK_CLASS(AP_Baro, &plane.barometer, accumulate, 50, 150),
     SCHED_TASK_CLASS(AP_Notify,      &plane.notify,  update, 50, 300),
+#if AC_FENCE == ENABLED
+    SCHED_TASK_CLASS(AC_Fence,       &plane.fence,   update, 10, 100),
+#endif
     SCHED_TASK(read_rangefinder,       50,    100),
     SCHED_TASK_CLASS(AP_ICEngine, &plane.g2.ice_control, update, 10, 100),
     SCHED_TASK_CLASS(Compass,          &plane.compass,              cal_update, 50, 50),
@@ -66,6 +69,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK_CLASS(OpticalFlow, &plane.optflow, update,    50,    50),
 #endif
     SCHED_TASK(one_second_loop,         1,    400),
+    SCHED_TASK(three_hz_loop,           3,    75),
     SCHED_TASK(check_long_failsafe,     3,    400),
     SCHED_TASK(rpm_update,             10,    100),
 #if AP_AIRSPEED_AUTOCAL_ENABLE
@@ -79,7 +83,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #endif // CAMERA == ENABLED
     SCHED_TASK_CLASS(AP_Scheduler, &plane.scheduler, update_logging,         0.2,    100),
     SCHED_TASK(compass_save,          0.1,    200),
-    SCHED_TASK(Log_Write_Fast,         25,    300),
+    SCHED_TASK(Log_Write_Fast,        400,    300),
     SCHED_TASK(update_logging1,        25,    300),
     SCHED_TASK(update_logging2,        25,    300),
 #if HAL_SOARING_ENABLED
@@ -108,7 +112,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #if LANDING_GEAR_ENABLED == ENABLED
     SCHED_TASK(landing_gear_update, 5, 50),
 #endif
-#if EFI_ENABLED
+#if HAL_EFI_ENABLED
     SCHED_TASK(efi_update,             10,    200),
 #endif
 };
@@ -129,17 +133,10 @@ void Plane::ahrs_update()
 {
     arming.update_soft_armed();
 
-#if HIL_SUPPORT
-    if (g.hil_mode == 1) {
-        // update hil before AHRS update
-        gcs().update_receive();
-    }
-#endif
-
     ahrs.update();
 
     if (should_log(MASK_LOG_IMU)) {
-        logger.Write_IMU();
+        AP::ins().Write_IMU();
     }
 
     // calculate a scaled roll limit based on current pitch
@@ -203,10 +200,10 @@ void Plane::update_logging1(void)
     }
 
     if (should_log(MASK_LOG_ATTITUDE_MED) && !should_log(MASK_LOG_IMU))
-        logger.Write_IMU();
+        AP::ins().Write_IMU();
 
     if (should_log(MASK_LOG_ATTITUDE_MED))
-        logger.Write_AOA_SSA(ahrs);
+        ahrs.Write_AOA_SSA();
 }
 
 /*
@@ -232,7 +229,7 @@ void Plane::update_logging2(void)
         Log_Write_RC();
 
     if (should_log(MASK_LOG_IMU))
-        logger.Write_Vibration();
+        AP::ins().Write_Vibration();
 }
 
 
@@ -243,7 +240,12 @@ void Plane::update_logging2(void)
 void Plane::afs_fs_check(void)
 {
     // perform AFS failsafe checks
-    afs.check(failsafe.last_heartbeat_ms, geofence_breached(), failsafe.AFS_last_valid_rc_ms);
+#if AC_FENCE == ENABLED
+    const bool fence_breached = fence.get_breaches() != 0;
+#else
+    const bool fence_breached = false;
+#endif
+    afs.check(fence_breached, failsafe.AFS_last_valid_rc_ms);
 }
 #endif
 
@@ -267,7 +269,12 @@ void Plane::one_second_loop()
     adsb.set_stall_speed_cm(aparm.airspeed_min);
     adsb.set_max_speed(aparm.airspeed_max);
 #endif
-    ahrs.writeDefaultAirSpeed((float)((aparm.airspeed_min + aparm.airspeed_max)/2));
+
+    if (g2.flight_options & FlightOptions::ENABLE_DEFAULT_AIRSPEED) {
+        // use average of min and max airspeed as default airspeed fusion with high variance
+        ahrs.writeDefaultAirSpeed((float)((aparm.airspeed_min + aparm.airspeed_max)/2),
+                                  (float)((aparm.airspeed_max - aparm.airspeed_min)/2));
+    }
 
     // sync MAVLink system ID
     mavlink_system.sysid = g.sysid_this_mav;
@@ -298,6 +305,13 @@ void Plane::one_second_loop()
     }
 }
 
+void Plane::three_hz_loop()
+{
+#if AC_FENCE == ENABLED
+    fence_check();
+#endif
+}
+
 void Plane::compass_save()
 {
     if (AP::compass().enabled() &&
@@ -312,7 +326,7 @@ void Plane::compass_save()
 
 void Plane::efi_update(void)
 {
-#if EFI_ENABLED
+#if HAL_EFI_ENABLED
     g2.efi.update();
 #endif
 }
@@ -389,9 +403,6 @@ void Plane::update_GPS_10Hz(void)
                 ground_start_count = 0;
             }
         }
-
-        // see if we've breached the geo-fence
-        geofence_check(false);
 
         // update wind estimate
         ahrs.estimate_wind();
@@ -477,7 +488,6 @@ void Plane::update_alt()
 #if PARACHUTE == ENABLED
     parachute.set_sink_rate(auto_state.sink_rate);
 #endif
-    geofence_check(true);
 
     update_flight_stage();
 
@@ -490,11 +500,11 @@ void Plane::update_alt()
 
         float target_alt = relative_target_altitude_cm();
 
-        if (control_mode == &mode_rtl && !rtl.done_climb && g2.rtl_climb_min > 0) {
+        if (control_mode == &mode_rtl && !rtl.done_climb && (g2.rtl_climb_min > 0 || (plane.g2.flight_options & FlightOptions::CLIMB_BEFORE_TURN))) {
             // ensure we do the initial climb in RTL. We add an extra
             // 10m in the demanded height to push TECS to climb
             // quickly
-            target_alt = MAX(target_alt, prev_WP_loc.alt + (g2.rtl_climb_min+10)*100);
+            target_alt = MAX(target_alt, prev_WP_loc.alt - home.alt) + (g2.rtl_climb_min+10)*100;
         }
 
         SpdHgt_Controller->update_pitch_throttle(target_alt,
@@ -641,7 +651,7 @@ bool Plane::get_wp_crosstrack_error_m(float &xtrack_error) const
     return true;
 }
 
-
+#ifdef ENABLE_SCRIPTING
 // set target location (for use by scripting)
 bool Plane::set_target_location(const Location& target_loc)
 {
@@ -679,5 +689,6 @@ bool Plane::get_target_location(Location& target_loc)
     }
     return false;
 }
+#endif // ENABLE_SCRIPTING
 
 AP_HAL_MAIN_CALLBACKS(&plane);

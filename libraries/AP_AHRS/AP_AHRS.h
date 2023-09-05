@@ -24,7 +24,6 @@
 #include <inttypes.h>
 #include <AP_Compass/AP_Compass.h>
 #include <AP_Airspeed/AP_Airspeed.h>
-#include <AP_Beacon/AP_Beacon.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_Common/Location.h>
@@ -96,6 +95,18 @@ public:
         return _flags.fly_forward;
     }
 
+    void set_takeoff_expected(bool b);
+
+    bool get_takeoff_expected(void) const {
+        return _flags.takeoff_expected;
+    }
+
+    void set_touchdown_expected(bool b);
+
+    bool get_touchdown_expected(void) const {
+        return _flags.touchdown_expected;
+    }
+
     AHRS_VehicleClass get_vehicle_class(void) const {
         return _vehicle_class;
     }
@@ -115,14 +126,6 @@ public:
 
     const Compass* get_compass() const {
         return _compass;
-    }
-
-    void set_optflow(const OpticalFlow *optflow) {
-        _optflow = optflow;
-    }
-
-    const OpticalFlow* get_optflow() const {
-        return _optflow;
     }
 
     // allow for runtime change of orientation
@@ -164,7 +167,8 @@ public:
     virtual void update(bool skip_ins_update=false) = 0;
 
     // returns false if we fail arming checks, in which case the buffer will be populated with a failure message
-    virtual bool pre_arm_check(char *failure_msg, uint8_t failure_msg_len) const = 0;
+    // requires_position should be true if horizontal position configuration should be checked
+    virtual bool pre_arm_check(bool requires_position, char *failure_msg, uint8_t failure_msg_len) const = 0;
 
     // check all cores providing consistent attitudes for prearm checks
     virtual bool attitudes_consistent(char *failure_msg, const uint8_t failure_msg_len) const { return true; }
@@ -216,9 +220,6 @@ public:
     // reset the current attitude, used on new IMU calibration
     virtual void reset(bool recover_eulers=false) = 0;
 
-    // reset the current attitude, used on new IMU calibration
-    virtual void reset_attitude(const float &roll, const float &pitch, const float &yaw) = 0;
-
     // return the average size of the roll/pitch error estimate
     // since last call
     virtual float get_error_rp(void) const = 0;
@@ -243,7 +244,7 @@ public:
 
     // get our current position estimate. Return true if a position is available,
     // otherwise false. This call fills in lat, lng and alt
-    virtual bool get_position(struct Location &loc) const = 0;
+    virtual bool get_position(struct Location &loc) const WARN_IF_UNUSED = 0;
 
     // get latest altitude estimate above ground level in meters and validity flag
     virtual bool get_hagl(float &height) const WARN_IF_UNUSED { return false; }
@@ -544,9 +545,7 @@ public:
     // Retrieves the corrected NED delta velocity in use by the inertial navigation
     virtual void getCorrectedDeltaVelocityNED(Vector3f& ret, float& dt) const {
         ret.zero();
-        const AP_InertialSensor &_ins = AP::ins();
-        _ins.get_delta_velocity(ret);
-        dt = _ins.get_delta_velocity_dt();
+        AP::ins().get_delta_velocity(ret, dt);
     }
 
     // create a view
@@ -610,6 +609,13 @@ public:
     // for holding parameters
     static const struct AP_Param::GroupInfo var_info[];
 
+    // Logging to disk functions
+    void Write_AHRS2(void) const;
+    void Write_AOA_SSA(void);  // should be const? but it calls update functions
+    void Write_Attitude(const Vector3f &targets) const;
+    void Write_Origin(uint8_t origin_type, const Location &loc) const; 
+    void Write_POS(void) const;
+
 protected:
     void update_nmea_out();
 
@@ -643,6 +649,8 @@ protected:
         uint8_t fly_forward             : 1;    // 1 if we can assume the aircraft will be flying forward on its X axis
         uint8_t correct_centrifugal     : 1;    // 1 if we should correct for centrifugal forces (allows arducopter to turn this off when motors are disarmed)
         uint8_t wind_estimation         : 1;    // 1 if we should do wind estimation
+        uint8_t takeoff_expected        : 1;    // 1 if the vehicle is in a state that takeoff might be expected.  Ground effect may be in play.
+        uint8_t touchdown_expected      : 1;    // 1 if the vehicle is in a state that touchdown might be expected.  Ground effect may be in play.
     } _flags;
 
     // calculate sin/cos of roll/pitch/yaw from rotation
@@ -657,11 +665,11 @@ protected:
     // update roll_sensor, pitch_sensor and yaw_sensor
     void update_cd_values(void);
 
+    // update takeoff/touchdown flags
+    void update_flags();
+
     // pointer to compass object, if available
     Compass         * _compass;
-
-    // pointer to OpticalFlow object, if available
-    const OpticalFlow *_optflow;
 
     // pointer to airspeed object, if available
 
@@ -713,6 +721,9 @@ private:
     static AP_AHRS *_singleton;
 
     AP_NMEA_Output* _nmea_out;
+
+    uint32_t takeoff_expected_start_ms;
+    uint32_t touchdown_expected_start_ms;
 };
 
 #include "AP_AHRS_DCM.h"

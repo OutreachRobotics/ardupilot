@@ -4,7 +4,7 @@
 import fnmatch
 
 def build(bld):
-    targets = ['f103-*', 'f303-*', 'CUAV_GPS', 'ZubaxGNSS*', '*-periph', 'sitl_*', 'HitecMosaic*']
+    targets = bld.ap_periph_boards()
     valid_target = False
     for t in targets:
         if fnmatch.fnmatch(bld.env.BOARD, t):
@@ -22,6 +22,7 @@ def build(bld):
         'AP_Math',
         'AP_BoardConfig',
         'AP_BattMonitor',
+        'AP_CANManager',
         'AP_Param',
         'StorageManager',
         'AP_FlashStorage',
@@ -40,6 +41,8 @@ def build(bld):
         'SRV_Channel',
         'AP_Notify',
         'AP_SerialLED',
+        'AP_Logger',
+        'AP_Filesystem',
         ],
         exclude_src=[
             'libraries/AP_HAL_ChibiOS/Storage.cpp'

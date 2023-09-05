@@ -94,9 +94,6 @@ public:
     // but will always be kinematically consistent with the z component of the EKF position state
     float getPosDownDerivative(int8_t instance) const;
 
-    // This returns the specific forces in the NED frame
-    void getAccelNED(Vector3f &accelNED) const;
-
     // return body axis gyro bias estimates in rad/sec for the specified instance
     // An out of range instance (eg -1) returns data for the primary instance
     void getGyroBias(int8_t instance, Vector3f &gyroBias) const;
@@ -104,10 +101,6 @@ public:
     // return body axis gyro scale factor error as a percentage for the specified instance
     // An out of range instance (eg -1) returns data for the primary instance
     void getGyroScaleErrorPercentage(int8_t instance, Vector3f &gyroScale) const;
-
-    // return tilt error convergence metric for the specified instance
-    // An out of range instance (eg -1) returns data for the primary instance
-    void getTiltError(int8_t instance, float &ang) const;
 
     // reset body axis gyro bias estimates
     void resetGyroBias(void);
@@ -199,14 +192,6 @@ public:
     // posOffset is the XYZ flow sensor position in the body frame in m
     void  writeOptFlowMeas(const uint8_t rawFlowQuality, const Vector2f &rawFlowRates, const Vector2f &rawGyroRates, const uint32_t msecFlowMeas, const Vector3f &posOffset);
 
-    // called by vehicle code to specify that a takeoff is happening
-    // causes the EKF to compensate for expected barometer errors due to ground effect
-    void setTakeoffExpected(bool val);
-
-    // called by vehicle code to specify that a touchdown is expected to happen
-    // causes the EKF to compensate for expected barometer errors due to ground effect
-    void setTouchdownExpected(bool val);
-
     // Set to true if the terrain underneath is stable enough to be used as a height reference
     // in combination with a range finder. Set to false if the terrain underneath the vehicle
     // cannot be used as a height reference. Use to prevent range finder operation otherwise
@@ -226,20 +211,6 @@ public:
      7 = filter is not initialised
     */
     void  getFilterFaults(int8_t instance, uint16_t &faults) const;
-
-    /*
-    return filter timeout status as a bitmasked integer for the specified instance
-    An out of range instance (eg -1) returns data for the primary instance
-     0 = position measurement timeout
-     1 = velocity measurement timeout
-     2 = height measurement timeout
-     3 = magnetometer measurement timeout
-     4 = unassigned
-     5 = unassigned
-     6 = unassigned
-     7 = unassigned
-    */
-    void  getFilterTimeouts(int8_t instance, uint8_t &timeouts) const;
 
     /*
     return filter gps quality check status for the specified instance
@@ -396,7 +367,6 @@ private:
     AP_Float _hrt_filt_freq;        // frequency of output observer height rate complementary filter in Hz
     AP_Int8 _gsfRunMask;            // mask controlling which EKF2 instances run a separate EKF-GSF yaw estimator
     AP_Int8 _gsfUseMask;            // mask controlling which EKF2 instances will use EKF-GSF yaw estimator data to assit with yaw resets
-    AP_Int16 _gsfResetDelay;        // number of mSec from loss of navigation to requesting a reset using EKF-GSF yaw estimator data
     AP_Int8 _gsfResetMaxCount;      // maximum number of times the EKF2 is allowed to reset it's yaw to the EKF-GSF estimate
 
 // Possible values for _flowUse
@@ -428,7 +398,6 @@ private:
     const float fScaleFactorPnoise = 1e-10f;       // Process noise added to focal length scale factor state variance at each time step
     const uint8_t flowTimeDeltaAvg_ms = 100;       // average interval between optical flow measurements (msec)
     const uint8_t flowIntervalMax_ms = 100;       // maximum allowable time between flow fusion events
-    const uint16_t gndEffectTimeout_ms = 1000;     // time in msec that ground effect mode is active after being activated
     const float gndEffectBaroScaler = 4.0f;        // scaler applied to the barometer observation variance when ground effect mode is active
     const uint8_t fusionTimeStep_ms = 10;          // The minimum time interval between covariance predictions and measurement fusions in msec
     const float maxYawEstVelInnov = 2.0f;          // Maximum acceptable length of the velocity innovation returned by the EKF-GSF yaw estimator (m/s)

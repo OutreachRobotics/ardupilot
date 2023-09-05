@@ -26,7 +26,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Sub::var_info[] = {
     // @Description: Roll axis rate controller I gain maximum.  Constrains the maximum motor output that the I gain will output
     // @Range: 0 1
     // @Increment: 0.01
-    // @Units: %
     // @User: Standard
 
     // @Param: RAT_RLL_D
@@ -95,7 +94,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Sub::var_info[] = {
     // @Description: Pitch axis rate controller I gain maximum.  Constrains the maximum motor output that the I gain will output
     // @Range: 0 1
     // @Increment: 0.01
-    // @Units: %
     // @User: Standard
 
     // @Param: RAT_PIT_D
@@ -164,7 +162,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Sub::var_info[] = {
     // @Description: Yaw axis rate controller I gain maximum.  Constrains the maximum motor output that the I gain will output
     // @Range: 0 1
     // @Increment: 0.01
-    // @Units: %
     // @User: Standard
 
     // @Param: RAT_YAW_D
@@ -359,9 +356,9 @@ void AC_AttitudeControl_Sub::rate_controller_run()
     update_throttle_rpy_mix();
 
     Vector3f gyro_latest = _ahrs.get_gyro_latest();
-    _motors.set_roll(get_rate_roll_pid().update_all(_rate_target_ang_vel.x, gyro_latest.x, _motors.limit.roll));
-    _motors.set_pitch(get_rate_pitch_pid().update_all(_rate_target_ang_vel.y, gyro_latest.y, _motors.limit.pitch));
-    _motors.set_yaw(get_rate_yaw_pid().update_all(_rate_target_ang_vel.z, gyro_latest.z, _motors.limit.yaw));
+    _motors.set_roll(get_rate_roll_pid().update_all(_ang_vel_body.x, gyro_latest.x, _motors.limit.roll));
+    _motors.set_pitch(get_rate_pitch_pid().update_all(_ang_vel_body.y, gyro_latest.y, _motors.limit.pitch));
+    _motors.set_yaw(get_rate_yaw_pid().update_all(_ang_vel_body.z, gyro_latest.z, _motors.limit.yaw));
 
     control_monitor_update();
 }
@@ -370,18 +367,18 @@ void AC_AttitudeControl_Sub::rate_controller_run()
 void AC_AttitudeControl_Sub::parameter_sanity_check()
 {
     // sanity check throttle mix parameters
-    if (_thr_mix_man < 0.1f || _thr_mix_man > 4.0f) {
+    if (_thr_mix_man < 0.1f || _thr_mix_man > AC_ATTITUDE_CONTROL_MAN_LIMIT) {
         // parameter description recommends thr-mix-man be no higher than 0.9 but we allow up to 4.0
         // which can be useful for very high powered copters with very low hover throttle
-        _thr_mix_man.set_and_save(AC_ATTITUDE_CONTROL_MAN_DEFAULT);
+        _thr_mix_man.set_and_save(constrain_float(_thr_mix_man, 0.1, AC_ATTITUDE_CONTROL_MAN_LIMIT));
     }
-    if (_thr_mix_min < 0.1f || _thr_mix_min > 0.25f) {
-        _thr_mix_min.set_and_save(AC_ATTITUDE_CONTROL_MIN_DEFAULT);
+    if (_thr_mix_min < 0.1f || _thr_mix_min > AC_ATTITUDE_CONTROL_MIN_LIMIT) {
+        _thr_mix_min.set_and_save(constrain_float(_thr_mix_min, 0.1, AC_ATTITUDE_CONTROL_MIN_LIMIT));
     }
     if (_thr_mix_max < 0.5f || _thr_mix_max > AC_ATTITUDE_CONTROL_MAX) {
         // parameter description recommends thr-mix-max be no higher than 0.9 but we allow up to 5.0
         // which can be useful for very high powered copters with very low hover throttle
-        _thr_mix_max.set_and_save(AC_ATTITUDE_CONTROL_MAX_DEFAULT);
+        _thr_mix_max.set_and_save(constrain_float(_thr_mix_max, 0.5, AC_ATTITUDE_CONTROL_MAX));
     }
     if (_thr_mix_min > _thr_mix_max) {
         _thr_mix_min.set_and_save(AC_ATTITUDE_CONTROL_MIN_DEFAULT);

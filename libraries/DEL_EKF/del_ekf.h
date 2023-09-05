@@ -1,0 +1,117 @@
+
+// del_ekf.h
+
+#ifndef DEL_EKF_H
+#define DEL_EKF_H
+
+/***************************************************************************
+    Include headers :
+***************************************************************************/
+
+#include "del_mat.h"
+#include <DEL_Helper/del_helper.h>
+#include <AP_HAL/AP_HAL.h>
+
+/***************************************************************************
+    Macro :
+***************************************************************************/
+
+#define PHI1DT_C    0
+#define PHI1_C      1
+#define PHI1DT_P    2
+#define PHI1_P      3
+#define PHI2DT_C    0
+#define PHI2_C      1
+#define PHI2DT_P    2
+#define PHI2_P      3
+#define PHI3DT_P    0
+#define PHI3_P      1
+
+
+/***************************************************************************
+	Enumerations :
+***************************************************************************/
+
+
+/***************************************************************************
+	Class :
+***************************************************************************/
+
+class DelEKF
+{
+public:
+    DelEKF();
+    Mat gyro2statesDt(Mat gyro_in);
+    Mat commandLPF(Mat F_in);
+    void linearDynamicsEstimation(Vector3f F_in, Vector3f gyro, Vector3f angle);
+    void propagateStates(Mat F_in);
+    void propagateCovariance();
+    void stateCovarianceUpdate(Mat gyro, Mat angle);
+    void wrapPropStates();
+    void wrapStates();
+    Vector3f getPlatformOrientation();
+    Mat getEKFStates();
+    Mat getLQRgain();
+    Mat getLQRgain_taxi();
+    Mat createCommandMat(Vector3f orientation);
+    void update_R_coeff(float r_value);
+    void update_length(float length, uint8_t controller_mode);
+
+private:
+    Mat x_roll;
+    Mat x_pitch;
+    Mat x_yaw;
+    Mat x_roll_prop;
+    Mat x_pitch_prop;
+    Mat x_yaw_prop;
+
+    Mat P_roll;
+    Mat P_pitch;
+    Mat P_yaw;
+    Mat P_roll_prop;
+    Mat P_pitch_prop;
+    Mat P_yaw_prop;
+
+    Mat F_roll_multi;
+    Mat F_pitch_multi;
+    Mat B_roll_multi;
+    Mat B_pitch_multi;
+
+    Mat F_roll;
+    Mat F_pitch;
+    Mat F_yaw;
+    Mat B_roll;
+    Mat B_pitch;
+    Mat B_yaw;
+
+    Mat Qe_roll;
+    Mat Qe_pitch;
+    Mat Qe_yaw;
+    Mat Re_roll;
+    Mat Re_pitch;
+    double Re_yaw;
+
+    Mat C_roll;
+    Mat C_pitch;
+    Mat C_yaw;
+
+    Mat I4x4;
+    Mat I2x2;
+
+    Mat last_F_in;
+    Mat last_F_in_filt;
+
+    Mat Q_trap_roll;
+    Mat Q_trap_pitch;
+    Mat Q_trap_yaw;
+
+    Mat H_roll;
+    Mat H_pitch;
+    Mat H_yaw;
+    
+    Mat k_lqr_pos_multi;
+    Mat k_lqr_damp_multi;
+    Mat k_lqr;    
+};
+
+#endif

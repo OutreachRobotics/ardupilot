@@ -33,6 +33,11 @@ def build(bld):
             'AP_KDECAN',
             'AP_WindSensor',
             'LIDAR',
+            'DEL_EKF',
+            'DEL_Comm',
+            'DEL_LED',
+            'DEL_Winch',
+            'DEL_Sony',
         ],
     )
 

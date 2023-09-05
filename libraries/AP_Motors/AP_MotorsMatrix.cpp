@@ -23,8 +23,8 @@ extern const AP_HAL::HAL& hal;
 void AP_MotorsMatrix::init(motor_frame_class frame_class, motor_frame_type frame_type)
 {
     // record requested frame class and type
-    _last_frame_class = frame_class;
-    _last_frame_type = frame_type;
+    _active_frame_class = frame_class;
+    _active_frame_type = frame_type;
 
     // setup the motors
     setup_motors(frame_class, frame_type);
@@ -32,6 +32,69 @@ void AP_MotorsMatrix::init(motor_frame_class frame_class, motor_frame_type frame
     // enable fast channels or instant pwm
     set_update_rate(_speed_hz);
 }
+
+#ifdef ENABLE_SCRIPTING
+// dedicated init for lua scripting
+bool AP_MotorsMatrix::init(uint8_t expected_num_motors)
+{
+    // Make sure the correct number of motors have been added
+    uint8_t num_motors = 0;
+    for (uint8_t i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
+        if (motor_enabled[i]) {
+            num_motors++;
+        }
+    }
+
+    set_initialised_ok(expected_num_motors == num_motors);
+
+    if (!initialised_ok()) {
+        _mav_type = MAV_TYPE_GENERIC;
+        return false;
+    }
+
+    switch (num_motors) {
+        case 3:
+            _mav_type = MAV_TYPE_TRICOPTER;
+            break;
+        case 4:
+            _mav_type = MAV_TYPE_QUADROTOR;
+            break;
+        case 6:
+            _mav_type = MAV_TYPE_HEXAROTOR;
+            break;
+        case 8:
+            _mav_type = MAV_TYPE_OCTOROTOR;
+            break;
+        case 10:
+            _mav_type = MAV_TYPE_DECAROTOR;
+            break;
+        case 12:
+            _mav_type = MAV_TYPE_DODECAROTOR;
+            break;
+        default:
+            _mav_type = MAV_TYPE_GENERIC;
+    }
+
+    normalise_rpy_factors();
+
+    set_update_rate(_speed_hz);
+
+    return true;
+}
+
+// Set throttle factor from scripting
+bool AP_MotorsMatrix::set_throttle_factor(int8_t motor_num, float throttle_factor)
+{
+    if (initialised_ok() || !motor_enabled[motor_num]) {
+        // Already setup or given motor is not enabled
+        return false;
+    }
+
+    _throttle_factor[motor_num] = throttle_factor;
+    return true;
+}
+
+#endif // ENABLE_SCRIPTING
 
 // set update rate to motors - a value in hertz
 void AP_MotorsMatrix::set_update_rate(uint16_t speed_hz)
@@ -52,17 +115,14 @@ void AP_MotorsMatrix::set_update_rate(uint16_t speed_hz)
 void AP_MotorsMatrix::set_frame_class_and_type(motor_frame_class frame_class, motor_frame_type frame_type)
 {
     // exit immediately if armed or no change
-    if (armed() || (frame_class == _last_frame_class && _last_frame_type == frame_type)) {
+    if (armed() || (frame_class == _active_frame_class && _active_frame_type == frame_type)) {
         return;
     }
-    _last_frame_class = frame_class;
-    _last_frame_type = frame_type;
+    _active_frame_class = frame_class;
+    _active_frame_type = frame_type;
 
-    // setup the motors
-    setup_motors(frame_class, frame_type);
+    init(frame_class, frame_type);
 
-    // enable fast channels or instant pwm
-    set_update_rate(_speed_hz);
 }
 
 void AP_MotorsMatrix::output_to_motors()
@@ -318,17 +378,14 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     }
 
     // add scaled roll, pitch, constrained yaw and throttle for each motor
+    const float throttle_thrust_best_plus_adj = throttle_thrust_best_rpy + thr_adj;
     for (i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
-        if ((motor_enabled[i]) && ((i==0) || (i==1))) {
-            _thrust_rpyt_out[i] = throttle_thrust_best_rpy + thr_adj;
-        }
-        else if(motor_enabled[i]) {
-            _thrust_rpyt_out[i] = throttle_thrust_best_rpy + (rpy_scale * _thrust_rpyt_out[i]);
+        if (motor_enabled[i]) {
+            _thrust_rpyt_out[i] = (throttle_thrust_best_plus_adj * _throttle_factor[i]) + (rpy_scale * _thrust_rpyt_out[i]);
         }
     }
 
     // determine throttle thrust for harmonic notch
-    const float throttle_thrust_best_plus_adj = throttle_thrust_best_rpy + thr_adj;
     // compensation_gain can never be zero
     _throttle_out = throttle_thrust_best_plus_adj / compensation_gain;
 
@@ -435,20 +492,24 @@ bool AP_MotorsMatrix::output_test_num(uint8_t output_channel, int16_t pwm)
 }
 
 // add_motor
-void AP_MotorsMatrix::add_motor_raw(int8_t motor_num, float roll_fac, float pitch_fac, float yaw_fac, uint8_t testing_order)
+void AP_MotorsMatrix::add_motor_raw(int8_t motor_num, float roll_fac, float pitch_fac, float yaw_fac, uint8_t testing_order, float throttle_factor)
 {
+    if (initialised_ok()) {
+        // do not allow motors to be set if the current frame type has init correctly
+        return;
+    }
+
     // ensure valid motor number is provided
     if (motor_num >= 0 && motor_num < AP_MOTORS_MAX_NUM_MOTORS) {
 
-        // increment number of motors if this motor is being newly motor_enabled
-        if (!motor_enabled[motor_num]) {
-            motor_enabled[motor_num] = true;
-        }
+        // enable motor
+        motor_enabled[motor_num] = true;
 
-        // set roll, pitch, thottle factors and opposite motor (for stability patch)
+        // set roll, pitch, yaw and throttle factors
         _roll_factor[motor_num] = roll_fac;
         _pitch_factor[motor_num] = pitch_fac;
         _yaw_factor[motor_num] = yaw_fac;
+        _throttle_factor[motor_num] = throttle_factor;
 
         // set order that motor appears in test
         _test_order[motor_num] = testing_order;
@@ -482,9 +543,10 @@ void AP_MotorsMatrix::remove_motor(int8_t motor_num)
     if (motor_num >= 0 && motor_num < AP_MOTORS_MAX_NUM_MOTORS) {
         // disable the motor, set all factors to zero
         motor_enabled[motor_num] = false;
-        _roll_factor[motor_num] = 0;
-        _pitch_factor[motor_num] = 0;
-        _yaw_factor[motor_num] = 0;
+        _roll_factor[motor_num] = 0.0f;
+        _pitch_factor[motor_num] = 0.0f;
+        _yaw_factor[motor_num] = 0.0f;
+        _throttle_factor[motor_num] = 0.0f;
     }
 }
 
@@ -494,20 +556,24 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
     for (int8_t i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         remove_motor(i);
     }
-
+    set_initialised_ok(false);
     bool success = true;
 
     switch (frame_class) {
 
         case MOTOR_FRAME_QUAD:
+            _frame_class_string = "QUAD";
+            _mav_type = MAV_TYPE_QUADROTOR;
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
+                    _frame_type_string = "PLUS";
                     add_motor(AP_MOTORS_MOT_1,  90, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
                     add_motor(AP_MOTORS_MOT_2, -90, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 4);
                     add_motor(AP_MOTORS_MOT_3,   0, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
                     add_motor(AP_MOTORS_MOT_4, 180, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
                     break;
                 case MOTOR_FRAME_TYPE_X:
+                    _frame_type_string = "X";
                     add_motor(AP_MOTORS_MOT_1,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
                     add_motor(AP_MOTORS_MOT_3,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  4);
@@ -515,12 +581,14 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
 #if APM_BUILD_TYPE(APM_BUILD_ArduPlane) 
                 case MOTOR_FRAME_TYPE_NYT_PLUS:
+                    _frame_type_string = "NYT_PLUS";
                     add_motor(AP_MOTORS_MOT_1,  90, 0, 2);
                     add_motor(AP_MOTORS_MOT_2, -90, 0, 4);
                     add_motor(AP_MOTORS_MOT_3,   0, 0, 1);
                     add_motor(AP_MOTORS_MOT_4, 180, 0, 3);
                     break;
                 case MOTOR_FRAME_TYPE_NYT_X:
+                    _frame_type_string = "NYT_X";
                     add_motor(AP_MOTORS_MOT_1,   45, 0, 1);
                     add_motor(AP_MOTORS_MOT_2, -135, 0, 3);
                     add_motor(AP_MOTORS_MOT_3,  -45, 0, 4);
@@ -530,6 +598,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                 case MOTOR_FRAME_TYPE_BF_X:
                     // betaflight quad X order
                     // see: https://fpvfrenzy.com/betaflight-motor-order/
+                    _frame_type_string = "BF_X";
                     add_motor(AP_MOTORS_MOT_1,  135, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 2);
                     add_motor(AP_MOTORS_MOT_2,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW,1);
                     add_motor(AP_MOTORS_MOT_3, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW,3);
@@ -537,6 +606,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 case MOTOR_FRAME_TYPE_BF_X_REV:
                     // betaflight quad X order, reversed motors
+                    _frame_type_string = "X_REV";
                     add_motor(AP_MOTORS_MOT_1,  135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
                     add_motor(AP_MOTORS_MOT_2,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
                     add_motor(AP_MOTORS_MOT_3, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
@@ -545,6 +615,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                 case MOTOR_FRAME_TYPE_DJI_X:
                     // DJI quad X order
                     // see https://forum44.djicdn.com/data/attachment/forum/201711/26/172348bppvtt1ot1nrtp5j.jpg
+                    _frame_type_string = "DJI_X";
                     add_motor(AP_MOTORS_MOT_1,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  4);
                     add_motor(AP_MOTORS_MOT_3, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
@@ -553,12 +624,14 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                 case MOTOR_FRAME_TYPE_CW_X:
                     // "clockwise X" motor order. Motors are ordered clockwise from front right
                     // matching test order
+                    _frame_type_string = "CW_X";
                     add_motor(AP_MOTORS_MOT_1,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2,  135, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2);
                     add_motor(AP_MOTORS_MOT_3, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
                     add_motor(AP_MOTORS_MOT_4,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  4);
                     break;
                 case MOTOR_FRAME_TYPE_V:
+                    _frame_type_string = "V";
                     add_motor(AP_MOTORS_MOT_1,   45,  0.7981f,  1);
                     add_motor(AP_MOTORS_MOT_2, -135,  1.0000f,  3);
                     add_motor(AP_MOTORS_MOT_3,  -45, -0.7981f,  4);
@@ -566,6 +639,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 case MOTOR_FRAME_TYPE_H:
                     // H frame set-up - same as X but motors spin in opposite directiSons
+                    _frame_type_string = "H";
                     add_motor(AP_MOTORS_MOT_1,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
                     add_motor(AP_MOTORS_MOT_2, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
                     add_motor(AP_MOTORS_MOT_3,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 4);
@@ -587,6 +661,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                             motors 1's yaw factor should be changed to sin(radians(40)).  Where "40" is the vtail angle
                             motors 3's yaw factor should be changed to -sin(radians(40))
                     */
+                    _frame_type_string = "VTAIL";
                     add_motor(AP_MOTORS_MOT_1, 60, 60, 0, 1);
                     add_motor(AP_MOTORS_MOT_2, 0, -160, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 3);
                     add_motor(AP_MOTORS_MOT_3, -60, -60, 0, 4);
@@ -606,6 +681,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                         - Yaw control is entirely in the rear motors
                         - Roll is is entirely in the front motors
                     */
+                    _frame_type_string = "ATAIL";
                     add_motor(AP_MOTORS_MOT_1, 60, 60, 0, 1);
                     add_motor(AP_MOTORS_MOT_2, 0, -160, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
                     add_motor(AP_MOTORS_MOT_3, -60, -60, 0, 4);
@@ -613,6 +689,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 case MOTOR_FRAME_TYPE_PLUSREV:
                     // plus with reversed motor directions
+                    _frame_type_string = "PLUSREV";
                     add_motor(AP_MOTORS_MOT_1, 90, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 2);
                     add_motor(AP_MOTORS_MOT_2, -90, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 4);
                     add_motor(AP_MOTORS_MOT_3, 0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
@@ -620,12 +697,15 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 default:
                     // quad frame class does not support this frame type
+                    _frame_type_string = "UNSUPPORTED";
                     success = false;
                     break;
             }
             break;  // quad
 
         case MOTOR_FRAME_HEXA:
+            _frame_class_string = "HEXA";
+            _mav_type = MAV_TYPE_HEXAROTOR;
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
                     add_motor_raw(AP_MOTORS_MOT_1, 0, 0, 0,  1);
@@ -638,6 +718,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor_raw(AP_MOTORS_MOT_8, 0, 0, 0, 8);
                     break;
                 case MOTOR_FRAME_TYPE_X:
+                    _frame_type_string = "X";
                     add_motor(AP_MOTORS_MOT_1,  90, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2);
                     add_motor(AP_MOTORS_MOT_2, -90, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 5);
                     add_motor(AP_MOTORS_MOT_3, -30, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  6);
@@ -647,6 +728,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 case MOTOR_FRAME_TYPE_H:
                     // H is same as X except middle motors are closer to center
+                    _frame_type_string = "H";
                     add_motor_raw(AP_MOTORS_MOT_1, -1.0f, 0.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 2);
                     add_motor_raw(AP_MOTORS_MOT_2, 1.0f, 0.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 5);
                     add_motor_raw(AP_MOTORS_MOT_3, 1.0f, 1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 6);
@@ -655,6 +737,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor_raw(AP_MOTORS_MOT_6, 1.0f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 4);
                     break;
                 case MOTOR_FRAME_TYPE_DJI_X:
+                    _frame_type_string = "DJI_X";
                     add_motor(AP_MOTORS_MOT_1,   30, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2,  -30, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  6);
                     add_motor(AP_MOTORS_MOT_3,  -90, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 5);
@@ -663,6 +746,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor(AP_MOTORS_MOT_6,   90, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2);
                     break;
                 case MOTOR_FRAME_TYPE_CW_X:
+                    _frame_type_string = "CW_X";
                     add_motor(AP_MOTORS_MOT_1,   30, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2,   90, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2);
                     add_motor(AP_MOTORS_MOT_3,  150, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
@@ -672,14 +756,18 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 default:
                     // hexa frame class does not support this frame type
+                    _frame_type_string = "UNSUPPORTED";
                     success = false;
                     break;
             }
             break;
 
         case MOTOR_FRAME_OCTA:
+            _frame_class_string = "OCTA";
+            _mav_type = MAV_TYPE_OCTOROTOR;
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
+                    _frame_type_string = "PLUS";
                     add_motor(AP_MOTORS_MOT_1,    0,  AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
                     add_motor(AP_MOTORS_MOT_2,  180,  AP_MOTORS_MATRIX_YAW_FACTOR_CW,  5);
                     add_motor(AP_MOTORS_MOT_3,   45,  AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
@@ -690,6 +778,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor(AP_MOTORS_MOT_8,   90,  AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
                     break;
                 case MOTOR_FRAME_TYPE_X:
+                    _frame_type_string = "X";
                     add_motor(AP_MOTORS_MOT_1,   22.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
                     add_motor(AP_MOTORS_MOT_2, -157.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  5);
                     add_motor(AP_MOTORS_MOT_3,   67.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
@@ -700,6 +789,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor(AP_MOTORS_MOT_8,  112.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
                     break;
                 case MOTOR_FRAME_TYPE_V:
+                    _frame_type_string = "V";
                     add_motor_raw(AP_MOTORS_MOT_1,  0.83f,  0.34f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  7);
                     add_motor_raw(AP_MOTORS_MOT_2, -0.67f, -0.32f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
                     add_motor_raw(AP_MOTORS_MOT_3,  0.67f, -0.32f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 6);
@@ -710,6 +800,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor_raw(AP_MOTORS_MOT_8,  0.50f, -1.00f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  5);
                     break;
                 case MOTOR_FRAME_TYPE_H:
+                    _frame_type_string = "H";
                     add_motor_raw(AP_MOTORS_MOT_1, -1.0f,    1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
                     add_motor_raw(AP_MOTORS_MOT_2,  1.0f,   -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  5);
                     add_motor_raw(AP_MOTORS_MOT_3, -1.0f,  0.333f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
@@ -720,6 +811,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor_raw(AP_MOTORS_MOT_8, -1.0f, -0.333f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
                     break;
                 case MOTOR_FRAME_TYPE_I:
+                    _frame_type_string = "I";
                     add_motor_raw(AP_MOTORS_MOT_1, 0.333f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
                     add_motor_raw(AP_MOTORS_MOT_2, -0.333f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  5);
                     add_motor_raw(AP_MOTORS_MOT_3,    1.0f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
@@ -730,6 +822,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor_raw(AP_MOTORS_MOT_8,    1.0f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
                     break;
                 case MOTOR_FRAME_TYPE_DJI_X:
+                    _frame_type_string = "DJI_X";
                     add_motor(AP_MOTORS_MOT_1,   22.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2,  -22.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  8);
                     add_motor(AP_MOTORS_MOT_3,  -67.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 7);
@@ -740,6 +833,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor(AP_MOTORS_MOT_8,   67.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2);
                     break;
                 case MOTOR_FRAME_TYPE_CW_X:
+                    _frame_type_string = "CW_X";
                     add_motor(AP_MOTORS_MOT_1,   22.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2,   67.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2);
                     add_motor(AP_MOTORS_MOT_3,  112.5f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
@@ -751,14 +845,18 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 default:
                     // octa frame class does not support this frame type
+                    _frame_type_string = "UNSUPPORTED";
                     success = false;
                     break;
             } // octa frame type
             break;
 
         case MOTOR_FRAME_OCTAQUAD:
+            _mav_type = MAV_TYPE_OCTOROTOR;
+            _frame_class_string = "OCTAQUAD";
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
+                    _frame_type_string = "PLUS";
                     add_motor(AP_MOTORS_MOT_1,    0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2,  -90, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  7);
                     add_motor(AP_MOTORS_MOT_3,  180, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 5);
@@ -769,6 +867,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor(AP_MOTORS_MOT_8,  180, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  6);
                     break;
                 case MOTOR_FRAME_TYPE_X:
+                    _frame_type_string = "X";
                     add_motor(AP_MOTORS_MOT_1,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  7);
                     add_motor(AP_MOTORS_MOT_3, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 5);
@@ -779,6 +878,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor(AP_MOTORS_MOT_8, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  6);
                     break;
                 case MOTOR_FRAME_TYPE_V:
+                    _frame_type_string = "V";
                     add_motor(AP_MOTORS_MOT_1,   45,  0.7981f, 1);
                     add_motor(AP_MOTORS_MOT_2,  -45, -0.7981f, 7);
                     add_motor(AP_MOTORS_MOT_3, -135,  1.0000f, 5);
@@ -790,6 +890,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 case MOTOR_FRAME_TYPE_H:
                     // H frame set-up - same as X but motors spin in opposite directions
+                    _frame_type_string = "H";
                     add_motor(AP_MOTORS_MOT_1,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
                     add_motor(AP_MOTORS_MOT_2,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 7);
                     add_motor(AP_MOTORS_MOT_3, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  5);
@@ -800,25 +901,30 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor(AP_MOTORS_MOT_8, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 6);
                     break;
                 case MOTOR_FRAME_TYPE_CW_X:
+                    _frame_type_string = "CW_X";
                     add_motor(AP_MOTORS_MOT_1,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor(AP_MOTORS_MOT_2,   45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2);
-                    add_motor(AP_MOTORS_MOT_3,  135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
-                    add_motor(AP_MOTORS_MOT_4,  135, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  4);
+                    add_motor(AP_MOTORS_MOT_3,  135, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
+                    add_motor(AP_MOTORS_MOT_4,  135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 4);
                     add_motor(AP_MOTORS_MOT_5, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 5);
                     add_motor(AP_MOTORS_MOT_6, -135, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  6);
-                    add_motor(AP_MOTORS_MOT_7,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 7);
-                    add_motor(AP_MOTORS_MOT_8,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  8);
+                    add_motor(AP_MOTORS_MOT_7,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  7);
+                    add_motor(AP_MOTORS_MOT_8,  -45, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 8);
                     break;
                 default:
                     // octaquad frame class does not support this frame type
+                    _frame_type_string = "UNSUPPORTED";
                     success = false;
                     break;
             }
             break;
 
         case MOTOR_FRAME_DODECAHEXA: {
+            _mav_type = MAV_TYPE_DODECAROTOR;
+            _frame_class_string = "DODECAHEXA";
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
+                    _frame_type_string = "PLUS";
                     add_motor(AP_MOTORS_MOT_1,     0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);  // forward-top
                     add_motor(AP_MOTORS_MOT_2,     0, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2);  // forward-bottom
                     add_motor(AP_MOTORS_MOT_3,    60, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);  // forward-right-top
@@ -833,6 +939,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor(AP_MOTORS_MOT_12,  -60, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 12); // forward-left-bottom
                     break;
                 case MOTOR_FRAME_TYPE_X:
+                    _frame_type_string = "X";
                     add_motor(AP_MOTORS_MOT_1,    30, AP_MOTORS_MATRIX_YAW_FACTOR_CCW,  1); // forward-right-top
                     add_motor(AP_MOTORS_MOT_2,    30, AP_MOTORS_MATRIX_YAW_FACTOR_CW,   2); // forward-right-bottom
                     add_motor(AP_MOTORS_MOT_3,    90, AP_MOTORS_MATRIX_YAW_FACTOR_CW,   3); // right-top
@@ -848,15 +955,19 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 default:
                     // dodeca-hexa frame class does not support this frame type
+                    _frame_type_string = "UNSUPPORTED";
                     success = false;
                     break;
             }}
             break;
 
         case MOTOR_FRAME_Y6:
+            _mav_type = MAV_TYPE_HEXAROTOR;
+            _frame_class_string = "Y6";
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_Y6B:
                     // Y6 motor definition with all top motors spinning clockwise, all bottom motors counter clockwise
+                    _frame_type_string = "Y6B";
                     add_motor_raw(AP_MOTORS_MOT_1, -1.0f,  0.500f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1);
                     add_motor_raw(AP_MOTORS_MOT_2, -1.0f,  0.500f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
                     add_motor_raw(AP_MOTORS_MOT_3,  0.0f, -1.000f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3);
@@ -866,6 +977,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
                 case MOTOR_FRAME_TYPE_Y6F:
                     // Y6 motor layout for FireFlyY6
+                    _frame_type_string = "Y6F";
                     add_motor_raw(AP_MOTORS_MOT_1,  0.0f, -1.000f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
                     add_motor_raw(AP_MOTORS_MOT_2, -1.0f,  0.500f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1);
                     add_motor_raw(AP_MOTORS_MOT_3,  1.0f,  0.500f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 5);
@@ -874,6 +986,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor_raw(AP_MOTORS_MOT_6,  1.0f,  0.500f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  6);
                     break;
                 default:
+                    _frame_type_string = "default";
                     add_motor_raw(AP_MOTORS_MOT_1, -1.0f,  0.666f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2);
                     add_motor_raw(AP_MOTORS_MOT_2,  1.0f,  0.666f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  5);
                     add_motor_raw(AP_MOTORS_MOT_3,  1.0f,  0.666f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 6);
@@ -885,8 +998,11 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
             break;
 
         case MOTOR_FRAME_DECA:
+            _mav_type = MAV_TYPE_DECAROTOR;
+            _frame_class_string = "DECA";
             switch (frame_type) {
                 case MOTOR_FRAME_TYPE_PLUS:
+                    _frame_type_string = "PLUS";
                     add_motor(AP_MOTORS_MOT_1,     0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW,  1);
                     add_motor(AP_MOTORS_MOT_2,    36, AP_MOTORS_MATRIX_YAW_FACTOR_CW,   2);
                     add_motor(AP_MOTORS_MOT_3,    72, AP_MOTORS_MATRIX_YAW_FACTOR_CCW,  3);
@@ -899,6 +1015,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motor(AP_MOTORS_MOT_10,  -36, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  10);
                     break;
                 case MOTOR_FRAME_TYPE_X:
+                    _frame_type_string = "X";
                     add_motor(AP_MOTORS_MOT_1,    18, AP_MOTORS_MATRIX_YAW_FACTOR_CCW,  1);
                     add_motor(AP_MOTORS_MOT_2,    54, AP_MOTORS_MATRIX_YAW_FACTOR_CW,   2);
                     add_motor(AP_MOTORS_MOT_3,    90, AP_MOTORS_MATRIX_YAW_FACTOR_CCW,  3);
@@ -917,9 +1034,28 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
             }
             break;
 
+        // case MOTOR_FRAME_MAMBA:
+        //     switch (frame_type)
+        //     {
+        //     case MOTOR_FRAME_TYPE_PROTO1:
+        //             add_motor_raw(AP_MOTORS_MOT_1, 0, 0, 0,  1);
+        //             add_motor_raw(AP_MOTORS_MOT_2, 0, 0, 0,  2);
+        //             add_motor_raw(AP_MOTORS_MOT_3,  1, 0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3);
+        //             add_motor_raw(AP_MOTORS_MOT_4, -1, 0, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 4);
+        //             add_motor_raw(AP_MOTORS_MOT_5,  1, 0, AP_MOTORS_MATRIX_YAW_FACTOR_CW, 5);
+        //             add_motor_raw(AP_MOTORS_MOT_6, -1, 0, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 6);
+        //         break;
+            
+        //     default:
+        //         success = false;
+        //         break;
+        //     }
+
         default:
             // matrix doesn't support the configured class
+            _frame_class_string = "UNSUPPORTED";
             success = false;
+            _mav_type = MAV_TYPE_GENERIC;
             break;
     } // switch frame_class
 
@@ -930,24 +1066,21 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
 }
 
 // normalizes the roll, pitch and yaw factors so maximum magnitude is 0.5
+// normalizes throttle factors so max value is 1 and no value is less than 0
 void AP_MotorsMatrix::normalise_rpy_factors()
 {
     float roll_fac = 0.0f;
     float pitch_fac = 0.0f;
     float yaw_fac = 0.0f;
+    float throttle_fac = 0.0f;
 
     // find maximum roll, pitch and yaw factors
     for (uint8_t i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         if (motor_enabled[i]) {
-            if (roll_fac < fabsf(_roll_factor[i])) {
-                roll_fac = fabsf(_roll_factor[i]);
-            }
-            if (pitch_fac < fabsf(_pitch_factor[i])) {
-                pitch_fac = fabsf(_pitch_factor[i]);
-            }
-            if (yaw_fac < fabsf(_yaw_factor[i])) {
-                yaw_fac = fabsf(_yaw_factor[i]);
-            }
+            roll_fac = MAX(roll_fac,fabsf(_roll_factor[i]));
+            pitch_fac = MAX(pitch_fac,fabsf(_pitch_factor[i]));
+            yaw_fac = MAX(yaw_fac,fabsf(_yaw_factor[i]));
+            throttle_fac = MAX(throttle_fac,MAX(0.0f,_throttle_factor[i]));
         }
     }
 
@@ -962,6 +1095,9 @@ void AP_MotorsMatrix::normalise_rpy_factors()
             }
             if (!is_zero(yaw_fac)) {
                 _yaw_factor[i] = 0.5f * _yaw_factor[i] / yaw_fac;
+            }
+            if (!is_zero(throttle_fac)) {
+                _throttle_factor[i] = MAX(0.0f,_throttle_factor[i] / throttle_fac);
             }
         }
     }
@@ -990,3 +1126,6 @@ void AP_MotorsMatrix::disable_yaw_torque(void)
         _yaw_factor[i] = 0;
     }
 }
+
+// singleton instance
+AP_MotorsMatrix *AP_MotorsMatrix::_singleton;

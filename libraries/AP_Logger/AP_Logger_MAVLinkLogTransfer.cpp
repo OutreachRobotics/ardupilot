@@ -22,10 +22,12 @@
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h> // for LOG_ENTRY
 
+#ifndef HAL_NO_GCS
+
 extern const AP_HAL::HAL& hal;
 
 // We avoid doing log messages when timing is critical:
-bool AP_Logger::should_handle_log_message()
+bool AP_Logger::should_handle_log_message() const
 {
     if (!WritesEnabled()) {
         // this is currently used as a proxy for "in_mavlink_delay"
@@ -45,6 +47,7 @@ void AP_Logger::handle_log_message(GCS_MAVLINK &link, const mavlink_message_t &m
     if (!should_handle_log_message()) {
         return;
     }
+    _last_mavlink_log_transfer_message_handled_ms = AP_HAL::millis();
     switch (msg.msgid) {
     case MAVLINK_MSG_ID_LOG_REQUEST_LIST:
         handle_log_request_list(link, msg);
@@ -327,3 +330,5 @@ bool AP_Logger::handle_log_send_data()
     }
     return true;
 }
+
+#endif

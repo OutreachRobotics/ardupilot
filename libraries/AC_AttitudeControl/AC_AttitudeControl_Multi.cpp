@@ -26,7 +26,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Description: Roll axis rate controller I gain maximum.  Constrains the maximum motor output that the I gain will output
     // @Range: 0 1
     // @Increment: 0.01
-    // @Units: %
     // @User: Standard
 
     // @Param: RAT_RLL_D
@@ -95,7 +94,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Description: Pitch axis rate controller I gain maximum.  Constrains the maximum motor output that the I gain will output
     // @Range: 0 1
     // @Increment: 0.01
-    // @Units: %
     // @User: Standard
 
     // @Param: RAT_PIT_D
@@ -164,7 +162,6 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Description: Yaw axis rate controller I gain maximum.  Constrains the maximum motor output that the I gain will output
     // @Range: 0 1
     // @Increment: 0.01
-    // @Units: %
     // @User: Standard
 
     // @Param: RAT_YAW_D
@@ -270,9 +267,18 @@ AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_
     yaw_kd = 0.0f;
 
     last_target_forward = 0.0f;
-    last_target_lateral = 0.0f;
+    last_target_lateral = LATERAL_INITIAL_COMMAND;
     filtered_target_forward = 0.0f;
-    filtered_target_lateral = 0.0f;
+    filtered_target_lateral = LATERAL_INITIAL_COMMAND;
+
+    yaw_kp = YAW_KP;
+    yaw_kd = YAW_KD;
+    roll_kp = ROLL_KP;
+    roll_kd = ROLL_KD;
+    pitch_kp = PITCH_KP;
+    pitch_kd = PITCH_KD;
+
+    delEKF = DelEKF();
 }
 
 // Update Alt_Hold angle maximum
@@ -325,8 +331,9 @@ float AC_AttitudeControl_Multi::get_throttle_boosted(float throttle_in)
     // inverted_factor reduces from 1 to 0 for tilt angles between 60 and 90 degrees
 
     float cos_tilt = _ahrs.cos_pitch() * _ahrs.cos_roll();
-    float inverted_factor = constrain_float(2.0f * cos_tilt, 0.0f, 1.0f);
-    float boost_factor = 1.0f / constrain_float(cos_tilt, 0.5f, 1.0f);
+    float inverted_factor = constrain_float(10.0f * cos_tilt, 0.0f, 1.0f);
+    float cos_tilt_target = cosf(_thrust_angle);
+    float boost_factor = 1.0f / constrain_float(cos_tilt_target, 0.1f, 1.0f);
 
     float throttle_out = throttle_in * inverted_factor * boost_factor;
     _angle_boost = constrain_float(throttle_out - throttle_in, -1.0f, 1.0f);
@@ -366,6 +373,8 @@ void AC_AttitudeControl_Multi::downSamplingDataFilter()
     Quaternion attitude_vehicle_quat;
     _ahrs.get_quat_body_to_ned(attitude_vehicle_quat);
     attitude_vehicle_quat.to_euler(ahrs_ang.x, ahrs_ang.y, ahrs_ang.z);
+
+
     ds_filtered_ang.x = B1_DS*ahrs_ang.x + B0_DS*last_ahrs_ang.x - A0_DS*ds_filtered_ang.x;
     ds_filtered_ang.y = B1_DS*ahrs_ang.y + B0_DS*last_ahrs_ang.y - A0_DS*ds_filtered_ang.y;
     ds_filtered_ang.z = B1_DS*ahrs_ang.z + B0_DS*last_ahrs_ang.z - A0_DS*ds_filtered_ang.z;
@@ -378,46 +387,6 @@ void AC_AttitudeControl_Multi::downSamplingDataFilter()
 
     last_ahrs_ang = ahrs_ang;
     last_ang_vel = ang_vel;
-
-    yaw_kp = 20.0f;
-    yaw_kd = 12.0f;
-
-    if(get_mamba_length()<8.0f)
-    {
-        roll_kp = 28.0f;
-        roll_kd = 46.0f;
-        pitch_kp = 50.0;
-        pitch_kd = 50.0f;
-        roll_sensitivity = 0.007f;
-        pitch_sensitivity = 0.007f;
-    }
-    else if(get_mamba_length()<12.0f)
-    {
-        roll_kp = 43.0f;
-        roll_kd = 70.0f;
-        pitch_kp = 85.0;
-        pitch_kd = 85.0f;
-        roll_sensitivity = 0.0038f;
-        pitch_sensitivity = 0.0038f;
-    }
-    else if(get_mamba_length()<17.0f)
-    {
-        roll_kp = 48.0f;
-        roll_kd = 89.0f;
-        pitch_kp = 139.0;
-        pitch_kd = 139.0f;
-        roll_sensitivity = 0.0025f;
-        pitch_sensitivity = 0.0025f;
-    }    
-    else
-    {
-        roll_kp = 73.0f;
-        roll_kd = 119.0f;
-        pitch_kp = 166.0;
-        pitch_kd = 166.0f;
-        roll_sensitivity = 0.00188f;
-        pitch_sensitivity = 0.00188f;
-    }
 }
 
 void AC_AttitudeControl_Multi::lowPassDataFilter()
@@ -448,18 +417,18 @@ void AC_AttitudeControl_Multi::lowPassSetPointFilter()
 void AC_AttitudeControl_Multi::parameter_sanity_check()
 {
     // sanity check throttle mix parameters
-    if (_thr_mix_man < 0.1f || _thr_mix_man > 4.0f) {
+    if (_thr_mix_man < 0.1f || _thr_mix_man > AC_ATTITUDE_CONTROL_MAN_LIMIT) {
         // parameter description recommends thr-mix-man be no higher than 0.9 but we allow up to 4.0
         // which can be useful for very high powered copters with very low hover throttle
-        _thr_mix_man.set_and_save(AC_ATTITUDE_CONTROL_MAN_DEFAULT);
+        _thr_mix_man.set_and_save(constrain_float(_thr_mix_man, 0.1, AC_ATTITUDE_CONTROL_MAN_LIMIT));
     }
-    if (_thr_mix_min < 0.1f || _thr_mix_min > 0.25f) {
-        _thr_mix_min.set_and_save(AC_ATTITUDE_CONTROL_MIN_DEFAULT);
+    if (_thr_mix_min < 0.1f || _thr_mix_min > AC_ATTITUDE_CONTROL_MIN_LIMIT) {
+        _thr_mix_min.set_and_save(constrain_float(_thr_mix_min, 0.1, AC_ATTITUDE_CONTROL_MIN_LIMIT));
     }
     if (_thr_mix_max < 0.5f || _thr_mix_max > AC_ATTITUDE_CONTROL_MAX) {
         // parameter description recommends thr-mix-max be no higher than 0.9 but we allow up to 5.0
         // which can be useful for very high powered copters with very low hover throttle
-        _thr_mix_max.set_and_save(AC_ATTITUDE_CONTROL_MAX_DEFAULT);
+        _thr_mix_max.set_and_save(constrain_float(_thr_mix_max, 0.5, AC_ATTITUDE_CONTROL_MAX));
     }
     if (_thr_mix_min > _thr_mix_max) {
         _thr_mix_min.set_and_save(AC_ATTITUDE_CONTROL_MIN_DEFAULT);
@@ -470,9 +439,16 @@ void AC_AttitudeControl_Multi::parameter_sanity_check()
 void AC_AttitudeControl_Multi::deleaves_controller_acro(float lateral, float forward, float yaw, float throttle)
 {
     _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
-    _motors.set_forward(forward*PMAX_ACTUATOR_THRUST);
-    _motors.set_yaw(yaw*PMAX_ACTUATOR_THRUST);
+    _motors.set_forward(forward>0? forward*PMAX_ACTUATOR_THRUST : forward*PMIN_ACTUATOR_THRUST);
+    _motors.set_yaw(yaw*YMAX_ACTUATOR_MOMENT);
     _motors.set_throttle(throttle);
+
+    // For logging purpose
+    _ang_vel_body.x = _motors.get_lateral();
+    _ang_vel_body.y = _motors.get_forward();
+    _ang_vel_body.z = _motors.get_yaw();
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 
@@ -483,7 +459,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
 
     //Initialize target yaw to the value of yaw when not armed or update it with joystick when armed
     target_yaw = !armed ? ahrs_ang.z : target_yaw + yaw*YAW_SENSITIVITY;
-    target_lateral = 0.0f;
+    target_lateral = LATERAL_INITIAL_COMMAND;
     target_forward = 0.0f;
     yaw_angle_error = target_yaw - ahrs_ang.z ;
 
@@ -506,140 +482,24 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
     yaw_angle_error_last=yaw_angle_error; //assign new error to last
 
     // For logging purpose
-    _attitude_target_euler_angle.x = 0.0f;
-    _attitude_target_euler_angle.y = 0.0f;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = 0.0f;
+    _euler_angle_target.y = 0.0f;
+    _euler_angle_target.z = target_yaw;
 
     constrainCommand();
 
     _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
-    _motors.set_forward(forward*PMAX_ACTUATOR_THRUST);
+    _motors.set_forward(forward>0? forward*PMAX_ACTUATOR_THRUST : forward*PMIN_ACTUATOR_THRUST);
     _motors.set_yaw(yaw_input);
     _motors.set_throttle(throttle);
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral*RMAX_ACTUATOR_THRUST;
-    _rate_target_ang_vel.y = forward*PMAX_ACTUATOR_THRUST;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = _motors.get_lateral();
+    _ang_vel_body.y = _motors.get_forward();
+    _ang_vel_body.z = _motors.get_yaw();
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
     
-}
-
-void AC_AttitudeControl_Multi::deleaves_controller_forHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)
-{
-    // Control runs at 50Hz
-    lowPassDataFilter();
-
-    //Initialize target angle to the value of angle when not armed or update it with joystick when armed
-    target_yaw = !armed ? ctrl_ang.z : target_yaw + yaw*YAW_SENSITIVITY;
-
-    // Yaw PD control here
-    yaw_angle_error= target_yaw-ctrl_ang.z;
-
-    //Correction for target angle more than half-turn away
-    if (yaw_angle_error>M_PI){
-        target_yaw=target_yaw-2*M_PI;
-        yaw_angle_error= target_yaw-ctrl_ang.z ;
-        yaw_angle_error_last=yaw_angle_error_last-2*M_PI;
-    }
-
-    if (yaw_angle_error<-M_PI){
-        target_yaw=target_yaw+2*M_PI;
-        yaw_angle_error= target_yaw-ctrl_ang.z;
-        yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
-    }
-
-    yaw_angle_error_dt=(yaw_angle_error-yaw_angle_error_last)*50; //50 Hz
-    yaw_input= yaw_kp*yaw_angle_error+yaw_kd*yaw_angle_error_dt;
-    yaw_angle_error_last=yaw_angle_error; //assign new error to last
-
-    // Pitch PD control here
-    target_forward = forward;   
-    forward_error= target_forward-ctrl_ang.y;
-    forward_error_dt=(forward_error-forward_error_last)*50; //50 Hz
-    forward_command= pitch_kp*forward_error+pitch_kd*forward_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_forward);
-    forward_error_last=forward_error; //assign new error to last
-            
-    
-    // Convert force command to motor command (0 to 1)
-    constrainCommand();
-    forward_command=sequenceArmed?forward_command:0.0f;
-
-    // For logging purpose
-    _attitude_target_euler_angle.x = 0.0f;
-    _attitude_target_euler_angle.y = target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
-
-    _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
-    _motors.set_forward(forward_command);
-    _motors.set_yaw(yaw_input);
-    _motors.set_throttle(throttle);
-
-    // For logging purpose
-    _rate_target_ang_vel.x = lateral*RMAX_ACTUATOR_THRUST;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
-}
-
-void AC_AttitudeControl_Multi::deleaves_controller_latHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)
-{
-    // Control runs at 50Hz
-
-    //Initialize target angle to the value of angle when not armed or update it with joystick when armed
-    target_yaw = !armed ? ctrl_ang.z : target_yaw + yaw*YAW_SENSITIVITY;
-
-    lowPassDataFilter();
-
-    // Yaw PD control here
-    yaw_angle_error= target_yaw-ctrl_ang.z;
-
-    //Correction for target angle more than half-turn away
-    if (yaw_angle_error>M_PI){
-        target_yaw=target_yaw-2*M_PI;
-        yaw_angle_error= target_yaw-ctrl_ang.z ;
-        yaw_angle_error_last=yaw_angle_error_last-2*M_PI;
-    }
-
-    if (yaw_angle_error<-M_PI){
-        target_yaw=target_yaw+2*M_PI;
-        yaw_angle_error= target_yaw-ctrl_ang.z;
-        yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
-    }
-
-    yaw_angle_error_dt=(yaw_angle_error-yaw_angle_error_last)*50; //50 Hz
-    yaw_input= yaw_kp*yaw_angle_error+yaw_kd*yaw_angle_error_dt;
-    yaw_angle_error_last=yaw_angle_error; //assign new error to last
-
-    target_lateral = lateral;
-
-    lateral_error= target_lateral-ctrl_ang.x;
-    lateral_error_dt=(lateral_error-lateral_error_last)*50; //50 Hz
-    lateral_command= roll_kp*lateral_error+roll_kd*lateral_error_dt + M_PLATFORM*GRAVITY_MSS*sinf(target_lateral);
-    lateral_error_last=lateral_error; //assign new error to last
-
-    // Convert force command to motor command (0 to 1)
-    constrainCommand();
-    lateral_command=sequenceArmed?lateral_command:0.0f;
-
-    // For logging purpose
-    _attitude_target_euler_angle.x = target_lateral;
-    _attitude_target_euler_angle.y = 0.0f;
-    _attitude_target_euler_angle.z = target_yaw;
-
-    _motors.set_lateral(lateral_command);
-    _motors.set_forward(forward*PMAX_ACTUATOR_THRUST);
-    _motors.set_yaw(yaw_input);
-    _motors.set_throttle(throttle);
-
-    // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward*PMAX_ACTUATOR_THRUST;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_approachHold(float lateral, float forward, float yaw, float throttle, bool sequenceArmed, bool armed)
@@ -690,9 +550,9 @@ void AC_AttitudeControl_Multi::deleaves_controller_approachHold(float lateral, f
     forward_command=sequenceArmed?forward_command:0.0f;
 
     // For logging purpose
-    _attitude_target_euler_angle.x = target_lateral;
-    _attitude_target_euler_angle.y = target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = target_lateral;
+    _euler_angle_target.y = target_forward;
+    _euler_angle_target.z = target_yaw;
 
     _motors.set_lateral(lateral_command);
     _motors.set_forward(forward_command);
@@ -700,11 +560,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_approachHold(float lateral, f
     _motors.set_throttle(throttle);
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = _motors.get_lateral();
+    _ang_vel_body.y = _motors.get_forward();
+    _ang_vel_body.z = _motors.get_yaw();
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, float forward, float yaw, float throttle, bool armed)
@@ -718,7 +578,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     {
         target_yaw = ctrl_ang.z;
         target_forward = 0.0f;
-        target_lateral = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
     }
     else
     {
@@ -731,13 +591,13 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
         // Forward control, velocity on move, angular on hold
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*pitch_sensitivity*get_sensitivity_coeff();
+            target_forward += forward*PITCH_SENSITIVITY/((gcs().get_winch_altitude_m()/uint8_t(5))+1);
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*roll_sensitivity*get_sensitivity_coeff();
+            target_lateral += lateral*ROLL_SENSITIVITY/((gcs().get_winch_altitude_m()/uint8_t(5))+1);
         }
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
@@ -780,21 +640,204 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_PD(float lateral, 
     constrainCommand();
 
     // For logging purpose
-    _attitude_target_euler_angle.x = filtered_target_lateral;
-    _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
 
-    _motors.set_lateral(lateral_command);
-    _motors.set_forward(forward_command);
-    _motors.set_yaw(yaw_input);
-    _motors.set_throttle(throttle);
+    if(armed)
+    {
+        _motors.set_lateral(lateral_command);
+        _motors.set_forward(forward_command);
+        _motors.set_yaw(yaw_input);
+        _motors.set_throttle(throttle);
+    }
+    else
+    {
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(0.0f);
+        _motors.set_yaw(0.0f);
+        _motors.set_throttle(0.0f);        
+    }
+    
+    // For logging purpose
+    _ang_vel_body.x = _motors.get_lateral();
+    _ang_vel_body.y = _motors.get_forward();
+    _ang_vel_body.z = _motors.get_yaw();
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
+}
+
+void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral, float forward, float yaw, float throttle, bool armed)
+{
+    // Control runs at 50Hz
+    // Low pass filter to reduce vibration in data
+    lowPassDataFilter();
+
+    Mat states = delEKF.getEKFStates();
+
+    //Initialize target angle to the value of angle when not armed or update it with joystick when armed
+    if(!armed)
+    {
+        target_yaw = states[9];
+        target_forward = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
+    }
+    else
+    {
+        // Yaw control, simple deadband check
+        if(abs(yaw) > DEADBAND)
+        {
+            target_yaw += yaw*YAW_SENSITIVITY;
+        }
+
+        // Forward control, velocity on move, angular on hold
+        if(abs(forward) > DEADBAND)
+        {
+            target_forward += forward*PITCH_SENSITIVITY/((gcs().get_winch_altitude_m()/uint8_t(5))+1);
+        }
+        
+        // Lateral control, based on the same principle as forward control
+        if(abs(lateral) > DEADBAND)
+        {
+            target_lateral += lateral*ROLL_SENSITIVITY/((gcs().get_winch_altitude_m()/uint8_t(5))+1);
+        }
+    }    
+    target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
+    target_lateral = constrain_value(target_lateral, MIN_ROLL, MAX_ROLL);
+
+    lowPassSetPointFilter();
+
+    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
+    Mat k_lqr = delEKF.getLQRgain();
+
+    // LQR control
+    yaw_angle_error= target_yaw-states[9];
+    
+    if (yaw_angle_error>M_PI){
+        target_yaw=target_yaw-2*M_PI;
+    }
+    if (yaw_angle_error<-M_PI){
+        target_yaw=target_yaw+2*M_PI;
+    }
+
+    double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
+    Mat ff = Mat(3,1,ff_array);
+    Mat out = (k_lqr * (command - states)) + ff;
+    forward_command = out[0];
+    lateral_command = -out[1];
+    yaw_input = out[2];
+
+    constrainCommand();
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
+
+    if(armed)
+    {
+        _motors.set_lateral(lateral_command);
+        _motors.set_forward(forward_command);
+        _motors.set_yaw(yaw_input);
+        _motors.set_throttle(throttle);
+    }
+    else
+    {
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(0.0f);
+        _motors.set_yaw(0.0f);
+        _motors.set_throttle(0.0f);        
+    }
+    
+    // For logging purpose
+    _ang_vel_body.x = _motors.get_lateral();
+    _ang_vel_body.y = _motors.get_forward();
+    _ang_vel_body.z = _motors.get_yaw();
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
+}
+
+void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float forward, float yaw, float throttle, bool armed)
+{
+    // Control runs at 50Hz
+    // Low pass filter to reduce vibration in data
+    lowPassDataFilter();
+
+    Mat states = delEKF.getEKFStates();
+
+    //Initialize target angle to the value of angle when not armed or update it with joystick when armed
+    if(!armed)
+    {
+        target_yaw = states[9];
+        target_forward = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
+    }
+    else
+    {
+        // Yaw control, simple deadband check
+        if(abs(yaw) > DEADBAND)
+        {
+            target_yaw += yaw*YAW_SENSITIVITY;
+        }
+        // Forward control, velocity on move, angular on hold
+        target_forward = forward*MAX_PITCH;
+        // Lateral control, based on the same principle as forward control
+        target_lateral = lateral*MAX_ROLL;
+    }    
+    target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
+    target_lateral = constrain_value(target_lateral, MIN_ROLL, MAX_ROLL);
+    filtered_target_forward = target_forward;
+    filtered_target_lateral = target_lateral;
+    
+    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
+    Mat k_lqr = delEKF.getLQRgain();
+
+    // LQR control
+    yaw_angle_error= target_yaw-states[9];
+    
+    if (yaw_angle_error>M_PI){
+        target_yaw=target_yaw-2*M_PI;
+    }
+    if (yaw_angle_error<-M_PI){
+        target_yaw=target_yaw+2*M_PI;
+    }
+
+    double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
+    Mat ff = Mat(3,1,ff_array);
+    Mat out = (k_lqr * (command - states)) + ff;
+    forward_command = out[0];
+    lateral_command = -out[1];
+    yaw_input = out[2];
+
+    constrainCommand();
+
+    // For logging purpose
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
+
+    if(armed)
+    {
+        // _motors.set_lateral(lateral_command);
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(forward_command);
+        _motors.set_yaw(yaw_input);
+        _motors.set_throttle(throttle);
+    }
+    else
+    {
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(0.0f);
+        _motors.set_yaw(0.0f);
+        _motors.set_throttle(0.0f);        
+    }
+    
+    // For logging purpose
+    _ang_vel_body.x = _motors.get_lateral();
+    _ang_vel_body.y = _motors.get_forward();
+    _ang_vel_body.z = _motors.get_yaw();
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
@@ -804,7 +847,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     lowPassDataFilter();
 
     target_forward = 0.0f;
-    target_lateral = 0.0f;
+    target_lateral = LATERAL_INITIAL_COMMAND;
     lowPassSetPointFilter();
 
     //Initialize target angle to the value of angle when not armed or update it with joystick when armed
@@ -858,36 +901,144 @@ void AC_AttitudeControl_Multi::deleaves_controller_taxi(float yaw, bool armed)
     constrainCommand();
 
     // For logging purpose
-    _attitude_target_euler_angle.x = filtered_target_lateral;
-    _attitude_target_euler_angle.y = filtered_target_forward;
-    _attitude_target_euler_angle.z = target_yaw;
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
 
-    _motors.set_lateral(lateral_command);
-    _motors.set_forward(forward_command);
-    _motors.set_yaw(yaw_input);
-    _motors.set_throttle(0.0f);
+    if(armed)
+    {
+        _motors.set_lateral(lateral_command);
+        _motors.set_forward(forward_command);
+        _motors.set_yaw(yaw_input);
+        _motors.set_throttle(0.0f);
+    }
+    else
+    {
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(0.0f);
+        _motors.set_yaw(0.0f);
+        _motors.set_throttle(0.0f);        
+    }
 
     // For logging purpose
-    _rate_target_ang_vel.x = lateral_command;
-    _rate_target_ang_vel.y = forward_command;
-    _rate_target_ang_vel.z = yaw_input;
-    _rate_sysid_ang_vel = ctrl_ang;
-    _attitude_target_ang_vel = ds_filtered_ang;
+    _ang_vel_body.x = _motors.get_lateral();
+    _ang_vel_body.y = _motors.get_forward();
+    _ang_vel_body.z = _motors.get_yaw();
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
+}
+
+void AC_AttitudeControl_Multi::deleaves_controller_taxi_LQR(float yaw, bool armed)
+{
+   // Control runs at 50Hz
+    // Low pass filter to reduce vibration in data
+    lowPassDataFilter();
+
+    Mat states = delEKF.getEKFStates();
+
+    //Initialize target angle to the value of angle when not armed or update it with joystick when armed
+    if(!armed)
+    {
+        target_yaw = states[9];
+        target_forward = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
+    }
+    else
+    {
+        // Yaw control, simple deadband check
+        if(abs(yaw) > DEADBAND)
+        {
+            target_yaw += yaw*YAW_SENSITIVITY;
+        }
+        target_forward = 0.0f;
+        target_lateral = LATERAL_INITIAL_COMMAND;
+    }    
+
+
+    lowPassSetPointFilter();
+
+    Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
+    Mat k_lqr = delEKF.getLQRgain_taxi();
+
+    // LQR control
+    yaw_angle_error= target_yaw-states[9];
+    
+    if (yaw_angle_error>M_PI){
+        target_yaw=target_yaw-2*M_PI;
+    }
+    if (yaw_angle_error<-M_PI){
+        target_yaw=target_yaw+2*M_PI;
+    }
+
+    double ff_array[] = {M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_forward), -M_PLATFORM*GRAVITY_MSS*sinf(filtered_target_lateral), 0};
+    Mat ff = Mat(3,1,ff_array);
+    Mat out = (k_lqr * (command - states)) + ff;
+    forward_command = out[0];
+    lateral_command = -out[1];
+    yaw_input = out[2];
+
+    constrainCommand();
+
+    // For logging purpose
+    _euler_angle_target.x = filtered_target_lateral;
+    _euler_angle_target.y = filtered_target_forward;
+    _euler_angle_target.z = target_yaw;
+
+    if(armed)
+    {
+        _motors.set_lateral(lateral_command);
+        _motors.set_forward(forward_command);
+        _motors.set_yaw(yaw_input);
+        _motors.set_throttle(0.0f);
+    }
+    else
+    {
+        _motors.set_lateral(0.0f);
+        _motors.set_forward(0.0f);
+        _motors.set_yaw(0.0f);
+        _motors.set_throttle(0.0f);        
+    }
+    
+    // For logging purpose
+    _ang_vel_body.x = _motors.get_lateral();
+    _ang_vel_body.y = _motors.get_forward();
+    _ang_vel_body.z = _motors.get_yaw();
+    _sysid_ang_vel_body = ctrl_ang;
+    _ang_vel_target = ds_filtered_ang;
 }
 
 void AC_AttitudeControl_Multi::constrainCommand()
 {
-    yaw_input=constrain_float(yaw_input,-PMAX_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
+    yaw_input=constrain_float(yaw_input,-YMAX_ACTUATOR_MOMENT,YMAX_ACTUATOR_MOMENT);
     lateral_command=constrain_float(lateral_command,-RMAX_ACTUATOR_THRUST,RMAX_ACTUATOR_THRUST);
-    forward_command=constrain_float(forward_command,-PMAX_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
+    forward_command=constrain_float(forward_command,-PMIN_ACTUATOR_THRUST,PMAX_ACTUATOR_THRUST);
 }
 
-float AC_AttitudeControl_Multi::get_mamba_length()
+void AC_AttitudeControl_Multi::updateDelEKF(Vector3f F_in, Vector3f measure, float rope_length, uint8_t controller_mode)
 {
-    return constrain_float(_pid_rate_pitch.kI(),5.5f,20.0f);
+    delEKF.update_length(rope_length, controller_mode);
+    delEKF.linearDynamicsEstimation(F_in, measure, ahrs_ang);
+    mamba_orientation = delEKF.getPlatformOrientation();
+    mamba_states = delEKF.getEKFStates();
 }
 
-float AC_AttitudeControl_Multi::get_sensitivity_coeff()
+Vector3f AC_AttitudeControl_Multi::getDelEKFOrientation()
 {
-    return constrain_float(_pid_rate_roll.kI(),0.1f,4.0f);
+    return delEKF.getPlatformOrientation();
 }
+
+Mat AC_AttitudeControl_Multi::getDelEKFStates()
+{
+    return delEKF.getEKFStates();
+}
+
+Vector2f AC_AttitudeControl_Multi::getMaxReach()
+{
+    return Vector2f(MAX_ROLL,MAX_PITCH);
+}
+
+float AC_AttitudeControl_Multi::getPitchCommand()
+{
+    return filtered_target_forward;
+}
+

@@ -55,7 +55,7 @@ const AP_Param::GroupInfo AP_MotorsHeli::var_info[] = {
 
     // @Param: SV_MAN
     // @DisplayName: Manual Servo Mode
-    // @Description: Manual servo override for swash set-up. Do not set this manually!
+    // @Description: Manual servo override for swash set-up. Must be 0 (Disabled) for flight!
     // @Values: 0:Disabled,1:Passthrough,2:Max collective,3:Mid collective,4:Min collective
     // @User: Standard
     AP_GROUPINFO("SV_MAN",  6, AP_MotorsHeli, _servo_mode, SERVO_CONTROL_MODE_AUTOMATED),
@@ -96,12 +96,12 @@ const AP_Param::GroupInfo AP_MotorsHeli::var_info[] = {
     // @Path: AP_MotorsHeli_RSC.cpp
     AP_SUBGROUPINFO(_main_rotor, "RSC_", 25, AP_MotorsHeli, AP_MotorsHeli_RSC),
 
-    // @Param: COLL_HOVER
+    // @Param: COL_HOVER
     // @DisplayName: Collective Hover Value
     // @Description: Collective needed to hover expressed as a number from 0 to 1 where 0 is H_COL_MIN and 1 is H_COL_MAX
     // @Range: 0.3 0.8
     // @User: Advanced
-    AP_GROUPINFO("COLL_HOVER", 26, AP_MotorsHeli, _collective_hover, AP_MOTORS_HELI_COLLECTIVE_HOVER_DEFAULT),
+    AP_GROUPINFO("COL_HOVER", 26, AP_MotorsHeli, _collective_hover, AP_MOTORS_HELI_COLLECTIVE_HOVER_DEFAULT),
 
     // @Param: HOVER_LEARN
     // @DisplayName: Hover Value Learning
@@ -113,7 +113,6 @@ const AP_Param::GroupInfo AP_MotorsHeli::var_info[] = {
     // @Param: OPTIONS
     // @DisplayName: Heli_Options
     // @Description: Bitmask of heli options.  Bit 0 changes how the pitch, roll, and yaw axis integrator term is managed for low speed and takeoff/landing. In AC 4.0 and earlier, scheme uses a leaky integrator for ground speeds less than 5 m/s and won't let the steady state integrator build above ILMI. The integrator is allowed to build to the ILMI value when it is landed.  The other integrator management scheme bases integrator limiting on takeoff and landing.  Whenever the aircraft is landed the integrator is set to zero.  When the aicraft is airborne, the integrator is only limited by IMAX. 
-    // @Values: 0:I term management based landed state, 1:Leaky I(4.0 and earlier)
     // @Bitmask: 0:Use Leaky I
     // @User: Standard
     AP_GROUPINFO("OPTIONS", 28, AP_MotorsHeli, _heli_options, (uint8_t)HeliOption::USE_LEAKY_I),
@@ -159,6 +158,7 @@ void AP_MotorsHeli::init(motor_frame_class frame_class, motor_frame_type frame_t
     // set flag to true so targets are initialized once aircraft is armed for first time
     _heliflags.init_targets_on_arming = true;
 
+    _mav_type = MAV_TYPE_HELICOPTER;
 }
 
 // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
@@ -414,7 +414,7 @@ void AP_MotorsHeli::output_logic()
                 _spool_state = SpoolState::SPOOLING_UP;
                 break;
             }
-            if (!rotor_speed_above_critical()){
+            if (_heliflags.rotor_spooldown_complete){
                 _spool_state = SpoolState::GROUND_IDLE;
             }
             break;

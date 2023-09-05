@@ -164,6 +164,19 @@ class Board:
             env.DEFINES.update(
                 HAL_DEBUG_BUILD = 1,
             )
+        if cfg.env.COVERAGE:
+            env.CFLAGS += [
+                '-fprofile-arcs',
+                '-ftest-coverage',
+            ]
+            env.CXXFLAGS += [
+                '-fprofile-arcs',
+                '-ftest-coverage',
+            ]
+            env.LINKFLAGS += [
+                '-lgcov',
+                '-coverage',
+            ]
 
         if cfg.options.bootloader:
             # don't let bootloaders try and pull scripting in
@@ -317,6 +330,9 @@ class Board:
         if cfg.options.disable_ekf3:
             env.CXXFLAGS += ['-DHAL_NAVEKF3_AVAILABLE=0']
 
+        if cfg.options.postype_single:
+            env.CXXFLAGS += ['-DHAL_WITH_POSTYPE_DOUBLE=0']
+            
         if cfg.options.osd or cfg.options.osd_fonts:
             env.CXXFLAGS += ['-DOSD_ENABLED=1', '-DHAL_MSP_ENABLED=1']
 
@@ -324,7 +340,24 @@ class Board:
             for f in os.listdir('libraries/AP_OSD/fonts'):
                 if fnmatch.fnmatch(f, "font*bin"):
                     env.ROMFS_FILES += [(f,'libraries/AP_OSD/fonts/'+f)]
-            
+
+        if cfg.options.ekf_double:
+            env.CXXFLAGS += ['-DHAL_WITH_EKF_DOUBLE=1']
+
+        if cfg.options.ekf_single:
+            env.CXXFLAGS += ['-DHAL_WITH_EKF_DOUBLE=0']
+
+        # add files from ROMFS_custom
+        custom_dir = 'ROMFS_custom'
+        if os.path.exists(custom_dir):
+            for root, subdirs, files in os.walk(custom_dir):
+                for f in files:
+                    if fnmatch.fnmatch(f,"*~"):
+                        # exclude emacs tmp files
+                        continue
+                    fname = root[len(custom_dir)+1:]+"/"+f
+                    env.ROMFS_FILES += [(fname,root+"/"+f)]
+
     def pre_build(self, bld):
         '''pre-build hook that gets called before dynamic sources'''
         if bld.env.ROMFS_FILES:
@@ -362,6 +395,23 @@ def get_boards_names():
     add_dynamic_boards()
 
     return sorted(list(_board_classes.keys()), key=str.lower)
+
+def get_ap_periph_boards():
+    '''Add AP_Periph boards based on existance of periph keywork in hwdef.dat or board name'''
+    list_ap = [s for s in list(_board_classes.keys()) if "periph" in s]
+    dirname, dirlist, filenames = next(os.walk('libraries/AP_HAL_ChibiOS/hwdef'))
+    for d in dirlist:
+        if d in list_ap:
+            continue
+        hwdef = os.path.join(dirname, d, 'hwdef.dat')
+        if os.path.exists(hwdef):
+            with open(hwdef, "r") as f:
+                if '-periph' in f.readline():  # try to get -periph include
+                    list_ap.append(d)
+                if 'AP_PERIPH' in f.read():
+                    list_ap.append(d)
+    list_ap = list(set(list_ap))
+    return list_ap
 
 def get_removed_boards():
     '''list of boards which have been removed'''
@@ -527,7 +577,11 @@ class sitl_periph_gps(sitl):
             HAL_RAM_RESERVE_START = 0,
             APJ_BOARD_ID = 100,
             HAL_NO_GCS = 1,
-            HAL_NO_LOGGING = 1,
+            HAL_LOGGING_ENABLED = 0,
+            HAL_LOGGING_MAVLINK_ENABLED = 0,
+            HAL_MISSION_ENABLED = 0,
+            HAL_RALLY_ENABLED = 0,
+            HAL_SCHEDULER_ENABLED = 0,
         )
         # libcanard is written for 32bit platforms
         env.CXXFLAGS += [
@@ -598,10 +652,11 @@ class chibios(Board):
             '-mno-thumb-interwork',
             '-mthumb',
             '--specs=nano.specs',
-            '-specs=nosys.specs',
+            '--specs=nosys.specs',
             '-DCHIBIOS_BOARD_NAME="%s"' % self.name,
             '-D__USE_CMSIS',
-            '-Werror=deprecated-declarations'
+            '-Werror=deprecated-declarations',
+            '-DNDEBUG=1'
         ]
         if not cfg.options.Werror:
             env.CFLAGS += [
@@ -641,8 +696,8 @@ class chibios(Board):
             '-nostartfiles',
             '-mno-thumb-interwork',
             '-mthumb',
-            '-specs=nano.specs',
-            '-specs=nosys.specs',
+            '--specs=nano.specs',
+            '--specs=nosys.specs',
             '-L%s' % env.BUILDROOT,
             '-L%s' % cfg.srcnode.make_node('modules/ChibiOS/os/common/startup/ARMCMx/compilers/GCC/ld/').abspath(),
             '-L%s' % cfg.srcnode.make_node('libraries/AP_HAL_ChibiOS/hwdef/common/').abspath(),
@@ -673,6 +728,13 @@ class chibios(Board):
         else:
             cfg.msg("Enabling malloc guard", "no")
             
+        if cfg.env.ENABLE_STATS:
+            cfg.msg("Enabling ChibiOS thread statistics", "yes")
+            env.CFLAGS += [ '-DHAL_ENABLE_THREAD_STATISTICS' ]
+            env.CXXFLAGS += [ '-DHAL_ENABLE_THREAD_STATISTICS' ]
+        else:
+            cfg.msg("Enabling ChibiOS thread statistics", "no")
+
         env.LIB += ['gcc', 'm']
 
         env.GIT_SUBMODULES += [
@@ -893,6 +955,16 @@ class bebop(linux):
             CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_BEBOP',
         )
 
+class vnav(linux):
+    toolchain = 'arm-linux-gnueabihf'
+
+    def configure_env(self, cfg, env):
+        super(vnav, self).configure_env(cfg, env)
+
+        env.DEFINES.update(
+            CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_VNAV',
+        )
+        
 class disco(linux):
     toolchain = 'arm-linux-gnueabihf'
 
@@ -962,6 +1034,16 @@ class rst_zynq(linux):
 
         env.DEFINES.update(
             CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ',
+        )
+
+class obal(linux):
+    toolchain = 'arm-linux-gnueabihf'
+
+    def configure_env(self, cfg, env):
+        super(obal, self).configure_env(cfg, env)
+
+        env.DEFINES.update(
+            CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_OBAL_V1',
         )
 
 class SITL_static(sitl):

@@ -70,10 +70,7 @@ const AP_Param::GroupInfo AC_PID::var_info[] = {
 // Constructor
 AC_PID::AC_PID(float initial_p, float initial_i, float initial_d, float initial_ff, float initial_imax, float initial_filt_T_hz, float initial_filt_E_hz, float initial_filt_D_hz,
                float dt, float initial_srmax, float initial_srtau):
-    _dt(dt),
-    _integrator(0.0f),
-    _error(0.0f),
-    _derivative(0.0f)
+    _dt(dt)
 {
     // load parameter values from eeprom
     AP_Param::setup_object_defaults(this, var_info);
@@ -93,6 +90,10 @@ AC_PID::AC_PID(float initial_p, float initial_i, float initial_d, float initial_
     _flags._reset_filter = true;
 
     memset(&_pid_info, 0, sizeof(_pid_info));
+
+    // slew limit scaler allows for plane to use degrees/sec slew
+    // limit
+    _slew_limit_scale = 1;
 }
 
 // set_dt - set time step in seconds
@@ -118,6 +119,12 @@ void AC_PID::filt_E_hz(float hz)
 void AC_PID::filt_D_hz(float hz)
 {
     _filt_D_hz.set(fabsf(hz));
+}
+
+// slew_limit - set slew limit
+void AC_PID::slew_limit(float smax)
+{
+    _slew_rate_max.set(fabsf(smax));
 }
 
 //  update_all - set target and measured inputs to PID controller and calculate outputs
@@ -156,7 +163,8 @@ float AC_PID::update_all(float target, float measurement, bool limit)
     float D_out = (_derivative * _kd);
 
     // calculate slew limit modifier for P+D
-    _pid_info.Dmod = _slew_limiter.modifier(_pid_info.P + _pid_info.D, _dt);
+    _pid_info.Dmod = _slew_limiter.modifier((_pid_info.P + _pid_info.D) * _slew_limit_scale, _dt);
+    _pid_info.slew_rate = _slew_limiter.get_slew_rate();
 
     P_out *= _pid_info.Dmod;
     D_out *= _pid_info.Dmod;
@@ -208,7 +216,8 @@ float AC_PID::update_error(float error, bool limit)
     float D_out = (_derivative * _kd);
 
     // calculate slew limit modifier for P+D
-    _pid_info.Dmod = _slew_limiter.modifier(_pid_info.P + _pid_info.D, _dt);
+    _pid_info.Dmod = _slew_limiter.modifier((_pid_info.P + _pid_info.D) * _slew_limit_scale, _dt);
+    _pid_info.slew_rate = _slew_limiter.get_slew_rate();
 
     P_out *= _pid_info.Dmod;
     D_out *= _pid_info.Dmod;
@@ -262,24 +271,7 @@ float AC_PID::get_ff()
 
 void AC_PID::reset_I()
 {
-    _integrator = 0;
-}
-
-void AC_PID::reset_I_smoothly()
-{
-    float reset_time = AC_PID_RESET_TC * 3.0f;
-    uint64_t now = AP_HAL::micros64();
-
-    if ((now - _reset_last_update) > 5e5 ) {
-        _reset_counter = 0;
-    }
-    if ((float)_reset_counter < (reset_time/_dt)) {
-        _integrator = _integrator - (_dt / (_dt + AC_PID_RESET_TC)) * _integrator;
-        _reset_counter++;
-    } else {
-        _integrator = 0;
-    }
-    _reset_last_update = now;
+    _integrator = 0.0;
 }
 
 void AC_PID::load_gains()
@@ -346,19 +338,26 @@ float AC_PID::get_filt_alpha(float filt_hz) const
     return calc_lowpass_alpha_dt(_dt, filt_hz);
 }
 
-void AC_PID::set_integrator(float target, float measurement, float i)
+void AC_PID::set_integrator(float target, float measurement, float integrator)
 {
-    set_integrator(target - measurement, i);
+    set_integrator(target - measurement, integrator);
 }
 
-void AC_PID::set_integrator(float error, float i)
+void AC_PID::set_integrator(float error, float integrator)
 {
-    _integrator = constrain_float(i - error * _kp, -_kimax, _kimax);
+    _integrator = constrain_float(integrator - error * _kp, -_kimax, _kimax);
     _pid_info.I = _integrator;
 }
 
-void AC_PID::set_integrator(float i)
+void AC_PID::set_integrator(float integrator)
 {
-    _integrator = constrain_float(i, -_kimax, _kimax);
+    _integrator = constrain_float(integrator, -_kimax, _kimax);
+    _pid_info.I = _integrator;
+}
+
+void AC_PID::relax_integrator(float integrator, float time_constant)
+{
+    integrator = constrain_float(integrator, -_kimax, _kimax);
+    _integrator = _integrator + (integrator - _integrator) * (_dt / (_dt + time_constant));
     _pid_info.I = _integrator;
 }

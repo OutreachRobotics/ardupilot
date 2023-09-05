@@ -54,6 +54,7 @@
 #include <SITL/SIM_PS_LightWare_SF45B.h>
 
 #include <SITL/SIM_RichenPower.h>
+#include <SITL/SIM_FETtecOneWireESC.h>
 #include <AP_HAL/utility/Socket.h>
 
 class HAL_SITL;
@@ -69,7 +70,8 @@ public:
         ArduCopter,
         Rover,
         ArduPlane,
-        ArduSub
+        ArduSub,
+        Blimp
     };
 
     int gps_pipe(uint8_t index);
@@ -103,7 +105,7 @@ public:
     uint16_t current2_pin_value;  // pin 14
 
     // paths for UART devices
-    const char *_uart_path[7] {
+    const char *_uart_path[9] {
         "tcp:0:wait",
         "GPS1",
         "tcp:2",
@@ -111,6 +113,8 @@ public:
         "GPS2",
         "tcp:5",
         "tcp:6",
+        "tcp:7",
+        "tcp:8",
     };
     std::vector<struct AP_Param::defaults_table_struct> cmdline_param;
 
@@ -124,6 +128,8 @@ public:
                                 Location &loc,
                                 float &yaw_degrees);
     
+    uint8_t get_instance() const { return _instance; }
+
 private:
     void _parse_command_line(int argc, char * const argv[]);
     void _set_param_default(const char *parm);
@@ -293,6 +299,9 @@ private:
     // simulated RPLidarA2:
     SITL::PS_RPLidarA2 *rplidara2;
 
+    // simulated FETtec OneWire ESCs:
+    SITL::FETtecOneWireESC *fetteconewireesc;
+
     // simulated SF45B proximity sensor:
     SITL::PS_LightWare_SF45B *sf45b;
 
@@ -310,6 +319,7 @@ private:
     const char *defaults_path = HAL_PARAM_DEFAULTS_PATH;
 
     const char *_home_str;
+    char *_gps_fifo[2];
 };
 
 #endif // defined(HAL_BUILD_AP_PERIPH)

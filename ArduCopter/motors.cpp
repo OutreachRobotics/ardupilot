@@ -52,7 +52,7 @@ void Copter::arm_motors_check()
         }
 
         // arm the motors and configure for flight
-        if (arming_counter == AUTO_TRIM_DELAY && motors->armed() && control_mode == Mode::Number::STABILIZE) {
+        if (arming_counter == AUTO_TRIM_DELAY && motors->armed() && flightmode->mode_number() == Mode::Number::STABILIZE) {
             gcs().send_text(MAV_SEVERITY_INFO, "AutoTrim start");
             auto_trim_counter = 250;
             auto_trim_started = false;
@@ -91,7 +91,7 @@ void Copter::auto_disarm_check()
 
     // exit immediately if we are already disarmed, or if auto
     // disarming is disabled
-    if (!motors->armed() || disarm_delay_ms == 0 || control_mode == Mode::Number::THROW) {
+    if (!motors->armed() || disarm_delay_ms == 0 || flightmode->mode_number() == Mode::Number::THROW) {
         auto_disarm_begin = tnow_ms;
         return;
     }
@@ -150,7 +150,7 @@ void Copter::motors_output()
 #endif
 
     // Update arming delay state
-    if (ap.in_arming_delay && (!motors->armed() || millis()-arm_time_ms > ARMING_DELAY_SEC*1.0e3f || control_mode == Mode::Number::THROW)) {
+    if (ap.in_arming_delay && (!motors->armed() || millis()-arm_time_ms > ARMING_DELAY_SEC*1.0e3f || flightmode->mode_number() == Mode::Number::THROW)) {
         ap.in_arming_delay = false;
     }
 
@@ -176,10 +176,12 @@ void Copter::motors_output()
             AP::logger().Write_Event(LogEvent::MOTORS_INTERLOCK_DISABLED);
         }
 
+        uint8_t* delStatus = gcs().getDelCommStatus();
+        uint16_t voltage = ((uint16_t)delStatus[STATUS_BATT_HIGH] << 8) | delStatus[STATUS_BATT_LOW];
+        motors->set_battery_voltage(float(voltage/100.0f));
         // send output signals to motors
         motors->output();
     }
-
     // push all channels
     SRV_Channels::push();
 }

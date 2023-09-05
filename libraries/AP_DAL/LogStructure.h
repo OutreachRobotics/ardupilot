@@ -67,6 +67,8 @@ struct log_RFRN {
     uint8_t ahrs_airspeed_sensor_enabled:1;
     uint8_t opticalflow_enabled:1;
     uint8_t wheelencoder_enabled:1;
+    uint8_t takeoff_expected:1;
+    uint8_t touchdown_expected:1;
     uint8_t _end;
 };
 
@@ -115,6 +117,7 @@ struct log_RSO2 {
 // @Description: Replay set-default-airspeed event
 struct log_RWA2 {
     float airspeed;
+    float uncertainty;
     uint8_t _end;
 };
 
@@ -205,6 +208,7 @@ struct log_RGPJ {
     float sacc;
     float yaw_deg;
     float yaw_accuracy_deg;
+    uint32_t yaw_deg_time_ms;
     int32_t lat;
     int32_t lng;
     int32_t alt;
@@ -241,6 +245,7 @@ struct log_RMGH {
     uint8_t num_enabled;
     bool learn_offsets_enabled;
     bool consistent;
+    uint8_t first_usable;
     uint8_t _end;
 };
 
@@ -365,13 +370,13 @@ struct log_RBOH {
     { LOG_RSO2_MSG, RLOG_SIZE(RSO2),                         \
       "RSO2", "III", "Lat,Lon,Alt", "DUm", "GGB" }, \
     { LOG_RWA2_MSG, RLOG_SIZE(RWA2),                         \
-      "RWA2", "f", "Airspeed", "n", "0" }, \
+      "RWA2", "ff", "Airspeed,uncertainty", "nn", "00" }, \
     { LOG_REV3_MSG, RLOG_SIZE(REV3),                \
       "REV3", "B", "Event", "-", "-" }, \
     { LOG_RSO3_MSG, RLOG_SIZE(RSO3),                         \
       "RSO3", "III", "Lat,Lon,Alt", "DUm", "GGB" }, \
     { LOG_RWA3_MSG, RLOG_SIZE(RWA3),                         \
-      "RWA3", "f", "Airspeed", "n", "0" }, \
+      "RWA3", "ff", "Airspeed,Uncertainty", "nn", "00" }, \
     { LOG_REY3_MSG, RLOG_SIZE(REY3),                                   \
       "REY3", "ffIB", "yawangle,yawangleerr,timestamp_ms,type", "???-", "???-" }, \
     { LOG_RISH_MSG, RLOG_SIZE(RISH),                                   \
@@ -395,9 +400,9 @@ struct log_RBOH {
     { LOG_RGPI_MSG, RLOG_SIZE(RGPI),                                   \
       "RGPI", "ffffBBBB", "OX,OY,OZ,Lg,Flags,Stat,NSats,I", "-------#", "--------" }, \
     { LOG_RGPJ_MSG, RLOG_SIZE(RGPJ),                                   \
-      "RGPJ", "IffffffiiiffHB", "TS,VX,VY,VZ,SA,Y,YA,Lat,Lon,Alt,HA,VA,HD,I", "-------------#", "--------------" }, \
+      "RGPJ", "IffffffIiiiffHB", "TS,VX,VY,VZ,SA,Y,YA,YT,Lat,Lon,Alt,HA,VA,HD,I", "--------------#", "---------------" }, \
     { LOG_RMGH_MSG, RLOG_SIZE(RMGH),                                   \
-      "RMGH", "BBfBBB", "Dec,NumInst,AutoDec,NumEna,LOE,C", "------", "------" },  \
+      "RMGH", "fBBBBBB", "Dec,NumInst,AutoDec,NumEna,LOE,C,FUsable", "-------", "-------" },  \
     { LOG_RMGI_MSG, RLOG_SIZE(RMGI),                                   \
       "RMGI", "IffffffBBBB", "LU,OX,OY,OZ,FX,FY,FZ,UFY,H,HSF,I", "----------#", "-----------" },                                        \
     { LOG_RBCH_MSG, RLOG_SIZE(RBCH),                                   \

@@ -5,10 +5,16 @@
 #include "AP_HAL_Namespace.h"
 #include "utility/BetterStream.h"
 
+class ExpandingString;
+
 /* Pure virtual UARTDriver class */
 class AP_HAL::UARTDriver : public AP_HAL::BetterStream {
 public:
     UARTDriver() {}
+    /* Do not allow copies */
+    UARTDriver(const UARTDriver &other) = delete;
+    UARTDriver &operator=(const UARTDriver&) = delete;
+
     // begin() implicitly clears rx/tx buffers, even if the port was already open (unless the UART is the console UART)
     virtual void begin(uint32_t baud) = 0;
 	/// Extended port open method
@@ -68,6 +74,7 @@ public:
         OPTION_NODMA_RX           = (1U<<8), // don't use DMA for RX
         OPTION_NODMA_TX           = (1U<<9), // don't use DMA for TX
         OPTION_MAVLINK_NO_FORWARD = (1U<<10), // don't forward MAVLink data to or from this device
+        OPTION_NOFIFO             = (1U<<11), // disable hardware FIFO
     };
 
     enum flow_control {
@@ -115,4 +122,12 @@ public:
     virtual uint32_t bw_in_kilobytes_per_second() const {
         return 57;
     }
+
+    /*
+      return true if this UART has DMA enabled on both RX and TX
+     */
+    virtual bool is_dma_enabled() const { return false; }
+
+    // request information on uart I/O for this uart, for @SYS/uarts.txt
+    virtual void uart_info(ExpandingString &str) {}
 };

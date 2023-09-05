@@ -94,15 +94,30 @@ void AP_InertialSensor_Backend::_rotate_and_correct_accel(uint8_t instance, Vect
 
     // rotate for sensor orientation
     accel.rotate(_imu._accel_orientation[instance]);
-    
-    // apply offsets
-    accel -= _imu._accel_offset[instance];
 
-    // apply scaling
-    const Vector3f &accel_scale = _imu._accel_scale[instance].get();
-    accel.x *= accel_scale.x;
-    accel.y *= accel_scale.y;
-    accel.z *= accel_scale.z;
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+    if (_imu.tcal_learning) {
+        _imu.tcal[instance].update_accel_learning(accel, _imu.get_temperature(instance));
+    }
+#endif
+
+    if (!_imu._calibrating_accel && (_imu._acal == nullptr || !_imu._acal->running())) {
+
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+        // apply temperature corrections
+        _imu.tcal[instance].correct_accel(_imu.get_temperature(instance), _imu.caltemp_accel[instance], accel);
+#endif
+
+        // apply offsets
+        accel -= _imu._accel_offset[instance];
+
+
+        // apply scaling
+        const Vector3f &accel_scale = _imu._accel_scale[instance].get();
+        accel.x *= accel_scale.x;
+        accel.y *= accel_scale.y;
+        accel.z *= accel_scale.z;
+    }
 
     // rotate to body frame
     if (_imu._board_orientation == ROTATION_CUSTOM && _imu._custom_rotation) {
@@ -116,9 +131,23 @@ void AP_InertialSensor_Backend::_rotate_and_correct_gyro(uint8_t instance, Vecto
 {
     // rotate for sensor orientation
     gyro.rotate(_imu._gyro_orientation[instance]);
+
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+    if (_imu.tcal_learning) {
+        _imu.tcal[instance].update_gyro_learning(gyro, _imu.get_temperature(instance));
+    }
+#endif
     
-    // gyro calibration is always assumed to have been done in sensor frame
-    gyro -= _imu._gyro_offset[instance];
+    if (!_imu._calibrating_gyro) {
+
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+        // apply temperature corrections
+        _imu.tcal[instance].correct_gyro(_imu.get_temperature(instance), _imu.caltemp_gyro[instance], gyro);
+#endif
+
+        // gyro calibration is always assumed to have been done in sensor frame
+        gyro -= _imu._gyro_offset[instance];
+    }
 
     if (_imu._board_orientation == ROTATION_CUSTOM && _imu._custom_rotation) {
         gyro = *_imu._custom_rotation * gyro;
@@ -142,6 +171,9 @@ void AP_InertialSensor_Backend::_publish_gyro(uint8_t instance, const Vector3f &
     _imu._delta_angle[instance] = _imu._delta_angle_acc[instance];
     _imu._delta_angle_dt[instance] = _imu._delta_angle_acc_dt[instance];
     _imu._delta_angle_valid[instance] = true;
+
+    _imu._delta_angle_acc[instance].zero();
+    _imu._delta_angle_acc_dt[instance] = 0;
 }
 
 void AP_InertialSensor_Backend::_notify_new_gyro_raw_sample(uint8_t instance,
@@ -277,17 +309,7 @@ void AP_InertialSensor_Backend::log_gyro_raw(uint8_t instance, const uint64_t sa
         return;
     }
     if (should_log_imu_raw()) {
-        uint64_t now = AP_HAL::micros64();
-        const struct log_GYR pkt{
-            LOG_PACKET_HEADER_INIT(LOG_GYR_MSG),
-            time_us   : now,
-            instance  : instance,
-            sample_us : sample_us?sample_us:now,
-            GyrX      : gyro.x,
-            GyrY      : gyro.y,
-            GyrZ      : gyro.z
-        };
-        logger->WriteBlock(&pkt, sizeof(pkt));
+        Write_GYR(instance, sample_us, gyro);
     } else {
         if (!_imu.batchsampler.doing_sensor_rate_logging()) {
             _imu.batchsampler.sample(instance, AP_InertialSensor::IMU_SENSOR_TYPE_GYRO, sample_us, gyro);
@@ -311,21 +333,15 @@ void AP_InertialSensor_Backend::_publish_accel(uint8_t instance, const Vector3f 
     _imu._delta_velocity_dt[instance] = _imu._delta_velocity_acc_dt[instance];
     _imu._delta_velocity_valid[instance] = true;
 
+    _imu._delta_velocity_acc[instance].zero();
+    _imu._delta_velocity_acc_dt[instance] = 0;
 
     if (_imu._accel_calibrator != nullptr && _imu._accel_calibrator[instance].get_status() == ACCEL_CAL_COLLECTING_SAMPLE) {
         Vector3f cal_sample = _imu._delta_velocity[instance];
 
-        //remove rotation
+        // remove rotation. Note that we don't need to remove offsets or scale factor as those
+        // are not applied when calibrating
         cal_sample.rotate_inverse(_imu._board_orientation);
-
-        // remove scale factors
-        const Vector3f &accel_scale = _imu._accel_scale[instance].get();
-        cal_sample.x /= accel_scale.x;
-        cal_sample.y /= accel_scale.y;
-        cal_sample.z /= accel_scale.z;
-        
-        //remove offsets
-        cal_sample += _imu._accel_offset[instance].get() * _imu._delta_velocity_dt[instance] ;
 
         _imu._accel_calibrator[instance].new_sample(cal_sample, _imu._delta_velocity_dt[instance]);
     }
@@ -433,17 +449,7 @@ void AP_InertialSensor_Backend::log_accel_raw(uint8_t instance, const uint64_t s
         return;
     }
     if (should_log_imu_raw()) {
-        uint64_t now = AP_HAL::micros64();
-        const struct log_ACC pkt {
-            LOG_PACKET_HEADER_INIT(LOG_ACC_MSG),
-            time_us   : now,
-            instance  : instance,
-            sample_us : sample_us?sample_us:now,
-            AccX      : accel.x,
-            AccY      : accel.y,
-            AccZ      : accel.z
-        };
-        logger->WriteBlock(&pkt, sizeof(pkt));
+        Write_ACC(instance, sample_us, accel);
     } else {
         if (!_imu.batchsampler.doing_sensor_rate_logging()) {
             _imu.batchsampler.sample(instance, AP_InertialSensor::IMU_SENSOR_TYPE_ACCEL, sample_us, accel);
@@ -600,3 +606,13 @@ bool AP_InertialSensor_Backend::should_log_imu_raw() const
     return true;
 }
 
+// log an unexpected change in a register for an IMU
+void AP_InertialSensor_Backend::log_register_change(uint32_t bus_id, const AP_HAL::Device::checkreg &reg)
+{
+    AP::logger().Write("IREG", "TimeUS,DevID,Bank,Reg,Val", "QIBBB",
+                       AP_HAL::micros64(),
+                       bus_id,
+                       reg.bank,
+                       reg.regnum,
+                       reg.value);
+}
