@@ -29,7 +29,7 @@ void ModeAltHold::run()
     // Yaw = 1 -> turn clockwise
     // Thrust is between 0 and 1
 
-    alt_hold_mode = hal.rcin->read(TAXI_CHANNEL) > MID_PPM_VALUE;
+    alt_hold_mode = !(hal.rcin->read(TAXI_CHANNEL) > MID_PPM_VALUE);
     sequence_on = hal.rcin->read(WRIST_CHANNEL) > MID_PPM_VALUE;
 
     lateral_input = -(float(channel_roll->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
