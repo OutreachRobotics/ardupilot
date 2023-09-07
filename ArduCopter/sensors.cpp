@@ -219,3 +219,14 @@ void Copter::init_proximity(void)
     g2.proximity.init();
 #endif
 }
+
+void Copter::lidar_update()
+{
+    lidar.update();
+    Log_Write_LIDAR();
+}
+
+void Copter::lidar_read()
+{
+    lidar.get_readings();
+}

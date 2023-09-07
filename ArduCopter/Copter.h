@@ -72,6 +72,7 @@
 #include <DEL_Winch/del_winch.h>
 #include <DEL_LED/del_led.h>
 #include <DEL_Sony/del_sony.h>
+#include <LIDAR/RPLidarS2.h>
 
 // Configuration
 #include "defines.h"
@@ -229,6 +230,7 @@ public:
 
 private:
 
+    RPLidarS2 lidar;
     DEL_Sony del_sony;
     DEL_LED del_led;
     DEL_Winch del_winch;
@@ -676,6 +678,9 @@ private:
     void update_super_simple_bearing(bool force_update);
     void read_AHRS(void);
     void update_altitude();
+    
+    void lidar_update();
+    void lidar_read();
 
     // Attitude.cpp
     void update_throttle_hover();
@@ -793,6 +798,7 @@ private:
     void standby_update();
 
     // Log.cpp
+    void Log_Write_LIDAR();
     void Log_Write_SAMPLER();
     void Log_Write_PLANT();
     void Log_Write_MAMBA_EKF();

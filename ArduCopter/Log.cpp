@@ -151,6 +151,43 @@ void Copter::Log_Write_PLANT()
     logger.WriteBlock(&pkt, sizeof(pkt));
 };
 
+struct PACKED log_LIDAR {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float distance_0deg;
+    float distance_36deg;
+    float distance_72deg;
+    float distance_108deg;
+    float distance_144deg;
+    float distance_180deg;
+    float distance_216deg;
+    float distance_252deg;
+    float distance_288deg;
+    float distance_324deg;
+    float distance_360deg;
+};
+
+void Copter::Log_Write_LIDAR()
+{
+    struct log_LIDAR pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_SAMBA_EKF_MSG),
+        time_us  : AP_HAL::micros64(),
+        distance_0deg   : (float)lidar.polarArray[0].distance,
+        distance_36deg  : (float)lidar.polarArray[10].distance,
+        distance_72deg  : (float)lidar.polarArray[20].distance,
+        distance_108deg : (float)lidar.polarArray[30].distance,
+        distance_144deg : (float)lidar.polarArray[40].distance,
+        distance_180deg : (float)lidar.polarArray[50].distance,
+        distance_216deg : (float)lidar.polarArray[60].distance,
+        distance_252deg : (float)lidar.polarArray[70].distance,
+        distance_288deg : (float)lidar.polarArray[80].distance,
+        distance_324deg : (float)lidar.polarArray[90].distance,
+        distance_360deg : (float)lidar.polarArray[99].distance,
+
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
 struct PACKED log_SAMBA_EKF {
     LOG_PACKET_HEADER;
     uint64_t time_us;
