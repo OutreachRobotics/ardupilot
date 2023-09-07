@@ -603,6 +603,17 @@ const struct LogStructure Copter::log_structure[] = {
     {LOG_SAMPLE_MSG, sizeof(log_SAMPLE),
       "SAMP", "QiiiBBfff",  "TimeUS,lon,lat,alt,stat,sat,x,y,z", "sddm-Smmm", "F--------" },  // Message Name, Format, Variables names, Units, Multiplier
 
+// @LoggerMessage: LIDA
+// @Description: Lidar points
+// @URL: 
+// @Field: TimeUS: Time since system startup
+// @Field: points distance around the lidar
+
+    {LOG_LIDAR_MSG, sizeof(log_LIDAR),
+      "LIDA", "Qffffffffff",  "TimeUS,0deg,36deg,72deg,108deg,144deg,180deg,216deg,252deg,288,360", "smmmmmmmmmm", "FCCCCCCCCCC" },  // Message Name, Format, Variables names, Units, Multiplier
+
+
+
 // @LoggerMessage: SEKF
 // @Description: SAMBA EKF Interesting log info
 // @URL: 

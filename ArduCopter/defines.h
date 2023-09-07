@@ -124,6 +124,7 @@ enum LoggingParameters {
      LOG_SYSIDS_MSG,
      LOG_SAMBA_MSG,
      LOG_SAMPLE_MSG,
+     LOG_LIDAR_MSG,
      LOG_SAMBA_EKF_MSG,
      LOG_WIND_MSG
 };

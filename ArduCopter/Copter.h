@@ -239,7 +239,6 @@ public:
 
 private:
 
-    RPLidarS2 lidar;
     DEL_Sony del_sony;
     DEL_LED del_led;
     DEL_Winch del_winch;
@@ -248,7 +247,7 @@ private:
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::MultiCopter aparm;
 
-    RPLidarS2 Lidar;
+    RPLidarS2 lidar;
 
     // Global parameters are all contained within the 'g' class.
     Parameters g;

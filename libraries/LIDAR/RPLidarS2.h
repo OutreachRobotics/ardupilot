@@ -146,11 +146,7 @@ private:
     uint32_t _break_count;
     uint8_t _pos;
     bool _sync_error;
-    //uint32_t nbytes;
-    uint8_t _rev_cnt;
-    uint16_t _byte_count;
 
-    uint8_t _next_read_flush;
 
     // request related variables
     uint32_t  _last_reset_ms;
@@ -165,9 +161,6 @@ private:
     uint16_t frequencyArray[coord_lenght];
 
     // List of selected points to use for localisation
-    
-    static const size_t coord_lenght = 200;
-    polar_coord polarArray[coord_lenght];
 
     static const size_t points_lenght = 100;
     cartesian_coord pointsArray[points_lenght];
