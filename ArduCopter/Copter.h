@@ -60,6 +60,15 @@
 #include <AP_LandingGear/AP_LandingGear.h>  // Landing Gear library
 #include <AC_InputManager/AC_InputManager.h>        // Pilot input handling library
 #include <AC_InputManager/AC_InputManager_Heli.h>   // Heli specific pilot input handling library
+#include <AP_Arming/AP_Arming.h>
+#include <AP_SmartRTL/AP_SmartRTL.h>
+#include <AP_TempCalibration/AP_TempCalibration.h>
+#include <AC_AutoTune/AC_AutoTune.h>
+#include <AP_Parachute/AP_Parachute.h>
+#include <AC_Sprayer/AC_Sprayer.h>
+#include <AP_ADSB/AP_ADSB.h>
+#include <AP_WindSensor/AP_ModernDevice.h>
+#include <LIDAR/RPLidarS2.h>
 #include <AP_Arming/AP_Arming.h>            // ArduPilot motor arming library
 #include <AP_SmartRTL/AP_SmartRTL.h>        // ArduPilot Smart Return To Launch Mode (SRTL) library
 #include <AP_TempCalibration/AP_TempCalibration.h>  // temperature calibration library
@@ -238,6 +247,8 @@ private:
 
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::MultiCopter aparm;
+
+    RPLidarS2 Lidar;
 
     // Global parameters are all contained within the 'g' class.
     Parameters g;
@@ -886,6 +897,8 @@ private:
     void accel_cal_update(void);
     void init_proximity();
     void update_proximity();
+    void read_lidar();
+    void update_lidar();
 
     // RC_Channel.cpp
     void save_trim();

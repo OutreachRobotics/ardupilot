@@ -208,6 +208,7 @@ void Copter::init_ardupilot()
     // }
     set_mode(Mode::Number::ALT_HOLD, ModeReason::INITIALISED);
 
+    //Lidar.init();
     del_sony.init();
     del_winch.init();
     del_led.init();
