@@ -153,6 +153,7 @@ private:
     uint32_t   _update_debug;
     uint32_t   _update_debug2;
     uint32_t   _last_rev;
+    uint64_t    _algo_time;
 
     // List of selected points to use for localisation
 

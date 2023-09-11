@@ -172,14 +172,20 @@ void RPLidarS2::update(void)
         break;
 
     case scanning:
-        //run_algo();
-        if ( (AP_HAL::millis() - _update_debug) > 1000){
+
+        run_algo();
+
+        if ( (AP_HAL::millis() - _update_debug) > 300){
             _update_debug = AP_HAL::millis();
-            Debug(1, "Points received : ");
+            hal.console->printf("\n");
             for(int i = 0 ; i < coord_lenght ; i+=10)
             {
-                Debug(1, "Angle : %f , Distance : %f, Occurence %u", polarArray[i].angle, polarArray[i].distance, frequencyArray[i]);
+                //Debug(1, "%f , %f", polarArray[i].angle, polarArray[i].distance);
+                hal.console->printf("%f , %f\n", polarArray[i].angle, polarArray[i].distance);
+                
             }
+            hal.console->printf("Goal, %f , %f\n", center_goal.x, center_goal.y);
+            hal.console->printf("\n");
         }
         
         break;
@@ -472,36 +478,33 @@ void RPLidarS2::equidistant_points(struct polar_coord* polar_coords, size_t num_
 {
     cartesian_coord cartesian_coords[num_coord];
     
-
     // Convert polar coordinates to Cartesian coordinates
     for (int i = 0 ; i < num_coord ; i++) {
         cartesian_coords[i] = polar_to_cartesian(polar_coords[i]);
     }
-
+    
     // Calculate total perimeter
     float total_perimeter = 0.0;
+    float segment_distances[num_coord-1];
     for (size_t i = 0; i < num_coord - 1; ++i) {
-        total_perimeter += calculate_distance(cartesian_coords[i], cartesian_coords[i + 1]);
+        segment_distances[i] = calculate_distance(cartesian_coords[i], cartesian_coords[i + 1]);
+        total_perimeter += segment_distances[i];
     }
 
     // Calculate equidistant points
-    float spacing = total_perimeter / static_cast<float>(num_points);
+    const float spacing = total_perimeter / static_cast<float>(num_points);
     int incrementor = 0;
+    float dist = 0.0;
 
-    for (float dist = 0.0; dist < total_perimeter; dist += spacing) {
-        for (size_t i = 0; i < num_coord - 1; ++i) {
-            float segment_distance = calculate_distance(cartesian_coords[i], cartesian_coords[i + 1]);
-
-            if (dist <= segment_distance) {
-                float ratio = dist / segment_distance;
-                points[incrementor].x = cartesian_coords[i].x + ratio * (cartesian_coords[i + 1].x - cartesian_coords[i].x);
-                points[incrementor].y = cartesian_coords[i].y + ratio * (cartesian_coords[i + 1].y - cartesian_coords[i].y);
-                break;
-            }
-
-            dist -= segment_distance;
+    for (size_t i = 0; i < num_coord - 1; ++i) {
+        while (dist < segment_distances[i] && incrementor < num_points) {
+            float ratio = dist / segment_distances[i];
+            points[incrementor].x = cartesian_coords[i].x + ratio * (cartesian_coords[i + 1].x - cartesian_coords[i].x);
+            points[incrementor].y = cartesian_coords[i].y + ratio * (cartesian_coords[i + 1].y - cartesian_coords[i].y);
+            incrementor++;
+            dist += spacing;
         }
-        incrementor++;
+        dist -= segment_distances[i];
     }
 
 }

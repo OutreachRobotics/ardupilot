@@ -92,7 +92,7 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(rc_loop,              100,    130),
     SCHED_TASK(throttle_loop,         50,     75),
-    SCHED_TASK(lidar_update,          10,    100),
+    SCHED_TASK(lidar_update,          10,    300),
     SCHED_TASK(lidar_read,           200,     50),
     SCHED_TASK_CLASS(AP_GPS, &copter.gps, update, 50, 200),
 #if OPTFLOW == ENABLED
