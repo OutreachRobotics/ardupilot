@@ -431,18 +431,15 @@ void RPLidarS2::parse_response()
 
         // Only save 100 points of the 360 degree scan
         const float divider = 360.0/coord_lenght;
-        const float pointNumber = response_angle / divider;
-        if( (pointNumber- std::roundf(response_angle / divider)) < 0.05 && (pointNumber- std::roundf(response_angle / divider)) > -0.05)
-        {
+        const int sectionNumber = static_cast<int>(response_angle/divider);
 
-            const int pos = static_cast<int>(pointNumber);
-            frequencyArray[pos]++;
-            
-            polarArray[pos].angle = response_angle;
-            polarArray[pos].distance = response_distance;
-   
-        }
-        
+        // Add to array if it is not already there
+        if( frequencyArray[sectionNumber] != _rev_cnt)
+        {
+            polarArray[sectionNumber].angle = response_angle;
+            polarArray[sectionNumber].distance = response_distance;
+            frequencyArray[sectionNumber]++;
+        } 
 
     }
     else
