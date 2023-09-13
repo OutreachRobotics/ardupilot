@@ -164,7 +164,6 @@ struct PACKED log_LIDAR {
     float distance_252deg;
     float distance_288deg;
     float distance_324deg;
-    float distance_360deg;
 };
 
 void Copter::Log_Write_LIDAR()
@@ -172,18 +171,16 @@ void Copter::Log_Write_LIDAR()
     struct log_LIDAR pkt = {
         LOG_PACKET_HEADER_INIT(LOG_LIDAR_MSG),
         time_us  : AP_HAL::micros64(),
-        distance_0deg   : lidar.polarArray[0].distance,
-        distance_36deg  : lidar.polarArray[10].distance,
-        distance_72deg  : lidar.polarArray[20].distance,
-        distance_108deg : lidar.polarArray[30].distance,
-        distance_144deg : lidar.polarArray[40].distance,
-        distance_180deg : lidar.polarArray[50].distance,
-        distance_216deg : lidar.polarArray[60].distance,
-        distance_252deg : lidar.polarArray[70].distance,
-        distance_288deg : lidar.polarArray[80].distance,
-        distance_324deg : lidar.polarArray[90].distance,
-        distance_360deg : lidar.polarArray[99].distance,
-
+        distance_0deg   : (float)lidar.polarArray[0].distance,
+        distance_36deg  : (float)lidar.polarArray[10].distance,
+        distance_72deg  : (float)lidar.polarArray[20].distance,
+        distance_108deg : (float)lidar.polarArray[30].distance,
+        distance_144deg : (float)lidar.polarArray[40].distance,
+        distance_180deg : (float)lidar.polarArray[50].distance,
+        distance_216deg : (float)lidar.polarArray[60].distance,
+        distance_252deg : (float)lidar.polarArray[70].distance,
+        distance_288deg : (float)lidar.polarArray[80].distance,
+        distance_324deg : (float)lidar.polarArray[90].distance,
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
@@ -610,7 +607,7 @@ const struct LogStructure Copter::log_structure[] = {
 // @Field: points distance around the lidar
 
     {LOG_LIDAR_MSG, sizeof(log_LIDAR),
-      "LIDA", "Qfffffffffff",  "TimeUS,0,36,72,108,144,180,216,252,288,324,360", "smmmmmmmmmmm", "FCCCCCCCCCCC" },  // Message Name, Format, Variables names, Units, Multiplier
+      "LIDA", "Qffffffffff",  "TimeUS,D0,D36,D72,D108,D144,D180,D216,D252,D288,D324", "smmmmmmmmmm", "FCCCCCCCCCC" },  // Message Name, Format, Variables names, Units, Multiplier
 
 
 

@@ -491,6 +491,7 @@ void Copter::fifty_hz_logging()
 {
     Log_Write_Attitude();
     Log_Write_MAMBA_EKF();
+    Log_Write_LIDAR();
     logger.Write_RCIN();
     logger.Write_RCOUT();
     AP::ins().Write_IMU();

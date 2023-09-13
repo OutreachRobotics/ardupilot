@@ -186,6 +186,7 @@ void RPLidarS2::update(void)
             }
             hal.console->printf("Goal, %f , %f\n", center_goal.x, center_goal.y);
             hal.console->printf("\n");
+            Debug(1, "Still running algo");
         }
         
         break;
@@ -193,8 +194,6 @@ void RPLidarS2::update(void)
     default:
         break;
     }
-
-    
 
 }
 

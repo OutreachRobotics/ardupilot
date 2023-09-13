@@ -223,7 +223,7 @@ void Copter::init_proximity(void)
 void Copter::lidar_update()
 {
     lidar.update();
-    Log_Write_LIDAR();
+    //Log_Write_LIDAR();
 }
 
 void Copter::lidar_read()
