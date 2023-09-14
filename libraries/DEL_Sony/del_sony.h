@@ -33,8 +33,8 @@
 #define HERE_MOVIE_CH                   9
 #define HERE_ZOOM_CH                    10
 
-#define MIN_SERVO_PWM                   600
-#define MAX_SERVO_PWM                   2380
+#define MIN_SERVO_PWM                   800
+#define MAX_SERVO_PWM                   2200
 #define SERVO_INCREMENT                 15
 
 class DEL_Sony

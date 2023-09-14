@@ -1030,6 +1030,8 @@ public:
     float get_winch_altitude_m();
     MAV_RESULT reset_winch_altitude();
 
+    float get_last_pitch_read();
+
     void start_herelink_record();
     void stop_herelink_record();
 

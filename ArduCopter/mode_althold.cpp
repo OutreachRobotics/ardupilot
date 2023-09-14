@@ -73,8 +73,18 @@ void ModeAltHold::run()
                 float des_pitch = attitude_control->get_att_target_euler_rad().y;
                 motors->set_coax_enable(true);
                 attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, SEQ_MOVING_PITCH_COMMAND, yaw_input, thrust_input, motors->armed());
-                nextProbingState = sequence_on ? des_pitch>=SEQ_MAX_ANGLE ? Probing : MoveForward : MoveBackward;
+                attachCommand = (motors->get_forward()/PMAX_ACTUATOR_THRUST) + 0.1f;
+                nextProbingState = sequence_on ? des_pitch>=SEQ_MAX_ANGLE ? Attach : MoveForward : MoveBackward;
             }
+            break;
+
+        case Attach:
+            {
+                motors->set_coax_enable(true);
+                attachCommand += SEQ_DETACH_INCREMENT;
+                attitude_control->deleaves_controller_acro(0.0f, attachCommand, yaw_input, thrust_input);
+                nextProbingState = sequence_on ? attachCommand>=SEQ_PROBING_PITCH_COMMAND ? Probing : Attach : Detach;
+            }   
             break;
 
         case Probing:
@@ -82,7 +92,7 @@ void ModeAltHold::run()
                 motors->set_coax_enable(true);
                 attitude_control->deleaves_controller_acro(0.0f, SEQ_PROBING_PITCH_COMMAND, yaw_input, thrust_input);
                 attitude_control->setForwardTarget(constrain_float(attitude_control->getDelEKFOrientation().y-SEQ_PITCH_OFFSET,0.0f,MAX_PITCH));
-                detachCommand = 1.0f;
+                detachCommand = SEQ_PROBING_PITCH_COMMAND;
                 nextProbingState = sequence_on ? Probing : Detach;
             }
             break;

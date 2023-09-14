@@ -19,7 +19,7 @@
 #define UART_SAMPLER        4
 #define UART_FCU            2
 
-#define COM_MSG_SIZE        5
+#define COM_MSG_SIZE        6
 #define COM_HEADER          255
 #define COM_SAMPLER_HEADER  251
 #define COM_SEQUENCE        0
@@ -124,7 +124,7 @@ public:
     void init();
     uint8_t manageSamplerInput();
     uint8_t manageFCUInput();
-    void sendCommand();
+    void sendCommand(float pitch);
 
     uint8_t* getStatus();
 

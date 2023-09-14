@@ -319,6 +319,7 @@ enum ProbingState
 {
     MoveForward,
     Probing,
+    Attach,
     Detach,
     MoveBackward,
     Standby
@@ -353,6 +354,7 @@ protected:
     bool sequenceArmed;
     uint32_t sequenceStart;
     ProbingState probingState;
+    float attachCommand;
     float detachCommand;
 private:
 

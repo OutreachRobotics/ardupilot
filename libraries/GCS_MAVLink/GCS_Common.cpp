@@ -185,7 +185,7 @@ void GCS::handleDelComm()
     textMessage = (TextMessageID)del_comm.manageFCUInput();
     handleDelMessage(textMessage);
     
-    del_comm.sendCommand();  
+    del_comm.sendCommand(last_pitch_read);  
 }
 
 void GCS::handleDelMessage(TextMessageID msg)
@@ -329,6 +329,11 @@ void GCS::set_camera_angle(uint16_t setter)
 uint16_t GCS::get_camera_angle()
 {
     return camera_angle;
+}
+
+float GCS::get_last_pitch_read()
+{
+    return last_pitch_read;
 }
 
 void GCS::start_herelink_record()

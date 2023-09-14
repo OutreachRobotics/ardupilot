@@ -149,7 +149,7 @@
 #define SEQ_MIN_ANGLE                       0.02f
 #define SEQ_MOVING_PITCH_COMMAND            0.30f
 #define SEQ_PROBING_PITCH_COMMAND           1.0f
-#define SEQ_DETACH_LIMIT                    0.65f
+#define SEQ_DETACH_LIMIT                    0.30f
 #define SEQ_PITCH_OFFSET                    0.02f
 
 // EKF CONSTANT ////////////////////////////////////////////////////////////////
