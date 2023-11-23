@@ -277,7 +277,7 @@ void AP_MotorsMulticopter::output()
         }
 
         for (int i = 0; i < 8; i++) {
-            rc_write(i, i==_tune_motor?1250:1000);
+            rc_write(i, i==_tune_motor?1130:1000);
         }
     }
     else
@@ -285,6 +285,7 @@ void AP_MotorsMulticopter::output()
         for (int i = 0; i < 8; i++) {
             constrain_float(_actuator[i], 0.0f, MAX_THRUST);
             rc_write(i, output_to_pwm(_actuator[i]));
+            _tune_motor = 0;
         }
     }
 };
