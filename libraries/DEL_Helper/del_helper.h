@@ -46,6 +46,7 @@
 #define DEADBAND                            0.02f
 #define PITCH_FAILSAFE                      0.80f
 #define ROLL_FAILSAFE                       0.50f
+#define FLIP_FAILSAFE                       -1.04f
 #define LATERAL_INITIAL_COMMAND             0.0f
 #define COAX_ANGLE_MIN                      0.15f
 #define COAX_ANGLE_MAX                      0.2f

@@ -33,6 +33,11 @@ void ModeAltHold::run()
     {
         taxi_mode = true;
     }
+    if(orientation.y<FLIP_FAILSAFE)
+    {
+        AP::arming().disarm(AP_Arming::Method::PILOT_INPUT_FAILSAFE,false);
+    }
+
 
     taxi_mode_ctr = hal.rcin->read(TAXI_CHANNEL) > MID_PPM_VALUE ? taxi_mode_ctr+1 : 0;
     taxi_mode = taxi_mode_ctr==10 ? !taxi_mode : taxi_mode;
