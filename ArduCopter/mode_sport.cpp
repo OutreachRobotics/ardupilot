@@ -122,11 +122,31 @@ void ModeSport::run()
             lateral_target = 0.0f;
             forward_target = 0.0f;
         }
+        else if(now-lateralSequenceStart<13000)
+        {
+            lateral_target = 0.2f;
+            forward_target = 0.0f;
+        }   
+        else if(now-lateralSequenceStart<16000)
+        {
+            lateral_target = 0.4f;
+            forward_target = 0.0f;
+        } 
+        else if(now-lateralSequenceStart<19000)
+        {
+            lateral_target = 0.6f;
+            forward_target = 0.0f;
+        } 
+        else if(now-lateralSequenceStart<22000)
+        {
+            lateral_target = 0.8f;
+            forward_target = 0.0f;
+        } 
         else
         {
-            lateral_target = 0.5f;
+            lateral_target = 1.0f;
             forward_target = 0.0f;
-        }       
+        }    
     }
     else if(forwardSequenceArmed)
     {
@@ -136,10 +156,30 @@ void ModeSport::run()
             lateral_target = 0.0f;
             forward_target = 0.0f;
         }
-        else
+        else if(now-forwardSequenceStart<13000)
+        {
+            lateral_target = 0.0f;
+            forward_target = 0.2f;
+        }
+        else if(now-forwardSequenceStart<16000)
+        {
+            lateral_target = 0.0f;
+            forward_target = 0.4f;
+        }
+        else if(now-forwardSequenceStart<19000)
+        {
+            lateral_target = 0.0f;
+            forward_target = 0.6f;
+        }
+        else if(now-forwardSequenceStart<22000)
         {
             lateral_target = 0.0f;
             forward_target = 0.8f;
+        }
+        else
+        {
+            lateral_target = 0.0f;
+            forward_target = 1.0f;
         }
     }
     else if(approachSequenceArmed)
@@ -150,25 +190,25 @@ void ModeSport::run()
             lateral_target = 0.0f;
             forward_target = 0.0f;
         }
+        else if(now-approachSequenceStart<15000)
+        {
+            lateral_target = 0.2f;
+            forward_target = 0.5f;            
+        }
         else if(now-approachSequenceStart<20000)
         {
-            lateral_target = 0.25f;
-            forward_target = 0.5f;            
-        }
-        else if(now-approachSequenceStart<30000)
-        {
             lateral_target = 0.4f;
-            forward_target = 0.5f;            
+            forward_target = 0.4f;            
         }
-        else if(now-approachSequenceStart<40000)
+        else if(now-approachSequenceStart<25000)
         {
-            lateral_target = 0.25f;
-            forward_target = 0.5f;            
+            lateral_target = 0.3f;
+            forward_target = 0.7f;            
         }
         else
         {
-            lateral_target = 0.25f;
-            forward_target = 0.65f;            
+            lateral_target = 0.2f;
+            forward_target = 0.8f;            
         }
     }
     else
@@ -204,6 +244,7 @@ void ModeSport::run()
             {
                 motors->set_coax_enable(true);
             }
+            motors->set_coax_enable(false);
             attitude_control->deleaves_controller_step_LQR(lateral_target, forward_target, yaw_input, thrust_input, motors->armed());
         }
         else

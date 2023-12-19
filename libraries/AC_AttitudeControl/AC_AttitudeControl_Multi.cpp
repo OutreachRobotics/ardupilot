@@ -786,8 +786,8 @@ void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
     target_lateral = constrain_value(target_lateral, MIN_ROLL, MAX_ROLL);
-    filtered_target_forward = target_forward;
-    filtered_target_lateral = target_lateral;
+    
+    lowPassSetPointFilter();
     
     Mat command = delEKF.createCommandMat(Vector3f(filtered_target_lateral,filtered_target_forward,target_yaw));
     Mat k_lqr = delEKF.getLQRgain();
@@ -818,8 +818,7 @@ void AC_AttitudeControl_Multi::deleaves_controller_step_LQR(float lateral, float
 
     if(armed)
     {
-        // _motors.set_lateral(lateral_command);
-        _motors.set_lateral(0.0f);
+        _motors.set_lateral(lateral_command);
         _motors.set_forward(forward_command);
         _motors.set_yaw(yaw_input);
         _motors.set_throttle(throttle);
