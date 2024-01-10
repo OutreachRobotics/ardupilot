@@ -217,6 +217,8 @@ void Copter::init_ardupilot()
         set_mode(Mode::Number::STABILIZE, ModeReason::UNAVAILABLE);
     }
 
+    del_winch.init();
+
     // flag that initialisation has completed
     ap.initialised = true;
 }
