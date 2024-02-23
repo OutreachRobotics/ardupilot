@@ -42,6 +42,12 @@ MissionItemProtocol *GCS::missionitemprotocols[3];
 void GCS::init()
 {
     mavlink_system.sysid = sysid_this_mav();
+    delGimbal.init();
+}
+
+void GCS::manageButtons(uint16_t buttons)
+{
+    delGimbal.manage(buttons);
 }
 
 /*

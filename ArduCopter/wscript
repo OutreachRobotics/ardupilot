@@ -31,7 +31,8 @@ def build(bld):
             'AP_OSD',
             'AC_AutoTune',
             'AP_KDECAN',
-            'DEL_Winch'
+            'DEL_Winch',
+            'DEL_Gimbal'
         ],
     )
 

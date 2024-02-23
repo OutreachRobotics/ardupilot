@@ -23,6 +23,7 @@
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Mount/AP_Mount.h>
 #include <AP_SerialManager/AP_SerialManager.h>
+#include <DEL_Gimbal/del_gimbal.h>
 
 #include "ap_message.h"
 
@@ -1223,6 +1224,8 @@ public:
 
     virtual uint8_t sysid_this_mav() const = 0;
 
+    void manageButtons(uint16_t buttons);
+
 protected:
 
     virtual GCS_MAVLINK *new_gcs_mavlink_backend(GCS_MAVLINK_Parameters &params,
@@ -1238,6 +1241,8 @@ protected:
     GCS_MAVLINK *_chan[MAVLINK_COMM_NUM_BUFFERS];
 
 private:
+
+    DelGimbal delGimbal;
 
     static GCS *_singleton;
 

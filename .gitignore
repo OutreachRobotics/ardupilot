@@ -149,6 +149,8 @@ segv_*out
 /ArduSub/repl/
 persistent.dat
 dumpstack_*out
+
+.vscode/settings.json
 build.tmp.binaries/
 tasklist.json
 modules/esp_idf

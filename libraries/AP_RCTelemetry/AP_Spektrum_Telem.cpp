@@ -34,7 +34,7 @@
 #include <AP_RTC/AP_RTC.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 #ifdef HAVE_AP_BLHELI_SUPPORT
-#include <AP_BLheli/AP_BLHeli.h>
+#include <AP_BLHeli/AP_BLHeli.h>
 #endif
 #include <math.h>
 
@@ -556,32 +556,32 @@ void AP_Spektrum_Telem::calc_gps_status()
 // prepare ESC information - B/E
 void AP_Spektrum_Telem::calc_esc()
 {
-#ifdef HAVE_AP_BLHELI_SUPPORT
-    AP_BLHeli* blh = AP_BLHeli::get_singleton();
+// #ifdef HAVE_AP_BLHELI_SUPPORT
+//     AP_BLHeli* blh = AP_BLHeli::get_singleton();
 
-    if (blh == nullptr) {
-        return;
-    }
+//     if (blh == nullptr) {
+//         return;
+//     }
 
-    AP_BLHeli::telem_data td;
+//     AP_BLHeli::telem_data td;
 
-    if (!blh->get_telem_data(0, td)) {
-        return;
-    }
+//     if (!blh->get_telem_data(0, td)) {
+//         return;
+//     }
 
-	_telem.esc.identifier = TELE_DEVICE_ESC;	    // Source device = 0x20
-	_telem.esc.sID = 0;									// Secondary ID
-	_telem.esc.RPM = htobe16(uint16_t(roundf(blh->get_average_motor_frequency_hz() * 60)));	// Electrical RPM, 10RPM (0-655340 RPM)  0xFFFF --> "No data"
-	_telem.esc.voltsInput = htobe16(td.voltage);	    // Volts, 0.01v (0-655.34V)       0xFFFF --> "No data"
-	_telem.esc.tempFET = htobe16(td.temperature * 10);	// Temperature, 0.1C (0-6553.4C)  0xFFFF --> "No data"
-	_telem.esc.currentMotor = htobe16(td.current);		// Current, 10mA (0-655.34A)      0xFFFF --> "No data"
-	_telem.esc.tempBEC = 0xFFFF;						// Temperature, 0.1C (0-6553.4C)  0xFFFF --> "No data"
-	_telem.esc.currentBEC = 0xFF;						// BEC Current, 100mA (0-25.4A)   0xFF ----> "No data"
-	_telem.esc.voltsBEC = 0xFF;							// BEC Volts, 0.05V (0-12.70V)    0xFF ----> "No data"
-	_telem.esc.throttle = 0xFF;							// 0.5% (0-100%)                  0xFF ----> "No data"
-	_telem.esc.powerOut = 0xFF;							// Power Output, 0.5% (0-127%)    0xFF ----> "No data"
-    _telem_pending = true;
-#endif
+// 	_telem.esc.identifier = TELE_DEVICE_ESC;	    // Source device = 0x20
+// 	_telem.esc.sID = 0;									// Secondary ID
+// 	_telem.esc.RPM = htobe16(uint16_t(roundf(blh->get_average_motor_frequency_hz() * 60)));	// Electrical RPM, 10RPM (0-655340 RPM)  0xFFFF --> "No data"
+// 	_telem.esc.voltsInput = htobe16(td.voltage);	    // Volts, 0.01v (0-655.34V)       0xFFFF --> "No data"
+// 	_telem.esc.tempFET = htobe16(td.temperature * 10);	// Temperature, 0.1C (0-6553.4C)  0xFFFF --> "No data"
+// 	_telem.esc.currentMotor = htobe16(td.current);		// Current, 10mA (0-655.34A)      0xFFFF --> "No data"
+// 	_telem.esc.tempBEC = 0xFFFF;						// Temperature, 0.1C (0-6553.4C)  0xFFFF --> "No data"
+// 	_telem.esc.currentBEC = 0xFF;						// BEC Current, 100mA (0-25.4A)   0xFF ----> "No data"
+// 	_telem.esc.voltsBEC = 0xFF;							// BEC Volts, 0.05V (0-12.70V)    0xFF ----> "No data"
+// 	_telem.esc.throttle = 0xFF;							// 0.5% (0-100%)                  0xFF ----> "No data"
+// 	_telem.esc.powerOut = 0xFF;							// Power Output, 0.5% (0-127%)    0xFF ----> "No data"
+//     _telem_pending = true;
+// #endif
 }
 
 /*

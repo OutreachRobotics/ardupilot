@@ -4699,7 +4699,6 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
         result = handle_rc_bind(packet);
         break;
 
-#if AP_CAMERA_ENABLED
     case MAV_CMD_DO_DIGICAM_CONFIGURE:
     case MAV_CMD_DO_DIGICAM_CONTROL:
     case MAV_CMD_DO_SET_CAM_TRIGG_DIST:
@@ -4710,7 +4709,7 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
     case MAV_CMD_VIDEO_STOP_CAPTURE:
         result = handle_command_camera(packet);
         break;
-#endif
+
 #if AP_GRIPPER_ENABLED
     case MAV_CMD_DO_GRIPPER:
         result = handle_command_do_gripper(packet);
@@ -6456,6 +6455,8 @@ void GCS_MAVLINK::handle_manual_control(const mavlink_message_t &msg)
 
     mavlink_manual_control_t packet;
     mavlink_msg_manual_control_decode(&msg, &packet);
+
+    gcs().manageButtons(packet.buttons);
 
     if (packet.target != gcs().sysid_this_mav()) {
         return; // only accept control aimed at us
