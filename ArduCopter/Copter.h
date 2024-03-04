@@ -71,7 +71,6 @@
 #include <AP_Proximity/AP_Proximity.h>      // ArduPilot proximity sensor library
 #include <AP_OpticalFlow/AP_OpticalFlow.h>
 #include <AP_Winch/AP_Winch_config.h>
-#include <DEL_Winch/del_winch.h>
 
 // Configuration
 #include "defines.h"
@@ -230,8 +229,6 @@ public:
     Copter(void);
 
 private:
-
-    DelWinch del_winch;
 
     // key aircraft parameters passed to multiple libraries
     AP_MultiCopter aparm;

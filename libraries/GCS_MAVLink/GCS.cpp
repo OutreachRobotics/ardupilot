@@ -43,11 +43,30 @@ void GCS::init()
 {
     mavlink_system.sysid = sysid_this_mav();
     delGimbal.init();
+    delWinch.init();
 }
 
 void GCS::manageButtons(uint16_t buttons)
 {
-    delGimbal.manage(buttons);
+    delWinch.manage(buttons);
+    delGimbal.manage(buttons, hal.util->get_soft_armed());
+}
+
+void GCS::manageWinchSerial()
+{
+    delWinch.receiveSerial();
+}
+
+void GCS::manageFailsafeOn()
+{
+    delWinch.setFailsafe(true);
+    delGimbal.setFailsafe(true);
+}
+
+void GCS::manageFailsafeOff()
+{
+    delWinch.setFailsafe(false);
+    delGimbal.setFailsafe(false);
 }
 
 /*

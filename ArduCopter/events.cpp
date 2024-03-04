@@ -164,6 +164,7 @@ void Copter::failsafe_gcs_on_event(void)
 {
     AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_GCS, LogErrorCode::FAILSAFE_OCCURRED);
     RC_Channels::clear_overrides();
+    gcs().manageFailsafeOn();
 
     // convert the desired failsafe response to the FailsafeAction enum
     FailsafeAction desired_action;
@@ -232,6 +233,7 @@ void Copter::failsafe_gcs_on_event(void)
 // failsafe_gcs_off_event - actions to take when GCS contact is restored
 void Copter::failsafe_gcs_off_event(void)
 {
+    gcs().manageFailsafeOff();
     gcs().send_text(MAV_SEVERITY_WARNING, "GCS Failsafe Cleared");
     AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_GCS, LogErrorCode::FAILSAFE_RESOLVED);
 }

@@ -31,21 +31,19 @@
 
 #define PITCH_UP_MASK           0x0008
 #define PITCH_DOWN_MASK         0x0001
-#define YAW_LEFT_MASK           0x0004
-#define YAW_RIGHT_MASK          0x0002
-#define ZOOM_IN_MASK            0x0400
-#define ZOOM_OUT_MASK           0x0200
-#define CENTER_MASK             0x0010
-#define FOCUS_MASK              0x0040
-#define RECORD_MASK             0x0020
+// #define YAW_LEFT_MASK           0x0004
+// #define YAW_RIGHT_MASK          0x0002
+#define ZOOM_IN_MASK            0x0002
+#define ZOOM_OUT_MASK           0x0004
+#define CENTER_MASK             0x0080
+#define FOCUS_MASK              0x0100
+#define RECORD_MASK             0x0080
 
 #define PITCH_UP                1700
 #define PITCH_DOWN              1300
 
-#define YAW_LEFT                1300
-#define YAW_RIGHT               1700
-
-#define ZOOM_SLEW               5
+// #define YAW_LEFT                1300
+// #define YAW_RIGHT               1700
 
 #define MIN_PPM                 1000
 #define MID_PPM                 1500
@@ -66,7 +64,8 @@ class DelGimbal
 public:
     DelGimbal();
     void init();
-    void manage(uint16_t receivedButtons);
+    void manage(uint16_t buttons, bool armStatus);
+    void setFailsafe(uint8_t setter);
 
 private:
     uint16_t pitch_command;
@@ -75,6 +74,8 @@ private:
     uint16_t center_command;
     uint16_t focus_command;
     uint16_t record_command;
+    bool lastArmStatus;
+    uint8_t gcs_failsafe;
 };
 
 #endif

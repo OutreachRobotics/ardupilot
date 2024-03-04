@@ -24,6 +24,7 @@
 #include <AP_Mount/AP_Mount.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <DEL_Gimbal/del_gimbal.h>
+#include <DEL_Winch/del_winch.h>
 
 #include "ap_message.h"
 
@@ -1225,6 +1226,9 @@ public:
     virtual uint8_t sysid_this_mav() const = 0;
 
     void manageButtons(uint16_t buttons);
+    void manageWinchSerial();
+    void manageFailsafeOn();
+    void manageFailsafeOff();
 
 protected:
 
@@ -1243,6 +1247,7 @@ protected:
 private:
 
     DelGimbal delGimbal;
+    DelWinch delWinch;
 
     static GCS *_singleton;
 

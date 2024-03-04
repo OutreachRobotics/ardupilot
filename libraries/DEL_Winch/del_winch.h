@@ -8,28 +8,27 @@
     Include headers :
 ***************************************************************************/
 
-#include <AP_HAL/AP_HAL.h>
-#include <RC_Channel/RC_Channel.h>
 #include <stdint.h>
+#include <AP_HAL/AP_HAL.h>
 
 /***************************************************************************
     Macro :
 ***************************************************************************/
 
-#define WINCH_UART 2
-#define WINCH_CHANNEL CH_12
-#define COMMAND_CHANNEL CH_13
-#define WINCH_HEADER 0xFE
-#define WINCH_FOOTER 0xDE
+#define WINCH_UART              2
+#define WINCH_HEADER            0xFE
+#define WINCH_FOOTER            0xDE
 
-#define TX_BUFFER_LEN 5
-#define RX_BUFFER_LEN 7
+#define TX_BUFFER_LEN           5
+#define RX_BUFFER_LEN           7
 
-#define WINCH_MID_CHANNEL 1500.0f
-#define WINCH_DEADBAND 0.05f
-#define WINCH_RANGE 500.0f
+#define WINCH_UP_MASK           0x0800
+#define WINCH_DOWN_MASK         0x1000
+#define COMMAND_MASK            0x0200
 
-#define WINCH_MAX_SPEED 50
+#define WINCH_MAX_SPEED         50
+
+#define COMMMAND_COUNT          5
 
 
 /***************************************************************************
@@ -58,7 +57,9 @@ class DelWinch
 public:
     DelWinch();
     void init();
-    void manage();
+    void manage(uint16_t buttons);
+    void receiveSerial();
+    void setFailsafe(bool setter);
     int16_t getPosition();
     uint8_t getSpeed();
     uint8_t getSpeedCommand();
@@ -77,7 +78,9 @@ private:
     uint8_t speed;
     Direction direction;
     uint8_t command;
-    float winch_input;
+    uint32_t command_ctr;
+    uint16_t last_command;
+    uint8_t gcs_failsafe;
 
 };
 

@@ -216,9 +216,7 @@ void Copter::init_ardupilot()
         // set mode to STABILIZE will trigger mode change notification to pilot
         set_mode(Mode::Number::STABILIZE, ModeReason::UNAVAILABLE);
     }
-
-    del_winch.init();
-
+    
     // flag that initialisation has completed
     ap.initialised = true;
 }
