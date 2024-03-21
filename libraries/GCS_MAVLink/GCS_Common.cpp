@@ -173,12 +173,12 @@ bool GCS_MAVLINK::init(uint8_t instance)
 
 void GCS::handleDelComm()
 {
-    AP_Logger *logger = AP_Logger::get_singleton();
-    if(!logger->CardInserted() && noSDWarning && AP_HAL::millis()>30000)
-    {
-        gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
-		noSDWarning = false;
-    }
+    // AP_Logger *logger = AP_Logger::get_singleton();
+    // if(!logger->CardInserted() && noSDWarning && AP_HAL::millis()>30000)
+    // {
+    //     gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
+	// 	noSDWarning = false;
+    // }
 
     TextMessageID textMessage = (TextMessageID)del_comm.manageSamplerInput();
     handleDelMessage(textMessage);
