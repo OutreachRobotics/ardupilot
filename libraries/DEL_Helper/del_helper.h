@@ -22,6 +22,7 @@
 
 // RANGEFINDER ///////////////////////////////////////////////////////////
 #define RANGEFINDER_OFFSET                  0.45f // To adjust
+#define RANGEFINDER_ANGLE                   0.349f
 
 // RC CHANNEL ////////////////////////////////////////////////////////////
 #define SEQUENCE_CHANNEL                    CH_12

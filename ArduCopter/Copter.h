@@ -69,6 +69,7 @@
 #include <AP_ADSB/AP_ADSB.h>                // ADS-B RF based collision avoidance module library
 #include <AP_Proximity/AP_Proximity.h>      // ArduPilot proximity sensor library
 #include <DEL_EKF/del_ekf.h>
+#include <DEL_Helper/del_helper.h>
 #include "AP_Math/AP_Math.h"
 
 
