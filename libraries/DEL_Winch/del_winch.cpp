@@ -65,7 +65,14 @@ void DelWinch::manage(uint16_t buttons)
         if(buttons & COMMAND_MASK)
         {
             command_ctr++;
-            command = command_ctr == COMMMAND_COUNT ? !command : command;
+            if(command_ctr == COMMMAND_COUNT)
+            {
+               command = !command;
+            }
+        }
+        else
+        {
+            command_ctr = 0;
         }
     }
     else
@@ -95,6 +102,7 @@ void DelWinch::receiveSerial()
             direction_read = _winch_port->read();
             current = _winch_port->read();
             error = _winch_port->read();
+            _winch_port->read();
         }
     }    
 }
