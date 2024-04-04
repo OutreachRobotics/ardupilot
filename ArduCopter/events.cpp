@@ -13,6 +13,7 @@ bool Copter::failsafe_option(FailsafeOption opt) const
 void Copter::failsafe_radio_on_event()
 {
     AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_RADIO, LogErrorCode::FAILSAFE_OCCURRED);
+    gcs().set_taxi_mode(true);
 
     // set desired action based on FS_THR_ENABLE parameter
     Failsafe_Action desired_action;
@@ -150,6 +151,7 @@ void Copter::failsafe_gcs_on_event(void)
 {
     AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_GCS, LogErrorCode::FAILSAFE_OCCURRED);
     RC_Channels::clear_overrides();
+    gcs().set_taxi_mode(true);
 
     // convert the desired failsafe response to the Failsafe_Action enum
     Failsafe_Action desired_action;
