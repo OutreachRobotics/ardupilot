@@ -38,9 +38,9 @@ void ModeAltHold::run()
         AP::arming().disarm(AP_Arming::Method::PILOT_INPUT_FAILSAFE,false);
     }
 
-
     taxi_mode_ctr = hal.rcin->read(TAXI_CHANNEL) > MID_PPM_VALUE ? taxi_mode_ctr+1 : 0;
     taxi_mode = taxi_mode_ctr==10 ? !taxi_mode : taxi_mode;
+    taxi_mode = taxi_mode || gcs().get_taxi_mode_override();
     gcs().set_taxi_mode(taxi_mode);
 
     lateral_input = -(float(channel_roll->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3

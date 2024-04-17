@@ -277,9 +277,19 @@ bool GCS::get_taxi_mode()
     return taxi_mode;
 }
 
+bool GCS::get_taxi_mode_override()
+{
+    return taxi_mode_override;
+}
+
 void GCS::set_taxi_mode(bool setter)
 {
     taxi_mode = setter;
+}
+
+void GCS::set_taxi_mode_override(bool setter)
+{
+    taxi_mode_override = setter;
 }
 
 void GCS::start_herelink_record()
