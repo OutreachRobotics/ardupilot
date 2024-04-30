@@ -564,6 +564,7 @@ void Copter::ten_hz_logging_loop()
 #endif
 
     gcs().manageWinchSerial();
+    gcs().sendWinchData();
 }
 
 // twentyfive_hz_logging - should be run at 25hz

@@ -20,7 +20,7 @@ DelWinch::DelWinch()
 {
     _winch_port = hal.serial(WINCH_UART);
     
-    position_read.pos = 0;
+    position_read.value = 0;
     speed_read = 0;
     direction_read = Neutral;
     speed = 0;
@@ -29,6 +29,15 @@ DelWinch::DelWinch()
     error = 0;
     last_command = 0;
     command_ctr = 0;
+
+    addOnType = None;
+    graspingState = 10;
+    rubbingState = 0;
+    waterReady = 0;
+    waterState = 0;
+    waterQty.value = 123;
+    waterRate = 0;
+    waterTime.value = 126;
 
     tx_buffer[0] = WINCH_HEADER;
     tx_buffer[1] = direction;
@@ -92,7 +101,7 @@ void DelWinch::manage(uint16_t buttons)
 void DelWinch::receiveSerial()
 {
     // Receiving status from the winch
-    while(_winch_port->available()>6)
+    while(_winch_port->available()>RX_BUFFER_LEN-1)
     {
         if(_winch_port->read() == WINCH_HEADER)
         {
@@ -102,6 +111,18 @@ void DelWinch::receiveSerial()
             direction_read = _winch_port->read();
             current = _winch_port->read();
             error = _winch_port->read();
+
+            addOnType = AddOnType(_winch_port->read());
+            graspingState = _winch_port->read();
+            rubbingState = _winch_port->read();
+            waterReady = _winch_port->read();
+            waterState = _winch_port->read();
+            waterQty.byte[1] = _winch_port->read();
+            waterQty.byte[0] = _winch_port->read();
+            waterRate = _winch_port->read();
+            waterTime.byte[1] = _winch_port->read();
+            waterTime.byte[0] = _winch_port->read();
+
             _winch_port->read();
         }
     }    
@@ -114,7 +135,7 @@ void DelWinch::setFailsafe(bool setter)
 
 int16_t DelWinch::getPosition()
 {
-    return position_read.pos;
+    return position_read.value;
 }
 
 uint8_t DelWinch::getSpeed()
@@ -140,4 +161,31 @@ uint8_t DelWinch::getCurrent()
 uint8_t DelWinch::getError()
 {
     return error;
+}
+
+DataQGC DelWinch::getDataQGC()
+{
+    dataQGC.position = position_read.value;
+    dataQGC.addOn = uint8_t(addOnType);
+    dataQGC.addOnState = graspingState || waterState || rubbingState;
+    dataQGC.waterQty = waterQty.value;
+    dataQGC.waterTime = waterTime.value;
+
+    return dataQGC;
+}
+
+void DelWinch::printStatus()
+{
+    hal.console->printf("\r\nWinch PCB Status\r\n");
+    hal.console->printf("Position: %f m\r\n", float(position_read.value/100.0f));
+    hal.console->printf("Speed: %f m/s\r\n", float(speed));
+    hal.console->printf("Direction: %s\r\n",direction==Neutral ? "Neutral" : direction==Up ? "Up" : "Down");
+    hal.console->printf("Add On Type: %s\r\n", addOnType==None ? "None" : addOnType==WaterSampling ? "Water" : addOnType==Grasping ? "Grasping" : "Rubbing");
+    hal.console->printf("Grasping state: %s\r\n", graspingState?"On":"Off");
+    hal.console->printf("Rubbing state: %s\r\n", rubbingState?"On":"Off");
+    hal.console->printf("Water ready: %s\r\n", waterReady?"On":"Off");
+    hal.console->printf("Water state: %s\r\n", waterState?"On":"Off");
+    hal.console->printf("Water Quantity: %f L\r\n", float(waterQty.value/10.0f));
+    hal.console->printf("Water Rate: %f\r\n", float(waterRate/10.0f));
+    hal.console->printf("Water time: %d s\r\n\r\n", waterTime.value);
 }

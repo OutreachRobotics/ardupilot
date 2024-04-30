@@ -69,6 +69,14 @@ void GCS::manageFailsafeOff()
     delGimbal.setFailsafe(false);
 }
 
+void GCS::sendWinchData()
+{
+    DataQGC data = delWinch.getDataQGC();
+    for (uint8_t i=0; i<num_gcs(); i++) {
+        chan(i)->send_winch_data(data.position, data.addOn, data.addOnState, data.waterQty, data.waterTime);
+    }
+}
+
 /*
  * returns a mask of channels that statustexts should be sent to
  */

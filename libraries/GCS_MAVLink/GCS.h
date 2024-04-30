@@ -335,6 +335,7 @@ public:
 #endif
     void send_battery_status(const uint8_t instance) const;
     bool send_battery_status();
+    void send_winch_data(int16_t position, uint8_t addOn, uint8_t state, uint16_t waterQty, uint16_t waterTime);
     void send_distance_sensor();
     // send_rangefinder sends only if a downward-facing instance is
     // found.  Rover overrides this!
@@ -1229,6 +1230,7 @@ public:
     void manageWinchSerial();
     void manageFailsafeOn();
     void manageFailsafeOff();
+    void sendWinchData();
 
 protected:
 

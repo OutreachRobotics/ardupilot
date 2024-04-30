@@ -414,6 +414,90 @@ void GCS_MAVLINK::send_distance_sensor(const AP_RangeFinder_Backend *sensor, con
         (const float *)nullptr,                  // quaternion of sensor orientation for MAV_SENSOR_ROTATION_CUSTOM
         quality);                                // Signal quality of the sensor. 0 = unknown/unset signal quality, 1 = invalid signal, 100 = perfect signal.
 }
+
+void GCS_MAVLINK::send_winch_data(int16_t position, uint8_t addOn, uint8_t state, uint16_t waterQty, uint16_t waterTime)
+{
+    // sending position
+    mavlink_msg_distance_sensor_send(
+    chan,
+    AP_HAL::millis(),                        // time since system boot TODO: take time of measurement
+    0,               // minimum distance the sensor can measure in centimeters
+    300,               // maximum distance the sensor can measure in centimeters
+    position > 0 ? position : 0,                   // current distance reading
+    0,  // type from MAV_DISTANCE_SENSOR enum
+    0,                                // onboard ID of the sensor == instance
+    0,                   // direction the sensor faces from MAV_SENSOR_ORIENTATION enum
+    0,                                       // Measurement covariance in centimeters, 0 for unknown / invalid readings
+    0,                                       // horizontal FOV
+    0,                                       // vertical FOV
+    (const float *)nullptr,                  // quaternion of sensor orientation for MAV_SENSOR_ROTATION_CUSTOM
+    100);   
+
+    // sending Add On type
+    mavlink_msg_distance_sensor_send(
+    chan,
+    AP_HAL::millis(),                        // time since system boot TODO: take time of measurement
+    0,               // minimum distance the sensor can measure in centimeters
+    305,               // maximum distance the sensor can measure in centimeters
+    addOn*100,                   // current distance reading
+    0,  // type from MAV_DISTANCE_SENSOR enum
+    0,                                // onboard ID of the sensor == instance
+    1,                   // direction the sensor faces from MAV_SENSOR_ORIENTATION enum
+    0,                                       // Measurement covariance in centimeters, 0 for unknown / invalid readings
+    0,                                       // horizontal FOV
+    0,                                       // vertical FOV
+    (const float *)nullptr,                  // quaternion of sensor orientation for MAV_SENSOR_ROTATION_CUSTOM
+    100);  
+
+    // sending Add On state
+    mavlink_msg_distance_sensor_send(
+    chan,
+    AP_HAL::millis(),                        // time since system boot TODO: take time of measurement
+    0,               // minimum distance the sensor can measure in centimeters
+    305,               // maximum distance the sensor can measure in centimeters
+    state*100,                   // current distance reading
+    0,  // type from MAV_DISTANCE_SENSOR enum
+    0,                                // onboard ID of the sensor == instance
+    2,                   // direction the sensor faces from MAV_SENSOR_ORIENTATION enum
+    0,                                       // Measurement covariance in centimeters, 0 for unknown / invalid readings
+    0,                                       // horizontal FOV
+    0,                                       // vertical FOV
+    (const float *)nullptr,                  // quaternion of sensor orientation for MAV_SENSOR_ROTATION_CUSTOM
+    100);  
+
+    // sending water qty
+    mavlink_msg_distance_sensor_send(
+    chan,
+    AP_HAL::millis(),                        // time since system boot TODO: take time of measurement
+    0,               // minimum distance the sensor can measure in centimeters
+    305,               // maximum distance the sensor can measure in centimeters
+    waterQty*10,                   // current distance reading
+    0,  // type from MAV_DISTANCE_SENSOR enum
+    0,                                // onboard ID of the sensor == instance
+    3,                   // direction the sensor faces from MAV_SENSOR_ORIENTATION enum
+    0,                                       // Measurement covariance in centimeters, 0 for unknown / invalid readings
+    0,                                       // horizontal FOV
+    0,                                       // vertical FOV
+    (const float *)nullptr,                  // quaternion of sensor orientation for MAV_SENSOR_ROTATION_CUSTOM
+    100);  
+
+    // sending waterTime
+    mavlink_msg_distance_sensor_send(
+    chan,
+    AP_HAL::millis(),                        // time since system boot TODO: take time of measurement
+    0,               // minimum distance the sensor can measure in centimeters
+    305,               // maximum distance the sensor can measure in centimeters
+    waterTime*100,                   // current distance reading
+    0,  // type from MAV_DISTANCE_SENSOR enum
+    0,                                // onboard ID of the sensor == instance
+    4,                   // direction the sensor faces from MAV_SENSOR_ORIENTATION enum
+    0,                                       // Measurement covariance in centimeters, 0 for unknown / invalid readings
+    0,                                       // horizontal FOV
+    0,                                       // vertical FOV
+    (const float *)nullptr,                  // quaternion of sensor orientation for MAV_SENSOR_ROTATION_CUSTOM
+    100);  
+}
+
 // send any and all distance_sensor messages.  This starts by sending
 // any distance sensors not used by a Proximity sensor, then sends the
 // proximity sensor ones.

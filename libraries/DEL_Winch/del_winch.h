@@ -20,7 +20,7 @@
 #define WINCH_FOOTER            0xDE
 
 #define TX_BUFFER_LEN           5
-#define RX_BUFFER_LEN           7
+#define RX_BUFFER_LEN           18
 
 #define WINCH_UP_MASK           0x0800
 #define WINCH_DOWN_MASK         0x1000
@@ -42,10 +42,31 @@ enum Direction
     Down
 };
 
-union PositionRead
+union uint16_union
 {
-    int16_t pos;
+    int16_t value;
     uint8_t byte[2];
+};
+
+enum AddOnType
+{
+    None,
+    WaterSampling,
+    Grasping,
+    PlantRubbing
+};
+
+/***************************************************************************
+	Struct :
+***************************************************************************/
+
+struct DataQGC
+{
+    int16_t position;
+    uint8_t addOn;
+    uint8_t addOnState;
+    uint16_t waterQty;
+    uint16_t waterTime;
 };
 
 /***************************************************************************
@@ -66,11 +87,14 @@ public:
     uint8_t getDirection();
     uint8_t getError();
     uint8_t getCurrent();
+    DataQGC getDataQGC();
+    void printStatus();
 
 private:
     AP_HAL::UARTDriver *_winch_port;
     uint8_t tx_buffer[TX_BUFFER_LEN];
-    PositionRead position_read;
+
+    uint16_union position_read;
     uint8_t speed_read;
     uint8_t direction_read;
     uint8_t current;
@@ -80,7 +104,19 @@ private:
     uint8_t command;
     uint32_t command_ctr;
     uint16_t last_command;
+
+    AddOnType addOnType;
+    uint8_t graspingState;
+    uint8_t rubbingState;
+    uint8_t waterReady;
+    uint8_t waterState;
+    uint16_union waterQty; // dL
+    uint8_t waterRate; // dL/m
+    uint16_union waterTime; // s
+
     uint8_t gcs_failsafe;
+
+    DataQGC dataQGC;
 
 };
 
