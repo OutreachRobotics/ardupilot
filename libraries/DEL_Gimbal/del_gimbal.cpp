@@ -71,11 +71,11 @@ void DelGimbal::manage(uint16_t buttons, bool armStatus)
 
         if(buttons & ZOOM_IN_MASK)
         {
-            zoom_command = MIN_PPM;
+            zoom_command = MAX_PPM;
         }
         else if(buttons & ZOOM_OUT_MASK)
         {
-            zoom_command = MAX_PPM;
+            zoom_command = MIN_PPM;
         }
         else
         {
@@ -88,7 +88,7 @@ void DelGimbal::manage(uint16_t buttons, bool armStatus)
         }
         else
         {
-            center_command = MID_PPM;
+            center_command = MIN_PPM;
         }
 
         if(buttons & FOCUS_MASK)
@@ -124,12 +124,16 @@ void DelGimbal::manage(uint16_t buttons, bool armStatus)
         record_command = MID_PPM;
     }
 
-    SRV_Channels::set_output_pwm(PITCH_CH, pitch_command);
-    SRV_Channels::set_output_pwm(YAW_CH, yaw_command);
-    SRV_Channels::set_output_pwm(ZOOM_CH, zoom_command);
-    SRV_Channels::set_output_pwm(CENTER_CH, center_command);
-    SRV_Channels::set_output_pwm(FOCUS_CH, focus_command);
-    SRV_Channels::set_output_pwm(RECORD_CH, record_command);   
+    // SRV_Channels::set_output_pwm(PITCH_CH, pitch_command);
+    // SRV_Channels::set_output_pwm(YAW_CH, yaw_command);
+    // SRV_Channels::set_output_pwm(ZOOM_CH, zoom_command);
+    // SRV_Channels::set_output_pwm(CENTER_CH, center_command);
+    // SRV_Channels::set_output_pwm(FOCUS_CH, focus_command);
+    // SRV_Channels::set_output_pwm(RECORD_CH, record_command);  
+
+    RC_Channels::set_override(5, pitch_command, AP_HAL::millis()); 
+    RC_Channels::set_override(6, zoom_command, AP_HAL::millis()); 
+    RC_Channels::set_override(8, center_command, AP_HAL::millis()); 
 }
 
 void DelGimbal::setFailsafe(uint8_t setter)

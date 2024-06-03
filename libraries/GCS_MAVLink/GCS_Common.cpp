@@ -6539,7 +6539,6 @@ void GCS_MAVLINK::handle_manual_control(const mavlink_message_t &msg)
 
     mavlink_manual_control_t packet;
     mavlink_msg_manual_control_decode(&msg, &packet);
-
     gcs().manageButtons(packet.buttons);
 
     if (packet.target != gcs().sysid_this_mav()) {

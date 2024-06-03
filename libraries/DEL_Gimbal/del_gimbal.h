@@ -10,6 +10,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <SRV_Channel/SRV_Channel.h>
+#include <RC_Channel/RC_Channel.h> 
 
 /***************************************************************************
     Macro :
@@ -39,8 +40,8 @@
 #define FOCUS_MASK              0x0100
 #define RECORD_MASK             0x0080
 
-#define PITCH_UP                1700
-#define PITCH_DOWN              1300
+#define PITCH_UP                2000
+#define PITCH_DOWN              1000
 
 // #define YAW_LEFT                1300
 // #define YAW_RIGHT               1700
