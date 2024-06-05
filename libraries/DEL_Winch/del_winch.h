@@ -28,7 +28,7 @@
 
 #define WINCH_MAX_SPEED         50
 
-#define COMMMAND_COUNT          5
+#define COMMMAND_COUNT          15
 
 
 /***************************************************************************
@@ -69,6 +69,14 @@ struct DataQGC
     uint16_t waterTime;
 };
 
+struct WinchData
+{
+    Direction direction;
+    uint16_t position;
+    uint8_t speed;
+    uint8_t command;
+};
+
 /***************************************************************************
 	Class :
 ***************************************************************************/
@@ -88,6 +96,7 @@ public:
     uint8_t getError();
     uint8_t getCurrent();
     DataQGC getDataQGC();
+    WinchData getWinchData();
     void printStatus();
 
 private:
@@ -103,7 +112,6 @@ private:
     Direction direction;
     uint8_t command;
     uint32_t command_ctr;
-    uint16_t last_command;
 
     AddOnType addOnType;
     uint8_t graspingState;
@@ -117,6 +125,7 @@ private:
     uint8_t gcs_failsafe;
 
     DataQGC dataQGC;
+    WinchData winchData;
 
 };
 

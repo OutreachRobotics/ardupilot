@@ -27,7 +27,6 @@ DelWinch::DelWinch()
     direction = Neutral;
     command = 0;
     error = 0;
-    last_command = 0;
     command_ctr = 0;
 
     addOnType = None;
@@ -167,11 +166,21 @@ DataQGC DelWinch::getDataQGC()
 {
     dataQGC.position = position_read.value;
     dataQGC.addOn = uint8_t(addOnType);
-    dataQGC.addOnState = graspingState || waterState || rubbingState;
+    dataQGC.addOnState = (graspingState || waterState || rubbingState) + command*10;
     dataQGC.waterQty = waterQty.value;
     dataQGC.waterTime = waterTime.value;
 
     return dataQGC;
+}
+
+WinchData DelWinch::getWinchData()
+{
+    winchData.direction = direction;
+    winchData.speed = speed_read;
+    winchData.position = position_read.value;
+    winchData.command = command;
+
+    return winchData;
 }
 
 void DelWinch::printStatus()

@@ -70,8 +70,9 @@ void AP_Mount_Siyi::update()
     switch (get_mode()) {
         // move mount to a "retracted" position.  To-Do: remove support and replace with a relaxed mode?
         case MAV_MOUNT_MODE_RETRACT: {
-            const Vector3f &angle_bf_target = _params.retract_angles.get();
-            send_target_angles(ToRad(angle_bf_target.y), ToRad(angle_bf_target.z), false);
+            // const Vector3f &angle_bf_target = _params.retract_angles.get();
+            // send_target_angles(ToRad(angle_bf_target.y), ToRad(angle_bf_target.z), false);
+            center_gimbal();
             break;
         }
 
@@ -565,7 +566,7 @@ void AP_Mount_Siyi::center_gimbal()
 // lock is false to follow / maintain a body-frame target
 void AP_Mount_Siyi::set_lock(bool lock)
 {
-    send_1byte_packet(SiyiCommandId::PHOTO, lock ? (uint8_t)PhotoFunction::LOCK_MODE : (uint8_t)PhotoFunction::FOLLOW_MODE);
+    send_1byte_packet(SiyiCommandId::PHOTO, lock ? (uint8_t)PhotoFunction::LOCK_MODE : (uint8_t)PhotoFunction::FPV_MODE);
 }
 
 // send target pitch and yaw rates to gimbal

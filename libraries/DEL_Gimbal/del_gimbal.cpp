@@ -97,7 +97,7 @@ void DelGimbal::manage(uint16_t buttons, bool armStatus)
         }
         else
         {
-            focus_command = MID_PPM;
+            focus_command = MIN_PPM;
         }
 
         if(armStatus && !lastArmStatus)
@@ -134,6 +134,7 @@ void DelGimbal::manage(uint16_t buttons, bool armStatus)
     RC_Channels::set_override(5, pitch_command, AP_HAL::millis()); 
     RC_Channels::set_override(6, zoom_command, AP_HAL::millis()); 
     RC_Channels::set_override(8, center_command, AP_HAL::millis()); 
+    RC_Channels::set_override(9, focus_command, AP_HAL::millis()); 
 }
 
 void DelGimbal::setFailsafe(uint8_t setter)
