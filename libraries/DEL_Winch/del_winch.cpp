@@ -166,7 +166,7 @@ DataQGC DelWinch::getDataQGC()
 {
     dataQGC.position = position_read.value;
     dataQGC.addOn = uint8_t(addOnType);
-    dataQGC.addOnState = (graspingState || waterState || rubbingState) + command*10;
+    dataQGC.addOnState = (graspingState || rubbingState || waterState) + (addOnType==WaterSampling ? command*10 : 0);
     dataQGC.waterQty = waterQty.value;
     dataQGC.waterTime = waterTime.value;
 
