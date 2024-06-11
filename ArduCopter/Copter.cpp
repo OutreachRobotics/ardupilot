@@ -565,6 +565,7 @@ void Copter::ten_hz_logging_loop()
 
     gcs().manageWinchSerial();
     gcs().sendWinchData();
+    Log_Write_Payload_Limelight();
 }
 
 // twentyfive_hz_logging - should be run at 25hz

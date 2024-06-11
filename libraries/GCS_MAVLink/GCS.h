@@ -1231,6 +1231,8 @@ public:
     void manageFailsafeOn();
     void manageFailsafeOff();
     void sendWinchData();
+    DataQGC getPayloadData();
+    WinchData getWinchData();
 
 protected:
 

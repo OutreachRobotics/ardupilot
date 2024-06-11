@@ -77,6 +77,16 @@ void GCS::sendWinchData()
     }
 }
 
+DataQGC GCS::getPayloadData()
+{
+    return delWinch.getDataQGC();
+}
+
+WinchData GCS::getWinchData()
+{
+    return delWinch.getWinchData();
+}
+
 /*
  * returns a mask of channels that statustexts should be sent to
  */

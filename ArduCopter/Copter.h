@@ -842,6 +842,7 @@ private:
     void Log_Write_SysID_Data(float waveform_time, float waveform_sample, float waveform_freq, float angle_x, float angle_y, float angle_z, float accel_x, float accel_y, float accel_z);
     void Log_Write_Vehicle_Startup_Messages();
     void log_init(void);
+    void Log_Write_Payload_Limelight();
 
     // mode.cpp
     bool set_mode(Mode::Number mode, ModeReason reason);

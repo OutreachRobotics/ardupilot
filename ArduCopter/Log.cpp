@@ -405,6 +405,40 @@ void Copter::Log_Write_Guided_Attitude_Target(ModeGuided::SubMode target_type, f
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
+// guided attitude target logging
+struct PACKED log_payload_limelight {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint16_t position;
+    uint8_t  direction;
+    uint8_t  speed;
+    uint8_t  command;
+    uint8_t  addOnType;
+    uint8_t  addOnStatus;
+    uint16_t waterQty;
+    uint16_t waterTime;
+};
+
+
+void Copter::Log_Write_Payload_Limelight()
+{
+    DataQGC _payload_data = gcs().getPayloadData();
+    WinchData _winch_data = gcs().getWinchData();
+    const log_payload_limelight pkt {
+        LOG_PACKET_HEADER_INIT(LOG_PAYLOAD_LIMELIGHT),
+        time_us         : AP_HAL::micros64(),
+        position        : _winch_data.position,
+        direction       : _winch_data.direction,
+        speed           : _winch_data.speed,
+        command         : _winch_data.command,
+        addOnType       : _payload_data.addOn,
+        addOnStatus     : _payload_data.addOnState,
+        waterQty        : _payload_data.waterQty,
+        waterTime       : _payload_data.waterTime
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
@@ -558,6 +592,13 @@ const struct LogStructure Copter::log_structure[] = {
 
     { LOG_GUIDED_ATTITUDE_TARGET_MSG, sizeof(log_Guided_Attitude_Target),
       "GUIA",  "QBffffffff",    "TimeUS,Type,Roll,Pitch,Yaw,RollRt,PitchRt,YawRt,Thrust,ClimbRt", "s-dddkkk-n", "F-000000-0" , true },
+
+// @LoggerMessage: LIME
+// @Description: Payload status from the motherships
+// @Field: TimeUS: Time since system startup
+
+    { LOG_PAYLOAD_LIMELIGHT, sizeof(log_payload_limelight),
+      "LIME",  "QHBBBBBHH",    "TimeUS,Pos,Dir,Speed,Command,Type,Status,Qty,Time", "s--------", "F--------" , true },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()
