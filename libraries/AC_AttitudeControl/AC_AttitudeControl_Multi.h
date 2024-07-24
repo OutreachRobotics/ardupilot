@@ -44,7 +44,7 @@
 #define MAX_ACTUATOR_THRUST                 (2.0f*3.2f)
 #define MAX_ACTUATOR_MOMENT                 0.5f
 
-#define M_PLATFORM                          3.26f
+#define M_PLATFORM                          3.40f
 #define MAX_PITCH                           0.20f 
 #define MAX_ROLL                            0.20f
 #define MIN_PITCH                           (-MAX_PITCH)

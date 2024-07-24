@@ -7,6 +7,7 @@
 #define ALLOW_DOUBLE_MATH_FUNCTIONS
 
 #include "del_ekf.h"
+#include "del_control.h"
 
 /***************************************************************************
 	Global variables declaration :
@@ -115,9 +116,9 @@ DelEKF::DelEKF()
 	H_pitch = ((F_pitch+I4x4)*B_pitch)*(TS/2);
 	H_yaw = ((F_yaw+I2x2)*B_yaw)*(TS/2);
 
-	double k_lqr_array[] = {0.000000,-0.000000,-0.000000,0.000000,3.725352,16.778788,9.531871,-17.063490,-0.000000,-0.000000,
--3.725352,-16.778788,-9.531871,17.063490,0.000000,-0.000000,0.000000,0.000000,-0.000000,-0.000000,
-0.000000,-0.000000,-0.000000,0.000000,-0.000000,-0.000000,0.000000,0.000000,1.090473,12.844587};
+	double k_lqr_array[] = {0.000000,0.000000,0.000000,-0.000000,48.009062,84.485876,9.395291,21.968553,-0.000000,-0.000000,
+-48.009062,-84.485876,-9.395291,-21.968553,0.000000,-0.000000,0.000000,0.000000,0.000000,-0.000000,
+-0.000000,-0.000000,-0.000000,-0.000000,-0.000000,-0.000000,-0.000000,0.000000,1.154681,13.567565};
 	k_lqr = Mat(3,10,k_lqr_array);
 }
 
@@ -322,18 +323,66 @@ void DelEKF::setYawValue(double newValue)
 
 void DelEKF::update_LQR_gain(float test)
 {
-	if(test<6.0f)
+	if(test<1.5f)
 	{
-		double k_lqr_array[] = {0.000000,-0.000000,0.000000,0.000000,48.048751,86.686661,9.302079,20.890013,-0.000000,-0.000000,
--48.048751,-86.686661,-9.302079,-20.890013,0.000000,0.000000,-0.000000,-0.000000,0.000000,0.000000,
--0.000000,-0.000000,-0.000000,-0.000000,-0.000000,-0.000000,-0.000000,0.000000,1.154681,13.5675651};
-		k_lqr = Mat(3,10,k_lqr_array);
+		k_lqr = Mat(3,10,k_lqr_array_1);
+
+		F_roll = Mat(4,4,froll_1);
+		F_pitch = Mat(4,4,fpitch_1);		
+		B_roll = Mat(4,1,broll_1);
+		B_pitch = Mat(4,1,bpitch_1);
 	}
-	else 
+	else if(test<2.5f)
 	{
-		double k_lqr_array[] = {0.000000,-0.000000,-0.000000,0.000000,12.203092,37.152414,32.068891,-39.870430,-0.000000,0.000000,
--12.203092,-37.152414,-32.068891,39.870430,0.000000,-0.000000,0.000000,0.000000,0.000000,0.000000,
--0.000000,-0.000000,0.000000,0.000000,0.000000,-0.000000,-0.000000,0.000000,1.154681,13.567565};
-		k_lqr = Mat(3,10,k_lqr_array);
-	}	
+		k_lqr = Mat(3,10,k_lqr_array_2);
+
+		F_roll = Mat(4,4,froll_2);
+		F_pitch = Mat(4,4,fpitch_2);		
+		B_roll = Mat(4,1,broll_2);
+		B_pitch = Mat(4,1,bpitch_2);
+	}
+	else if(test<3.5)
+	{
+		k_lqr = Mat(3,10,k_lqr_array_3);
+
+		F_roll = Mat(4,4,froll_3);
+		F_pitch = Mat(4,4,fpitch_3);		
+		B_roll = Mat(4,1,broll_3);
+		B_pitch = Mat(4,1,bpitch_3);
+	}
+	else if(test<4.5)
+	{
+		k_lqr = Mat(3,10,k_lqr_array_4);
+
+		F_roll = Mat(4,4,froll_4);
+		F_pitch = Mat(4,4,fpitch_4);		
+		B_roll = Mat(4,1,broll_4);
+		B_pitch = Mat(4,1,bpitch_4);
+	}		
+	else if(test<5.5)
+	{
+		k_lqr = Mat(3,10,k_lqr_array_5);
+
+		F_roll = Mat(4,4,froll_5);
+		F_pitch = Mat(4,4,fpitch_5);		
+		B_roll = Mat(4,1,broll_5);
+		B_pitch = Mat(4,1,bpitch_5);
+	}
+	else
+	{
+		k_lqr = Mat(3,10,k_lqr_array_6);
+
+		F_roll = Mat(4,4,froll_6);
+		F_pitch = Mat(4,4,fpitch_6);		
+		B_roll = Mat(4,1,broll_6);
+		B_pitch = Mat(4,1,bpitch_6);
+	}
+
+	Q_trap_roll = (F_roll*Qe_roll*(F_roll.t()) + Qe_roll) * (TS/2);
+	Q_trap_pitch = (F_pitch*Qe_pitch*(F_pitch.t()) + Qe_pitch) * (TS/2);
+	Q_trap_yaw = (F_yaw*Qe_yaw*(F_yaw.t()) + Qe_yaw) * (TS/2);
+
+	H_roll = ((F_roll+I4x4)*B_roll)*(TS/2);
+	H_pitch = ((F_pitch+I4x4)*B_pitch)*(TS/2);
+	H_yaw = ((F_yaw+I2x2)*B_yaw)*(TS/2);
 }

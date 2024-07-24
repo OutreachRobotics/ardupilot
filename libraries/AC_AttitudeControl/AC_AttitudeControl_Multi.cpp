@@ -1108,7 +1108,7 @@ void AC_AttitudeControl_Multi::constrainCommand()
 
 float AC_AttitudeControl_Multi::get_rope_length()
 {
-    return constrain_float(_pid_rate_pitch.kI(),5.5f,20.0f);
+    return constrain_float(_pid_rate_pitch.kI(),0.5f,10.0f);
 }
 
 float AC_AttitudeControl_Multi::get_sensitivity_coeff()
