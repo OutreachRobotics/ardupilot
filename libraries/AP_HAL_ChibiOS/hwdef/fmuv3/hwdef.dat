@@ -210,7 +210,7 @@ PA7 SPI1_MOSI SPI1
 # This defines an output pin which will default to output LOW. It is a
 # pin that enables peripheral power on this board.
 
-PA8 VDD_5V_PERIPH_EN OUTPUT LOW
+PA8 nVDD_5V_PERIPH_EN OUTPUT LOW
 
 # This is the pin that senses USB being connected. It is an input pin
 # setup as OPENDRAIN.
@@ -336,12 +336,6 @@ PE11 TIM1_CH2 TIM1 PWM(3) GPIO(52)
 PE9  TIM1_CH1 TIM1 PWM(4) GPIO(53)
 PD13 TIM4_CH2 TIM4 PWM(5) GPIO(54)
 PD14 TIM4_CH3 TIM4 PWM(6) GPIO(55)
-
-define BOARD_PWM_COUNT_DEFAULT 4
-
-# Relays default to use GPIO pins 54 and 55.
-define RELAY1_PIN_DEFAULT 54
-define RELAY2_PIN_DEFAULT 55
 
 # This is the invensense data-ready pin. We don't use it in the
 # default driver.
@@ -474,3 +468,13 @@ DMA_PRIORITY USART6* SPI*
 # is "ROMFS ROMFS-filename source-filename". Paths are relative to the
 # ardupilot root.
 ROMFS io_firmware.bin Tools/IO_Firmware/iofirmware_lowpolh.bin
+
+# for users running fmuv3 on their Solo:
+define AP_NOTIFY_OREOLED_ENABLED (BOARD_FLASH_SIZE > 1024)
+define HAL_SOLO_GIMBAL_ENABLED (HAL_MOUNT_ENABLED && BOARD_FLASH_SIZE > 1024)
+
+undef AP_BATTERY_SMBUS_SOLO_ENABLED
+define AP_BATTERY_SMBUS_SOLO_ENABLED (AP_BATTERY_SMBUS_ENABLED && BOARD_FLASH_SIZE > 1024)
+
+# produce this error if we are on a 1M board
+define BOARD_CHECK_F427_USE_1M "ERROR: 1M flash use fmuv2"
