@@ -27,7 +27,7 @@ void ModeStabilize::run()
 
     lateral_input = -(float(channel_roll->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
     pitch_input = -(float(channel_pitch->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
-    yaw_input = hal.rcin->read(WRIST_CHANNEL) < MID_PPM_VALUE ? (float(channel_yaw->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT : 0.0f;
+    yaw_input = (float(channel_yaw->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
     thrust_input = float(channel_throttle->percent_input()) / MAX_RC_INPUT;
 
 

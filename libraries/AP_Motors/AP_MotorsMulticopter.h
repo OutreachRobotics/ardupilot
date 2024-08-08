@@ -25,6 +25,15 @@
 #define AP_MOTORS_SLEW_TIME_DEFAULT     0.0f    // slew rate limit for thrust output
 #define AP_MOTORS_SAFE_TIME_DEFAULT     1.0f    // Time for the esc when transitioning between zero pwm to minimum
 
+#define T2PWM_COEF1                     23.69f
+#define T2PWM_COEF2                     -141.45f
+#define T2PWM_COEF3                     437.33f
+#define T2PWM_COEF4                     1170.1f
+#define LOW_PWM_LIMIT                   1170.0f
+#define HIGH_PWM_LIMIT                  1900.0f
+#define ACTUATOR_LEVER                  0.29f
+#define MAX_THRUST                      2.0f
+
 
 // spool definition
 #define AP_MOTORS_SPOOL_UP_TIME_DEFAULT 0.5f    // time (in seconds) for throttle to increase from zero to min throttle, and min throttle to full throttle.

@@ -438,8 +438,8 @@ void AC_AttitudeControl_Multi::parameter_sanity_check()
 
 void AC_AttitudeControl_Multi::deleaves_controller_acro(float lateral, float forward, float yaw, float throttle)
 {
-    _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
-    _motors.set_forward(forward>0? forward*PMAX_ACTUATOR_THRUST : forward*PMIN_ACTUATOR_THRUST);
+    _motors.set_lateral(0);
+    _motors.set_forward(0);
     _motors.set_yaw(yaw*YMAX_ACTUATOR_MOMENT);
     _motors.set_throttle(throttle);
 
@@ -458,9 +458,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
     //run at 50Hz
 
     //Initialize target yaw to the value of yaw when not armed or update it with joystick when armed
-    target_yaw = !armed ? ahrs_ang.z : target_yaw + yaw*YAW_SENSITIVITY;
-    target_lateral = LATERAL_INITIAL_COMMAND;
-    target_forward = 0.0f;
+    if(!armed || fabs(ahrs_ang.y)>(0.5f))
+    {
+        target_yaw = ahrs_ang.z;
+        hal.console->printf("Not sending any command");
+    }
     yaw_angle_error = target_yaw - ahrs_ang.z ;
 
     //Correction for target angle more than half-turn away
@@ -476,7 +478,11 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
         yaw_angle_error_last=yaw_angle_error_last+2*M_PI;
     }
     lowPassSetPointFilter();
+    yaw_kp = _pid_rate_yaw.kP();
+    yaw_kd = _pid_rate_yaw.kD();
 
+    hal.console->printf("kp = %f, kd = %f\r\n", yaw_kp, yaw_kd);
+    
     yaw_angle_error_dt=(yaw_angle_error-yaw_angle_error_last)*50; //50 Hz
     yaw_input= yaw_kp*yaw_angle_error+yaw_kd*yaw_angle_error_dt;
     yaw_angle_error_last=yaw_angle_error; //assign new error to last
@@ -488,9 +494,17 @@ void AC_AttitudeControl_Multi::deleaves_controller_stabilize(float lateral, floa
 
     constrainCommand();
 
-    _motors.set_lateral(lateral*RMAX_ACTUATOR_THRUST);
-    _motors.set_forward(forward>0? forward*PMAX_ACTUATOR_THRUST : forward*PMIN_ACTUATOR_THRUST);
-    _motors.set_yaw(yaw_input);
+    _motors.set_lateral(0);
+    _motors.set_forward(0);
+
+    if(!armed || fabs(ahrs_ang.y)>(0.5f))
+    {
+        _motors.set_yaw(0);
+    }
+    else
+    {
+        _motors.set_yaw(yaw_input);
+    }
     _motors.set_throttle(throttle);
 
     // For logging purpose
