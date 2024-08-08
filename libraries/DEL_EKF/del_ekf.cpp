@@ -33,6 +33,7 @@
 	double f_pitch_array[] = F_PITCH;
 	double b_pitch_array[] = B_PITCH;
     double k_lqr_array[] = K_LQR;
+    double k_lqr_taxi_array[] = K_LQR_TAXI;
 	
 
 /***************************************************************************
@@ -61,6 +62,7 @@ DelEKF::DelEKF()
 	B_roll_multi = Mat(NUMBER_OF_LENGTH,4,b_roll_array);
 	B_pitch_multi = Mat(NUMBER_OF_LENGTH,4,b_roll_array);
 	k_lqr_multi = Mat(NUMBER_OF_LENGTH,30,k_lqr_array);
+	k_lqr_taxi_multi = Mat(NUMBER_OF_LENGTH,30,k_lqr_taxi_array);
 	
 	F_roll = Mat(4,4,i4);
 	F_pitch = Mat(4,4,i4);
@@ -97,6 +99,7 @@ DelEKF::DelEKF()
 	H_yaw = ((F_yaw+I2x2)*B_yaw)*(TS/2);
 
 	k_lqr = Mat(3,10);
+	k_lqr_taxi = Mat(3,10);
 }
 
 Mat DelEKF::gyro2statesDt(Mat gyro_in)
@@ -118,9 +121,9 @@ Mat DelEKF::commandLPF(Mat F_in)
 {
 	Mat F_in_filt(3,1);
 
-	F_in_filt[0] = F_in[0]*LT_TF_B + last_F_in[0]*LT_TF_B + last_F_in_filt[0]*LT_TF_A;
+	F_in_filt[0] = F_in[0]*FT_TF_B + last_F_in[0]*FT_TF_B + last_F_in_filt[0]*FT_TF_A;
 	F_in_filt[1] = F_in[1]*FT_TF_B + last_F_in[1]*FT_TF_B + last_F_in_filt[1]*FT_TF_A;
-	F_in_filt[2] = F_in[2]*LT_TF_B + last_F_in[2]*LT_TF_B + last_F_in_filt[2]*LT_TF_A;
+	F_in_filt[2] = F_in[2]*FT_TF_B + last_F_in[2]*FT_TF_B + last_F_in_filt[2]*FT_TF_A;
 	last_F_in_filt = F_in_filt;
 	last_F_in = F_in;
 
@@ -250,8 +253,7 @@ Mat DelEKF::getLQRgain()
 
 Mat DelEKF::getLQRgain_taxi()
 {
-	double k_lqr_taxi[] = K_LQR_TAXI;
-	return Mat(3,10,k_lqr_taxi);
+	return k_lqr_taxi;;
 }
 
 Mat DelEKF::createCommandMat(Vector3f orientation)
@@ -285,6 +287,7 @@ void DelEKF::update_length(float length)
 		B_roll = Mat(4,1,B_roll_multi.getLength(uint8_t(round(length))));
 		B_pitch = Mat(4,1,B_pitch_multi.getLength(uint8_t(round(length))));
 		k_lqr = Mat(3,10,k_lqr_multi.getLength(uint8_t(round(length))));
+		k_lqr_taxi = Mat(3,10,k_lqr_taxi_multi.getLength(uint8_t(round(length))));
 	}
 	else
 	{
@@ -293,5 +296,6 @@ void DelEKF::update_length(float length)
 		B_roll = Mat(4,1,B_roll_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
 		B_pitch = Mat(4,1,B_pitch_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
 		k_lqr = Mat(3,10,k_lqr_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
+		k_lqr_taxi = Mat(3,10,k_lqr_taxi_multi.getLength(uint8_t(LENGTH_DEFAULT_VALUE)));
 	}
 }

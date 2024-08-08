@@ -480,14 +480,14 @@ void Copter::fifty_hz_logging()
     logger.Write_RCIN();
     logger.Write_RCOUT();
     AP::ins().Write_IMU();
-    rangefinder.Log_RFND();
+    // rangefinder.Log_RFND();
     
     gcs().handleDelComm();
 
     // Populating the reach widget
     gcs().set_platform_orientation(attitude_control->getDelEKFOrientation());
     gcs().set_platform_reach(attitude_control->getMaxReach());
-    gcs().set_rangefinder_distance(float(rangefinder.distance_cm_orient(ROTATION_PITCH_270))/100.0f);
+    // gcs().set_rangefinder_distance(float(rangefinder.distance_cm_orient(ROTATION_PITCH_270))/100.0f);
 }
 
 // three_hz_loop - 3.3hz loop

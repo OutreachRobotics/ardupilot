@@ -176,47 +176,47 @@ void GCS::handleDelComm()
     AP_Logger *logger = AP_Logger::get_singleton();
     if(!logger->CardInserted() && noSDWarning && AP_HAL::millis()>30000)
     {
-        gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
+        // gcs().send_text(MAV_SEVERITY_ERROR, "#No card in the flight controller");
 		noSDWarning = false;
     }
 
-    TextMessageID textMessage = (TextMessageID)del_comm.manageSamplerInput();
-    handleDelMessage(textMessage);
-    textMessage = (TextMessageID)del_comm.manageFCUInput();
+    // TextMessageID textMessage = (TextMessageID)del_comm.manageSamplerInput();
+    // handleDelMessage(textMessage);
+    TextMessageID textMessage = (TextMessageID)del_comm.manageFCUInput();
     handleDelMessage(textMessage);
     
-    del_comm.sendCommand(camera_switch);  
+    // del_comm.sendCommand(camera_switch);  
 }
 
 void GCS::handleDelMessage(TextMessageID msg)
 {
     switch (msg)
     {
-        case SamplingCompleted:
-            gcs().send_text(MAV_SEVERITY_INFO, "#Sampling completed");
-            gcs().set_log_sample_data();
-            break;
-        case CalibrationStarted:
-            gcs().send_text(MAV_SEVERITY_INFO, "#Calibration started");
-            break;
+        // case SamplingCompleted:
+        //     gcs().send_text(MAV_SEVERITY_INFO, "#Sampling completed");
+        //     gcs().set_log_sample_data();
+        //     break;
+        // case CalibrationStarted:
+        //     gcs().send_text(MAV_SEVERITY_INFO, "#Calibration started");
+        //     break;
         case LowBattery:
             gcs().send_text(MAV_SEVERITY_INFO, "#Low battery");
             break;
-        case SawNotConnected:
-            gcs().send_text(MAV_SEVERITY_ALERT, "Saw not connected");
-            break;
-        case SawJammed:
-            gcs().send_text(MAV_SEVERITY_ALERT, "Saw jammed during the cutting sequence");
-            break;
-        case SawHighCurrent:
-            gcs().send_text(MAV_SEVERITY_ALERT, "Saw high current protection triggered");
-            break;
-        case SamplingStucked:
-            gcs().send_text(MAV_SEVERITY_ALERT, "Unable to complete the sampling sequence");
-            break;
-        case NoCalibration:
-            gcs().send_text(MAV_SEVERITY_ALERT, "The cutting sequence needs to be stopped for calibration");
-            break;
+        // case SawNotConnected:
+        //     gcs().send_text(MAV_SEVERITY_ALERT, "Saw not connected");
+        //     break;
+        // case SawJammed:
+        //     gcs().send_text(MAV_SEVERITY_ALERT, "Saw jammed during the cutting sequence");
+        //     break;
+        // case SawHighCurrent:
+        //     gcs().send_text(MAV_SEVERITY_ALERT, "Saw high current protection triggered");
+        //     break;
+        // case SamplingStucked:
+        //     gcs().send_text(MAV_SEVERITY_ALERT, "Unable to complete the sampling sequence");
+        //     break;
+        // case NoCalibration:
+        //     gcs().send_text(MAV_SEVERITY_ALERT, "The cutting sequence needs to be stopped for calibration");
+        //     break;
         default:
             break;
     }  
@@ -4773,17 +4773,19 @@ void GCS_MAVLINK::send_attitude() const
 {
     Vector2f reach = gcs().get_platform_reach();
     Vector3f orientation = gcs().get_platform_orientation();
-    float length = float(gcs().get_rope_length());
-    float distance = gcs().get_rangefinder_distance();
-    distance = distance>RANGEFINDER_OFFSET?distance-RANGEFINDER_OFFSET:0.0f;
+    // float length = float(gcs().get_rope_length());
+    // float distance = gcs().get_rangefinder_distance();
+    // distance = distance>RANGEFINDER_OFFSET?distance-RANGEFINDER_OFFSET:0.0f;
+    float distance = 0.0f;
 
-    float forward_reach = (length*sinf(orientation.y) + distance*cosf(orientation.y)) / (length*sinf(reach.y));
+    // float forward_reach = (length*sinf(orientation.y) + distance*cosf(orientation.y)) / (length*sinf(reach.y));
+    float forward_reach = 0.0f;
 
     mavlink_msg_attitude_send(
         chan,
         AP_HAL::millis(),
         -(orientation.x/reach.x),
-        (orientation.y/reach.y),
+        (orientation.y/(2*reach.y) + reach.y),
         orientation.z,
         distance,
         forward_reach,

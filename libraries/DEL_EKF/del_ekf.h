@@ -110,7 +110,9 @@ private:
     Mat H_yaw;
     
     Mat k_lqr_multi;
-    Mat k_lqr;    
+    Mat k_lqr_taxi_multi;
+    Mat k_lqr;   
+    Mat k_lqr_taxi; 
 };
 
 #endif

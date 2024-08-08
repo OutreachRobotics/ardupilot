@@ -202,7 +202,7 @@ void ModeSport::run()
             }
             else if(!motors->get_coax_enable() && attitude_control->getDelEKFOrientation().y>COAX_ANGLE_MIN && attitude_control->getPitchCommand()>COAX_ANGLE_MAX)
             {
-                motors->set_coax_enable(true);
+                motors->set_coax_enable(false);
             }
             attitude_control->deleaves_controller_step_LQR(lateral_target, forward_target, yaw_input, thrust_input, motors->armed());
         }

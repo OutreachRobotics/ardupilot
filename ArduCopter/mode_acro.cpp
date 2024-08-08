@@ -6,7 +6,7 @@
  */
 bool ModeAcro::init(bool ignore_checks)
 {
-    motors->set_coax_enable(true);
+    motors->set_coax_enable(false);
     return true;
 }
 

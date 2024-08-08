@@ -45,7 +45,8 @@ void ModeAltHold::run()
 
     lateral_input = -(float(channel_roll->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT; // Exemple: channel=0.3 range -1 to 1 so 1.3/2=65% 65-50/50=0.3
     pitch_input = -(float(channel_pitch->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
-    yaw_input = hal.rcin->read(WRIST_CHANNEL) < MID_PPM_VALUE ? (float(channel_yaw->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT : 0.0f;
+    // yaw_input = hal.rcin->read(WRIST_CHANNEL) < MID_PPM_VALUE ? (float(channel_yaw->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT : 0.0f;
+    yaw_input = (float(channel_yaw->percent_input()) - MID_RC_INPUT) / MID_RC_INPUT;
     thrust_input = float(channel_throttle->percent_input()) / MAX_RC_INPUT;
 
     if (!motors->armed()) {
@@ -74,7 +75,7 @@ void ModeAltHold::run()
             }
             else if(!motors->get_coax_enable() && attitude_control->getDelEKFOrientation().y>COAX_ANGLE_MIN && attitude_control->getPitchCommand()>COAX_ANGLE_MAX)
             {
-                motors->set_coax_enable(true);
+                motors->set_coax_enable(false);
             }
             attitude_control->deleaves_controller_angVelHold_LQR(lateral_input, pitch_input, yaw_input, thrust_input, motors->armed());
         }
