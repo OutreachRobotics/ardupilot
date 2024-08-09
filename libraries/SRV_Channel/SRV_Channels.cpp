@@ -47,9 +47,9 @@ SRV_Channels *SRV_Channels::_singleton;
 AP_Volz_Protocol *SRV_Channels::volz_ptr;
 AP_SBusOut *SRV_Channels::sbus_ptr;
 AP_RobotisServo *SRV_Channels::robotis_ptr;
-#if HAL_AP_FETTEC_ONEWIRE_ENABLED
-AP_FETtecOneWire *SRV_Channels::fetteconwire_ptr;
-#endif
+// #if HAL_AP_FETTEC_ONEWIRE_ENABLED
+// AP_FETtecOneWire *SRV_Channels::fetteconwire_ptr;
+// #endif
 #endif // HAL_BUILD_AP_PERIPH
 
 #if AP_FETTEC_ONEWIRE_ENABLED

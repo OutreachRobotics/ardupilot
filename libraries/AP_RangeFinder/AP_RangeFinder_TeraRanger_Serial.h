@@ -22,7 +22,7 @@ private:
 
     // get a reading
     // distance returned in reading_m
-    bool get_reading(uint16_t &reading_cm) override;
+    bool get_reading(uint16_t &reading_cm);
 
     uint8_t linebuf[10];
     uint8_t linebuf_len;

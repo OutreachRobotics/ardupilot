@@ -134,21 +134,23 @@ struct PACKED log_SAMPLE {
 void Copter::Log_Write_PLANT()
 {
     Vector3f local_position;
-    ahrs.get_relative_position_NED_origin(local_position);
+    bool ret = ahrs.get_relative_position_NED_origin(local_position);
 
-    struct log_SAMPLE pkt = {
-        LOG_PACKET_HEADER_INIT(LOG_SAMPLE_MSG),
-        time_us  : AP_HAL::micros64(),
-        lon : gps.location().lng,
-        lat : gps.location().lat,
-        alt : gps.location().alt/100,
-        status : gps.status(),
-        sat_count : gps.num_sats(),
-        x : local_position.x,
-        y : local_position.y,
-        z : local_position.z
-    };
-    logger.WriteBlock(&pkt, sizeof(pkt));
+    if(ret) {
+        struct log_SAMPLE pkt = {
+            LOG_PACKET_HEADER_INIT(LOG_SAMPLE_MSG),
+            time_us  : AP_HAL::micros64(),
+            lon : gps.location().lng,
+            lat : gps.location().lat,
+            alt : gps.location().alt/100,
+            status : gps.status(),
+            sat_count : gps.num_sats(),
+            x : local_position.x,
+            y : local_position.y,
+            z : local_position.z
+        };
+        logger.WriteBlock(&pkt, sizeof(pkt));
+    }
 };
 
 struct PACKED log_SAMBA_EKF {

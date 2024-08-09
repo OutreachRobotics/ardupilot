@@ -65,28 +65,28 @@ public:
     AP_AHRS_NavEKF &operator=(const AP_AHRS_NavEKF&) = delete;
 
     // return the smoothed gyro vector corrected for drift
-    const Vector3f &get_gyro(void) const override;
-    const Matrix3f &get_rotation_body_to_ned(void) const override;
+    const Vector3f &get_gyro(void) const ;
+    const Matrix3f &get_rotation_body_to_ned(void) const ;
 
     // return the current drift correction integrator value
-    const Vector3f &get_gyro_drift(void) const override;
+    const Vector3f &get_gyro_drift(void) const ;
 
     // reset the current gyro drift estimate
     //  should be called if gyro offsets are recalculated
     void reset_gyro_drift() override;
 
-    void            update(bool skip_ins_update=false) override;
-    void            reset(bool recover_eulers = false) override;
+    void            update(bool skip_ins_update=false) ;
+    void            reset(bool recover_eulers = false) ;
 
     // dead-reckoning support
-    bool get_position(struct Location &loc) const override;
+    bool get_position(struct Location &loc) const ;
 
     // get latest altitude estimate above ground level in meters and validity flag
     bool get_hagl(float &hagl) const override WARN_IF_UNUSED;
 
     // status reporting of estimated error
-    float           get_error_rp() const override;
-    float           get_error_yaw() const override;
+    float           get_error_rp() const ;
+    float           get_error_yaw() const ;
 
     // return a wind estimation vector, in m/s
     Vector3f wind_estimate() const override;
@@ -125,25 +125,25 @@ public:
     bool get_quaternion(Quaternion &quat) const override WARN_IF_UNUSED;
 
     // return secondary attitude solution if available, as eulers in radians
-    bool get_secondary_attitude(Vector3f &eulers) const override;
+    bool get_secondary_attitude(Vector3f &eulers) const ;
 
     // return secondary attitude solution if available, as quaternion
-    bool get_secondary_quaternion(Quaternion &quat) const override;
+    bool get_secondary_quaternion(Quaternion &quat) const ;
 
     // return secondary position solution if available
-    bool get_secondary_position(struct Location &loc) const override;
+    bool get_secondary_position(struct Location &loc) const ;
 
     // EKF has a better ground speed vector estimate
     Vector2f groundspeed_vector() override;
 
-    const Vector3f &get_accel_ef(uint8_t i) const override;
-    const Vector3f &get_accel_ef() const override;
+    const Vector3f &get_accel_ef(uint8_t i) const ;
+    const Vector3f &get_accel_ef() const ;
 
     // Retrieves the corrected NED delta velocity in use by the inertial navigation
     void getCorrectedDeltaVelocityNED(Vector3f& ret, float& dt) const override;
 
     // blended accelerometer values in the earth frame in m/s/s
-    const Vector3f &get_accel_ef_blended() const override;
+    const Vector3f &get_accel_ef_blended() const ;
 
     // set the EKF's origin location in 10e7 degrees.  This should only
     // be called when the EKF has no absolute position reference (i.e. GPS)
@@ -159,22 +159,22 @@ public:
 
     // return the relative position NED to either home or origin
     // return true if the estimate is valid
-    bool get_relative_position_NED_home(Vector3f &vec) const override;
+    bool get_relative_position_NED_home(Vector3f &vec) const ;
     bool get_relative_position_NED_origin(Vector3f &vec) const override;
 
     // return the relative position NE to either home or origin
     // return true if the estimate is valid
-    bool get_relative_position_NE_home(Vector2f &posNE) const override;
+    bool get_relative_position_NE_home(Vector2f &posNE) const ;
     bool get_relative_position_NE_origin(Vector2f &posNE) const override;
 
     // return the relative position down to either home or origin
     // baro will be used for the _home relative one if the EKF isn't
-    void get_relative_position_D_home(float &posD) const override;
+    void get_relative_position_D_home(float &posD) const ;
     bool get_relative_position_D_origin(float &posD) const override;
 
     // Get a derivative of the vertical position in m/s which is kinematically consistent with the vertical position is required by some control loops.
     // This is different to the vertical velocity from the EKF which is not always consistent with the vertical position due to the various errors that are being corrected for.
-    bool get_vert_pos_rate(float &velocity) const;
+    bool get_vert_pos_rate(float &velocity) const override;
 
     // write optical flow measurements to EKF
     void writeOptFlowMeas(const uint8_t rawFlowQuality, const Vector2f &rawFlowRates, const Vector2f &rawGyroRates, const uint32_t msecFlowMeas, const Vector3f &posOffset);
@@ -186,10 +186,10 @@ public:
     void writeDefaultAirSpeed(float airspeed, float uncertainty);
 
     // Write position and quaternion data from an external navigation system
-    void writeExtNavData(const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint16_t delay_ms, uint32_t resetTime_ms) override;
+    void writeExtNavData(const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint16_t delay_ms, uint32_t resetTime_ms) ;
 
     // Write velocity data from an external navigation system
-    void writeExtNavVelData(const Vector3f &vel, float err, uint32_t timeStamp_ms, uint16_t delay_ms) override;
+    void writeExtNavVelData(const Vector3f &vel, float err, uint32_t timeStamp_ms, uint16_t delay_ms) ;
 
     // get speed limits and controller scaling
     void getEkfControlLimits(float &ekfGndSpdLimit, float &ekfNavVelGainScaler) const;
@@ -206,7 +206,7 @@ public:
     bool initialised() const override;
 
     // get_filter_status - returns filter status as a series of flags
-    bool get_filter_status(nav_filter_status &status) const;
+    bool get_filter_status(nav_filter_status &status) const override;
 
     // get compass offset estimates
     // true if offsets are valid
@@ -239,7 +239,7 @@ public:
     bool resetHeightDatum() override;
 
     // send a EKF_STATUS_REPORT for current EKF
-    void send_ekf_status_report(mavlink_channel_t chan) const;
+    void send_ekf_status_report(mavlink_channel_t chan) const override;
 
     // get_hgt_ctrl_limit - get maximum height to be observed by the control loops in meters and a validity flag
     // this is used to limit height during optical flow navigation
@@ -254,7 +254,7 @@ public:
     // calculated location including absolute altitude
     // returns true on success (i.e. the EKF knows it's latest
     // position), false on failure
-    bool get_location(struct Location &loc) const;
+    bool get_location(struct Location &loc) const override;
 
     // return the innovations for the specified instance
     // An out of range instance (eg -1) returns data for the primary instance
@@ -274,7 +274,7 @@ public:
     bool get_vel_innovations_and_variances_for_source(uint8_t source, Vector3f &innovations, Vector3f &variances) const override WARN_IF_UNUSED;
 
     // returns the expected NED magnetic field
-    bool get_mag_field_NED(Vector3f& ret) const;
+    bool get_mag_field_NED(Vector3f& ret) const override;
 
     // returns the estimated magnetic field offsets in body frame
     bool get_mag_field_correction(Vector3f &ret) const override;
@@ -309,13 +309,13 @@ public:
     void Log_Write();
 
     // check whether external navigation is providing yaw.  Allows compass pre-arm checks to be bypassed
-    bool is_ext_nav_used_for_yaw(void) const override;
+    bool is_ext_nav_used_for_yaw(void) const ;
 
     // set and save the ALT_M_NSE parameter value
-    void set_alt_measurement_noise(float noise) override;
+    void set_alt_measurement_noise(float noise) ;
 
     // active EKF type for logging
-    uint8_t get_active_AHRS_type(void) const override {
+    uint8_t get_active_AHRS_type(void) const  {
         return uint8_t(active_EKF_type());
     }
 

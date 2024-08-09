@@ -37,6 +37,7 @@ public:
         ICM42605,
         ICM40605,
         IIM42652,
+        ICM42670,
     };
 
     // acclerometers on Invensense sensors will return values up to 32G

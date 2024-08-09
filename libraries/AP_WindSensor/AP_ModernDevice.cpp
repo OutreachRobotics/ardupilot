@@ -70,14 +70,14 @@ void AP_ModernDevice::update_speed()
     // only read temp pin if defined, sensor will do OK assuming constant temp
     float temp_ambient = 28.0f; // equations were generated at this temp in above data sheet
     if (_speed_sensor_temp_pin > 0) {
-        _temp_analog_source->set_pin(_speed_sensor_temp_pin);
+        // _temp_analog_source->set_pin(_speed_sensor_temp_pin);
         _temp_voltage = _temp_analog_source->voltage_average();
         temp_ambient = (_temp_voltage - 0.4f) / 0.0195f; // deg C
         // constrain to reasonable range to avoid deviating from calibration too much and potential divide by zero
         temp_ambient = constrain_float(temp_ambient, 10.0f, 40.0f);
     }
 
-    _speed_analog_source->set_pin(_speed_sensor_speed_pin);
+    // _speed_analog_source->set_pin(_speed_sensor_speed_pin);
     _wind_voltage = _speed_analog_source->voltage_average();
 
     float analog_voltage;
@@ -95,7 +95,7 @@ void AP_ModernDevice::update_speed()
 
 void AP_ModernDevice::calibrate()
 {
-    _speed_analog_source->set_pin(_speed_sensor_speed_pin);
+    // _speed_analog_source->set_pin(_speed_sensor_speed_pin);
     _speed_sensor_voltage_offset = _speed_analog_source->voltage_average();
 }
 

@@ -71,7 +71,7 @@ void Copter::update_land_detector()
                                     || ((!force_flying || landing) && motors->limit.throttle_lower && pos_control->get_vel_desired_cms().z < 0.0f);
 #else
         // check that the average throttle output is near minimum (less than 12.5% hover throttle)
-        bool motor_at_lower_limit = motors->limit.throttle_lower && attitude_control->is_throttle_mix_min();
+        // bool motor_at_lower_limit = motors->limit.throttle_lower && attitude_control->is_throttle_mix_min();
 #endif
 
 //         // check that the airframe is not accelerating (not falling or braking after fast forward flight)
@@ -81,7 +81,7 @@ void Copter::update_land_detector()
 //         bool descent_rate_low = fabsf(inertial_nav.get_velocity_z()) < 100;
 
         // check that vertical speed is within 1m/s of zero
-        bool descent_rate_low = fabsf(inertial_nav.get_velocity_z_up_cms()) < 100 * land_detector_scalar;
+        // bool descent_rate_low = fabsf(inertial_nav.get_velocity_z_up_cms()) < 100 * 10;
 
 //         if (motor_at_lower_limit && accel_stationary && descent_rate_low && rangefinder_check) {
 //             // landed criteria met - increment the counter and check if we've triggered

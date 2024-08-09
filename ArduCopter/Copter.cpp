@@ -176,9 +176,9 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_Camera,            &copter.camera,              update,          50,  75, 111),
 #endif
 #if LOGGING_ENABLED == ENABLED
-    SCHED_TASK(ten_hz_logging_loop,   10,    350),
-    SCHED_TASK(fifty_hz_logging, 50,    800),
-    SCHED_TASK_CLASS(AP_Logger,      &copter.logger,           periodic_tasks, 400, 300),
+    SCHED_TASK(ten_hz_logging_loop,   10,    350, 99),
+    SCHED_TASK(fifty_hz_logging, 50,    800, 99),
+    SCHED_TASK_CLASS(AP_Logger,      &copter.logger,           periodic_tasks, 400, 300, 99),
 #endif
     SCHED_TASK_CLASS(AP_InertialSensor,    &copter.ins,                 periodic,       400,  50, 123),
 

@@ -124,8 +124,8 @@ enum LoggingParameters {
      LOG_SAMBA_MSG,
      LOG_SAMPLE_MSG,
      LOG_SAMBA_EKF_MSG,
-     LOG_WIND_MSG
-     LOG_GUIDED_ATTITUDE_TARGET_MSG
+     LOG_WIND_MSG,
+     LOG_GUIDED_ATTITUDE_TARGET_MSG,
 };
 
 #define MASK_LOG_ATTITUDE_FAST          (1<<0)

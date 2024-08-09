@@ -1253,9 +1253,6 @@ public:
     bool get_wp(Location &loc) const override;
 
     bool use_pilot_yaw() const override;
-
-    bool use_pilot_yaw() const override;
-
     // RTL states
     enum class SubMode : uint8_t {
         STARTING,
