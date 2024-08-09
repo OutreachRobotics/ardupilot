@@ -61,7 +61,6 @@ uint8_t DEL_Comm::manageSamplerInput()
 
 uint8_t DEL_Comm::manageFCUInput()
 {
-    hal.console->printf("TESTTEST\r\n");
     while(fcu_port->available()>1)
     {
         uint8_t temp = fcu_port->read();

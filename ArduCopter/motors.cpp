@@ -15,8 +15,7 @@ void Copter::arm_motors_check()
 
     // check if arming/disarm using rudder is allowed
     AP_Arming::RudderArming arming_rudder = arming.get_rudder_arming_type();
-    // if (arming_rudder == AP_Arming::RudderArming::IS_DISABLED) {
-    if (true) {
+    if (arming_rudder == AP_Arming::RudderArming::IS_DISABLED) {
         return;
     }
 

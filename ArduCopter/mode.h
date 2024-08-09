@@ -335,8 +335,6 @@ protected:
     // inputs are -1 to 1 and the function returns desired angle rates in centi-degrees-per-second
     void get_pilot_desired_angle_rates(float roll_in, float pitch_in, float yaw_in, float &roll_out, float &pitch_out, float &yaw_out);
 
-    float throttle_hover() const override;
-
 private:
     bool disable_air_mode_reset;
 };
