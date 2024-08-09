@@ -14,13 +14,14 @@
 #include <AP_MSP/AP_MSP.h>
 #include <AP_MSP/msp.h>
 #include "../AP_Bootloader/app_comms.h"
+#include <AP_CheckFirmware/AP_CheckFirmware.h>
 #include "hwing_esc.h"
 #include <AP_CANManager/AP_CANManager.h>
+#include <AP_Scripting/AP_Scripting.h>
+#include <AP_HAL/CANIface.h>
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
-#include <AP_HAL_ChibiOS/CANIface.h>
-#elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
-#include <AP_HAL_SITL/CANSocketIface.h>
+#if HAL_GCS_ENABLED
+#include "GCS_MAVLink.h"
 #endif
 
 #if defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_NCP5623_LED_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_NCP5623_BGR_LED_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_TOSHIBA_LED_WITHOUT_NOTIFY)
@@ -28,7 +29,7 @@
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
-    #ifndef HAL_PERIPH_ENABLE_RC_OUT
+    #if !defined(HAL_PERIPH_ENABLE_RC_OUT) && !defined(HAL_PERIPH_NOTIFY_WITHOUT_RCOUT)
         #error "HAL_PERIPH_ENABLE_NOTIFY requires HAL_PERIPH_ENABLE_RC_OUT"
     #endif
     #ifdef HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY
@@ -41,11 +42,6 @@
         #error "You cannot use HAL_PERIPH_ENABLE_NOTIFY and HAL_PERIPH_NEOPIXEL_CHAN_WITHOUT_NOTIFY at the same time. Notify already includes it. Set param OUTx_FUNCTION=120"
     #endif
 #endif
-
-#if defined(HAL_PERIPH_ENABLE_BATTERY_MPPT_PACKETDIGITAL) && HAL_MAX_CAN_PROTOCOL_DRIVERS < 2
-#error "Battery MPPT PacketDigital driver requires at least two CAN Ports"
-#endif
-
 
 #include "Parameters.h"
 
@@ -81,6 +77,8 @@ public:
     void can_update();
     void can_mag_update();
     void can_gps_update();
+    void send_moving_baseline_msg();
+    void send_relposheading_msg();
     void can_baro_update();
     void can_airspeed_update();
     void can_rangefinder_update();
@@ -103,6 +101,9 @@ public:
 
 #ifdef HAL_PERIPH_ENABLE_GPS
     AP_GPS gps;
+#if HAL_NUM_CAN_IFACES >= 2
+    int8_t gps_mb_can_port = -1;
+#endif
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_MAG
@@ -126,7 +127,7 @@ public:
 #if HAL_NUM_CAN_IFACES >= 2
     // This allows you to change the protocol and it continues to use the one at boot.
     // Without this, changing away from UAVCAN causes loss of comms and you can't
-    // change the rest of your params or veryofy it suceeded.
+    // change the rest of your params or verify it succeeded.
     AP_CANManager::Driver_Type can_protocol_cached[HAL_NUM_CAN_IFACES];
 #endif
 
@@ -185,6 +186,12 @@ public:
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
+#if HAL_WITH_ESC_TELEM
+    AP_ESC_Telem esc_telem;
+    uint32_t last_esc_telem_update_ms;
+    void esc_telem_update();
+#endif
+
     SRV_Channels servo_channels;
     bool rcout_has_new_data_to_update;
 
@@ -203,6 +210,21 @@ public:
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
     // notification object for LEDs, buzzers etc
     AP_Notify notify;
+    uint64_t vehicle_state = 1; // default to initialisation
+    float yaw_earth;
+    uint32_t last_vehicle_state;
+
+    // Handled under LUA script to control LEDs
+    float get_yaw_earth() { return yaw_earth; }
+    uint32_t get_vehicle_state() { return vehicle_state; }
+#elif defined(AP_SCRIPTING_ENABLED)
+    // create dummy methods for the case when the user doesn't want to use the notify object
+    float get_yaw_earth() { return 0.0; }
+    uint32_t get_vehicle_state() { return 0.0; }
+#endif
+
+#if AP_SCRIPTING_ENABLED
+    AP_Scripting scripting;
 #endif
 
 #if HAL_LOGGING_ENABLED
@@ -210,6 +232,9 @@ public:
     AP_Logger logger;
 #endif
 
+#if HAL_GCS_ENABLED
+    GCS_Periph _gcs;
+#endif
     // setup the var_info table
     AP_Param param_loader{var_info};
 
@@ -219,11 +244,14 @@ public:
     uint32_t last_gps_update_ms;
     uint32_t last_baro_update_ms;
     uint32_t last_airspeed_update_ms;
+    bool saw_gps_lock_once;
 
     static AP_Periph_FW *_singleton;
 
     // show stack as DEBUG msgs
     void show_stack_free();
+
+    static bool no_iface_finished_dna;
 };
 
 namespace AP
@@ -234,6 +262,6 @@ namespace AP
 extern AP_Periph_FW periph;
 
 extern "C" {
-void can_printf(const char *fmt, ...);
+void can_printf(const char *fmt, ...) FMT_PRINTF(1,2);
 }
 

@@ -13,9 +13,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 /*
-  driver for all supported Invensense IMUs, including MPU6000, MPU9250
-  ICM-20608 and ICM-20602
+  driver for all supported Invensense IMUs, including
+  MPU6000, MPU9250,  ICM20608, ICM20602, ICM20601, ICM20789, ICM20689
  */
+#define AP_INLINE_VECTOR_OPS
 
 #include <assert.h>
 #include <utility>
@@ -422,10 +423,11 @@ bool AP_InertialSensor_Invensense::get_output_banner(char* banner, uint8_t banne
     return false;
 }
 
+
 /*
   publish any pending data
  */
-bool AP_InertialSensor_Invensense::update()
+bool AP_InertialSensor_Invensense::update() /* front end */
 {
     update_accel(_accel_instance);
     update_gyro(_gyro_instance);
@@ -757,7 +759,9 @@ check_registers:
               events to help with log analysis, but don't shout at the
               GCS to prevent possible flood
             */
+#if HAL_LOGGING_ENABLED
             AP::logger().Write_MessageF("ICM20602 yofs fix: %x %x", y_ofs, _saved_y_ofs_high);
+#endif
             _register_write(MPUREG_ACC_OFF_Y_H, _saved_y_ofs_high);
         }
     }

@@ -28,7 +28,13 @@
 #define AP_MISSION_EEPROM_VERSION           0x65AE  // version number stored in first four bytes of eeprom.  increment this by one when eeprom format is changed
 #define AP_MISSION_EEPROM_COMMAND_SIZE      15      // size in bytes of all mission commands
 
+#ifndef AP_MISSION_MAX_NUM_DO_JUMP_COMMANDS
+#if HAL_MEM_CLASS >= HAL_MEM_CLASS_500
+#define AP_MISSION_MAX_NUM_DO_JUMP_COMMANDS 100     // allow up to 100 do-jump commands
+#else
 #define AP_MISSION_MAX_NUM_DO_JUMP_COMMANDS 15      // allow up to 15 do-jump commands
+#endif
+#endif
 
 #define AP_MISSION_JUMP_REPEAT_FOREVER      -1      // when do-jump command's repeat count is -1 this means endless repeat
 
@@ -215,6 +221,14 @@ public:
         float p3;
     };
 
+    // Scripting NAV command (with verify)
+    struct PACKED nav_script_time_Command {
+        uint8_t command;
+        uint8_t timeout_s;
+        float arg1;
+        float arg2;
+    };
+    
     union Content {
         // jump structure
         Jump_Command jump;
@@ -285,6 +299,9 @@ public:
         // do scripting
         scripting_Command scripting;
 
+        // nav scripting
+        nav_script_time_Command nav_script_time;
+        
         // location
         Location location{};      // Waypoint location
     };
@@ -295,6 +312,10 @@ public:
         uint16_t id;                // mavlink command id
         uint16_t p1;                // general purpose parameter 1
         Content content;
+
+        // for items which store in location, we offer a few more bits
+        // of storage:
+        uint8_t type_specific_bits;  // bitmask of set/unset bits
 
         // return a human-readable interpretation of the ID stored in this command
         const char *type() const;
@@ -532,7 +553,7 @@ public:
     // find the nearest landing sequence starting point (DO_LAND_START) and
     // return its index.  Returns 0 if no appropriate DO_LAND_START point can
     // be found.
-    uint16_t get_landing_sequence_start() const;
+    uint16_t get_landing_sequence_start();
 
     // find the nearest landing sequence starting point (DO_LAND_START) and
     // switch to that mission item.  Returns false if no DO_LAND_START
@@ -577,9 +598,11 @@ public:
 
     /*
       return true if MIS_OPTIONS is set to allow continue of mission
-      logic after a land. If this is false then after a landing is
-      complete the vehicle should disarm and mission logic should stop
+      logic after a land and the next waypoint is a takeoff. If this
+      is false then after a landing is complete the vehicle should 
+      disarm and mission logic should stop
      */
+    bool continue_after_land_check_for_takeoff(void);
     bool continue_after_land(void) const {
         return (_options.get() & AP_MISSION_MASK_CONTINUE_AFTER_LAND) != 0;
     }
@@ -675,6 +698,9 @@ private:
 
     /// sanity checks that the masked fields are not NaN's or infinite
     static MAV_MISSION_RESULT sanity_check_params(const mavlink_mission_item_int_t& packet);
+
+    /// check if the next nav command is a takeoff, skipping delays
+    bool is_takeoff_next(uint16_t start_index);
 
     // pointer to main program functions
     mission_cmd_fn_t        _cmd_start_fn;  // pointer to function which will be called when a new command is started

@@ -7,8 +7,6 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Terrain/AP_Terrain.h>
 
-AP_Terrain *Location::_terrain = nullptr;
-
 /// constructors
 Location::Location()
 {
@@ -138,7 +136,11 @@ bool Location::get_alt_cm(AltFrame desired_frame, int32_t &ret_alt_cm) const
     float alt_terr_cm = 0;
     if (frame == AltFrame::ABOVE_TERRAIN || desired_frame == AltFrame::ABOVE_TERRAIN) {
 #if AP_TERRAIN_AVAILABLE
-        if (_terrain == nullptr || !_terrain->height_amsl(*this, alt_terr_cm, true)) {
+        AP_Terrain *terrain = AP::terrain();
+        if (terrain == nullptr) {
+            return false;
+        }
+        if (!terrain->height_amsl(*this, alt_terr_cm)) {
             return false;
         }
         // convert terrain alt to cm
@@ -242,6 +244,16 @@ ftype Location::get_distance(const struct Location &loc2) const
     return norm(dlat, dlng) * LOCATION_SCALING_FACTOR;
 }
 
+// return the altitude difference in meters taking into account alt frame.
+bool Location::get_alt_distance(const struct Location &loc2, ftype &distance) const
+{
+    int32_t alt1, alt2;
+    if (!get_alt_cm(AltFrame::ABSOLUTE, alt1) || !loc2.get_alt_cm(AltFrame::ABSOLUTE, alt2)) {
+        return false;
+    }
+    distance = (alt1 - alt2) * 0.01;
+    return true;
+}
 
 /*
   return the distance in meters in North/East plane as a N/E vector
@@ -253,7 +265,7 @@ Vector2f Location::get_distance_NE(const Location &loc2) const
                     diff_longitude(loc2.lng,lng) * LOCATION_SCALING_FACTOR * longitude_scale((loc2.lat+lat)/2));
 }
 
-// return the distance in meters in North/East/Down plane as a N/E/D vector to loc2
+// return the distance in meters in North/East/Down plane as a N/E/D vector to loc2, NOT CONSIDERING ALT FRAME!
 Vector3f Location::get_distance_NED(const Location &loc2) const
 {
     return Vector3f((loc2.lat - lat) * LOCATION_SCALING_FACTOR,
@@ -317,7 +329,7 @@ void Location::offset_bearing_and_pitch(ftype bearing_deg, ftype pitch_deg, ftyp
     const ftype ofs_north =  cosF(radians(pitch_deg)) * cosF(radians(bearing_deg)) * distance;
     const ftype ofs_east  =  cosF(radians(pitch_deg)) * sinF(radians(bearing_deg)) * distance;
     offset(ofs_north, ofs_east);
-    const int32_t dalt =  sinf(radians(pitch_deg)) * distance *100.0f;
+    const int32_t dalt =  sinF(radians(pitch_deg)) * distance *100.0f;
     alt += dalt; 
 }
 
@@ -362,14 +374,18 @@ bool Location::sanitize(const Location &defaultLoc)
 assert_storage_size<Location, 16> _assert_storage_size_Location;
 
 
-// return bearing in centi-degrees from location to loc2
-int32_t Location::get_bearing_to(const struct Location &loc2) const
+// return bearing in radians from location to loc2, return is 0 to 2*Pi
+ftype Location::get_bearing(const struct Location &loc2) const
 {
     const int32_t off_x = diff_longitude(loc2.lng,lng);
     const int32_t off_y = (loc2.lat - lat) / loc2.longitude_scale((lat+loc2.lat)/2);
+<<<<<<< HEAD
     int32_t bearing = 9000 + atan2f(-off_y, off_x) * DEGX100;
+=======
+    ftype bearing = (M_PI*0.5) + atan2F(-off_y, off_x);
+>>>>>>> Copter-4.2.3
     if (bearing < 0) {
-        bearing += 36000;
+        bearing += 2*M_PI;
     }
     return bearing;
 }

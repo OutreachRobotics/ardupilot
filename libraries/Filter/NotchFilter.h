@@ -50,9 +50,6 @@ private:
  */
 class NotchFilterParams {
 public:
-    NotchFilterParams(void);
-    static const struct AP_Param::GroupInfo var_info[];
-
     float center_freq_hz(void) const { return _center_freq_hz; }
     float bandwidth_hz(void) const { return _bandwidth_hz; }
     float attenuation_dB(void) const { return _attenuation_dB; }
@@ -66,5 +63,6 @@ protected:
 };
 
 typedef NotchFilter<float> NotchFilterFloat;
+typedef NotchFilter<Vector2f> NotchFilterVector2f;
 typedef NotchFilter<Vector3f> NotchFilterVector3f;
 

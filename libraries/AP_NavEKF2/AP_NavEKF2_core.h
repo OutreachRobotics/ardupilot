@@ -184,10 +184,10 @@ public:
     void getQuaternion(Quaternion &quat) const;
 
     // return the innovations for the NED Pos, NED Vel, XYZ Mag and Vtas measurements
-    void  getInnovations(Vector3f &velInnov, Vector3f &posInnov, Vector3f &magInnov, float &tasInnov, float &yawInnov) const;
+    bool getInnovations(Vector3f &velInnov, Vector3f &posInnov, Vector3f &magInnov, float &tasInnov, float &yawInnov) const;
 
     // return the innovation consistency test ratios for the velocity, position, magnetometer and true airspeed measurements
-    void  getVariances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar, Vector2f &offset) const;
+    bool getVariances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar, Vector2f &offset) const;
 
     // should we use the compass? This is public so it can be used for
     // reporting via ahrs.use_compass()
@@ -327,6 +327,9 @@ public:
 
     void Log_Write(uint64_t time_us);
 
+    // get a yaw estimator instance
+    const EKFGSF_yaw *get_yawEstimator(void) const { return yawEstimator; }
+    
 private:
     EKFGSF_yaw *yawEstimator;
     AP_DAL &dal;
@@ -830,6 +833,7 @@ private:
     uint32_t lastPosPassTime_ms;    // time stamp when GPS position measurement last passed innovation consistency check (msec)
     uint32_t lastHgtPassTime_ms;    // time stamp when height measurement last passed innovation consistency check (msec)
     uint32_t lastTasPassTime_ms;    // time stamp when airspeed measurement last passed innovation consistency check (msec)
+    uint32_t lastTasFailTime_ms;    // time stamp when airspeed measurement last failed innovation consistency check (msec)
     uint32_t lastTimeGpsReceived_ms;// last time we received GPS data
     uint32_t timeAtLastAuxEKF_ms;   // last time the auxiliary filter was run to fuse range or optical flow measurements
     uint32_t lastHealthyMagTime_ms; // time the magnetometer was last declared healthy
@@ -1174,6 +1178,9 @@ private:
     uint32_t EKFGSF_yaw_reset_request_ms;   // timestamp of last emergency yaw reset request (uSec)
     uint8_t EKFGSF_yaw_reset_count;         // number of emergency yaw resets performed
     bool EKFGSF_run_filterbank;             // true when the filter bank is active
+
+    // logging timestamps
+    uint32_t lastTimingLogTime_ms;
 
     // logging functions shared by cores:
     void Log_Write_NKF1(uint64_t time_us) const;

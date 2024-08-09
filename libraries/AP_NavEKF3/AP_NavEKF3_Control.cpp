@@ -344,12 +344,12 @@ void NavEKF3_core::setAidingMode()
                 posTimeout = true;
                 velTimeout = true;
                 tasTimeout = true;
-                gpsNotAvailable = true;
+                gpsIsInUse = false;
              } else if (posAidLossCritical) {
                 // if the loss of position is critical, declare all sources of position aiding as being timed out
                 posTimeout = true;
                 velTimeout = !optFlowUsed && !gpsVelUsed && !bodyOdmUsed;
-                gpsNotAvailable = true;
+                gpsIsInUse = false;
 
             }
             break;
@@ -565,14 +565,13 @@ bool NavEKF3_core::use_compass(void) const
         return false;
     }
 
-    const auto *compass = dal.get_compass();
-    return compass &&
-           compass->use_for_yaw(magSelectIndex) &&
+    const auto &compass = dal.compass();
+    return compass.use_for_yaw(magSelectIndex) &&
            !allMagSensorsFailed;
 }
 
-// are we using a yaw source other than the magnetomer?
-bool NavEKF3_core::using_external_yaw(void) const
+// are we using (aka fusing) a non-compass yaw?
+bool NavEKF3_core::using_noncompass_for_yaw(void) const
 {
     const AP_NavEKF_Source::SourceYaw yaw_source = frontend->sources.getYawSource();
 #if EK3_FEATURE_EXTERNAL_NAV
@@ -584,6 +583,17 @@ bool NavEKF3_core::using_external_yaw(void) const
         yaw_source == AP_NavEKF_Source::SourceYaw::GSF || !use_compass()) {
         return imuSampleTime_ms - last_gps_yaw_ms < 5000 || imuSampleTime_ms - lastSynthYawTime_ms < 5000;
     }
+    return false;
+}
+
+// are we using (aka fusing) external nav for yaw?
+bool NavEKF3_core::using_extnav_for_yaw() const
+{
+#if EK3_FEATURE_EXTERNAL_NAV
+    if (frontend->sources.getYawSource() == AP_NavEKF_Source::SourceYaw::EXTNAV) {
+        return ((imuSampleTime_ms - last_extnav_yaw_fusion_ms < 5000) || (imuSampleTime_ms - lastSynthYawTime_ms < 5000));
+    }
+#endif
     return false;
 }
 
@@ -699,6 +709,10 @@ void  NavEKF3_core::updateFilterStatus(void)
     filterStatus.flags.using_gps = ((imuSampleTime_ms - lastPosPassTime_ms) < 4000) && (PV_AidingMode == AID_ABSOLUTE);
     filterStatus.flags.gps_glitching = !gpsAccuracyGood && (PV_AidingMode == AID_ABSOLUTE) && (frontend->sources.getPosXYSource() == AP_NavEKF_Source::SourceXY::GPS); // GPS glitching is affecting navigation accuracy
     filterStatus.flags.gps_quality_good = gpsGoodToAlign;
+    // for reporting purposes we report rejecting airspeed after 3s of not fusing when we want to fuse the data
+    filterStatus.flags.rejecting_airspeed = lastTasFailTime_ms != 0 &&
+                                            (imuSampleTime_ms - lastTasFailTime_ms) < 1000 &&
+                                            (imuSampleTime_ms - lastTasPassTime_ms) > 3000;
     filterStatus.flags.initalized = filterStatus.flags.initalized || healthy();
 }
 

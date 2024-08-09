@@ -70,9 +70,12 @@ bool Sub::set_home(const Location& loc, bool lock)
 
     // init inav and compass declination
     if (!home_was_set) {
+<<<<<<< HEAD
         // record home is set
         AP::logger().Write_Event(LogEvent::SET_HOME);
 
+=======
+>>>>>>> Copter-4.2.3
         // log new home position which mission library will pull from ahrs
         if (should_log(MASK_LOG_CMD)) {
             AP_Mission::Mission_Command temp_cmd;

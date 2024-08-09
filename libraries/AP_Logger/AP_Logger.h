@@ -11,11 +11,7 @@
 
 // set default for HAL_LOGGING_DATAFLASH_ENABLED
 #ifndef HAL_LOGGING_DATAFLASH_ENABLED
-    #ifdef HAL_LOGGING_DATAFLASH
-        #define HAL_LOGGING_DATAFLASH_ENABLED HAL_LOGGING_ENABLED
-    #else
-        #define HAL_LOGGING_DATAFLASH_ENABLED 0
-    #endif
+#define HAL_LOGGING_DATAFLASH_ENABLED (CONFIG_HAL_BOARD == HAL_BOARD_SITL)
 #endif
 
 #ifndef HAL_LOGGING_MAVLINK_ENABLED
@@ -30,29 +26,10 @@
     #endif
 #endif
 
-#ifndef HAL_LOGGING_SITL_ENABLED
-    #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        #define HAL_LOGGING_SITL_ENABLED HAL_LOGGING_ENABLED
-    #else
-        #define HAL_LOGGING_SITL_ENABLED 0
-    #endif
-#endif
-
-#if HAL_LOGGING_SITL_ENABLED || HAL_LOGGING_DATAFLASH_ENABLED
+#if HAL_LOGGING_DATAFLASH_ENABLED
     #define HAL_LOGGING_BLOCK_ENABLED 1
 #else
     #define HAL_LOGGING_BLOCK_ENABLED 0
-#endif
-
-// sanity checks:
-#if defined(HAL_LOGGING_DATAFLASH) && !HAL_LOGGING_DATAFLASH_ENABLED
-#error Can not default to dataflash if it is not enabled
-#endif
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-    #if HAL_LOGGING_DATAFLASH_ENABLED
-        #error DATAFLASH not supported on SITL; you probably mean SITL
-    #endif
 #endif
 
 #if HAL_LOGGING_FILESYSTEM_ENABLED
@@ -67,10 +44,13 @@
 
 #endif
 
+#ifndef HAL_LOGGER_FILE_CONTENTS_ENABLED
+#define HAL_LOGGER_FILE_CONTENTS_ENABLED HAL_LOGGING_FILESYSTEM_ENABLED
+#endif
+
 #include <AP_HAL/AP_HAL.h>
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_AHRS/AP_AHRS_DCM.h>
-#include <AP_AHRS/AP_AHRS_NavEKF.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_Mission/AP_Mission.h>
@@ -85,7 +65,6 @@
 #include <stdint.h>
 
 #include "LoggerMessageWriter.h"
-
 
 class AP_Logger_Backend;
 class AP_AHRS;
@@ -153,6 +132,12 @@ enum class LogEvent : uint8_t {
     FENCE_FLOOR_ENABLE = 80,
     FENCE_FLOOR_DISABLE = 81,
 
+    // if the EKF's source input set is changed (e.g. via a switch or
+    // a script), we log an event:
+    EK3_SOURCES_SET_TO_PRIMARY = 85,
+    EK3_SOURCES_SET_TO_SECONDARY = 86,
+    EK3_SOURCES_SET_TO_TERTIARY = 87,
+
     SURFACED = 163,
     NOT_SURFACED = 164,
     BOTTOMED = 165,
@@ -195,6 +180,7 @@ enum class LogErrorSubsystem : uint8_t {
     FAILSAFE_LEAK = 27,
     PILOT_INPUT = 28,
     FAILSAFE_VIBE = 29,
+    INTERNAL_ERROR = 30,
 };
 
 // bizarrely this enumeration has lots of duplicate values, offering
@@ -224,6 +210,8 @@ enum class LogErrorCode : uint8_t {
     FAILED_CIRCLE_INIT = 4,
     DEST_OUTSIDE_FENCE = 5,
     RTL_MISSING_RNGFND = 6,
+    // subsystem specific error codes -- internal_error
+    INTERNAL_ERRORS_DETECTED = 1,
 
 // parachute failed to deploy because of low altitude or landed
     PARACHUTE_TOO_LOW = 2,
@@ -241,6 +229,7 @@ enum class LogErrorCode : uint8_t {
 class AP_Logger
 {
     friend class AP_Logger_Backend; // for _num_types
+    friend class AP_Logger_RateLimiter;
 
 public:
     FUNCTOR_TYPEDEF(vehicle_startup_message_Writer, void);
@@ -308,7 +297,11 @@ public:
     void Write_Mode(uint8_t mode, const ModeReason reason);
 
     void Write_EntireMission();
-    void Write_Command(const mavlink_command_int_t &packet, MAV_RESULT result, bool was_command_long=false);
+    void Write_Command(const mavlink_command_int_t &packet,
+                       uint8_t source_system,
+                       uint8_t source_component,
+                       MAV_RESULT result,
+                       bool was_command_long=false);
     void Write_Mission_Cmd(const AP_Mission &mission,
                                const AP_Mission::Mission_Command &cmd);
     void Write_RPM(const AP_RPM &rpm_sensor);
@@ -327,9 +320,11 @@ public:
 
     void Write(const char *name, const char *labels, const char *fmt, ...);
     void Write(const char *name, const char *labels, const char *units, const char *mults, const char *fmt, ...);
+    void WriteStreaming(const char *name, const char *labels, const char *fmt, ...);
+    void WriteStreaming(const char *name, const char *labels, const char *units, const char *mults, const char *fmt, ...);
     void WriteCritical(const char *name, const char *labels, const char *fmt, ...);
     void WriteCritical(const char *name, const char *labels, const char *units, const char *mults, const char *fmt, ...);
-    void WriteV(const char *name, const char *labels, const char *units, const char *mults, const char *fmt, va_list arg_list, bool is_critical=false);
+    void WriteV(const char *name, const char *labels, const char *units, const char *mults, const char *fmt, va_list arg_list, bool is_critical=false, bool is_streaming=false);
 
     // This structure provides information on the internal member data of a PID for logging purposes
     struct PID_Info {
@@ -370,6 +365,7 @@ public:
 
     // accesss to public parameters
     void set_force_log_disarmed(bool force_logging) { _force_log_disarmed = force_logging; }
+    void set_long_log_persist(bool b) { _force_long_log_persist = b; }
     bool log_while_disarmed(void) const;
     uint8_t log_replay(void) const { return _params.log_replay; }
 
@@ -386,6 +382,9 @@ public:
         AP_Int8 mav_bufsize; // in kilobytes
         AP_Int16 file_timeout; // in seconds
         AP_Int16 min_MB_free;
+        AP_Float file_ratemax;
+        AP_Float mav_ratemax;
+        AP_Float blk_ratemax;
     } _params;
 
     const struct LogStructure *structure(uint16_t num) const;
@@ -401,7 +400,12 @@ public:
 
     // notify logging subsystem of an arming failure. This triggers
     // logging for HAL_LOGGER_ARM_PERSIST seconds
-    void arming_failure() { _last_arming_failure_ms = AP_HAL::millis(); }
+    void arming_failure() {
+        _last_arming_failure_ms = AP_HAL::millis();
+#if HAL_LOGGER_FILE_CONTENTS_ENABLED
+        file_content_prepare_for_arming = true;
+#endif
+    }
 
     void set_vehicle_armed(bool armed_state);
     bool vehicle_is_armed() const { return _armed; }
@@ -444,6 +448,9 @@ public:
     uint8_t get_log_start_count(void) const {
         return _log_start_count;
     }
+
+    // add a filename to list of files to log. The name must be a constant string, not allocated
+    void log_file_content(const char *name);
 
 protected:
 
@@ -520,6 +527,7 @@ private:
 
     bool _writes_enabled:1;
     bool _force_log_disarmed:1;
+    bool _force_long_log_persist:1;
 
     // remember formats for replay
     void save_format_Replay(const void *pBuffer);
@@ -529,7 +537,37 @@ private:
 
     void start_io_thread(void);
     void io_thread();
+    bool check_crash_dump_save(void);
 
+#if HAL_LOGGER_FILE_CONTENTS_ENABLED
+    // support for logging file content
+    struct file_list {
+        struct file_list *next;
+        const char *filename;
+        char log_filename[16];
+    };
+    struct FileContent {
+        void reset();
+        void remove_and_free(file_list *victim);
+        struct file_list *head, *tail;
+        int fd{-1};
+        uint32_t offset;
+        bool fast;
+        uint8_t counter;
+        HAL_Semaphore sem;
+    };
+    FileContent normal_file_content;
+    FileContent at_arm_file_content;
+
+    // protect this with a semaphore?
+    bool file_content_prepare_for_arming;
+
+    void file_content_update(void);
+
+    void prepare_at_arming_sys_file_logging();
+
+#endif
+    
     /* support for retrieving logs via mavlink: */
 
     enum class TransferActivity {
@@ -540,6 +578,7 @@ private:
 
     // last time we handled a log-transfer-over-mavlink message:
     uint32_t _last_mavlink_log_transfer_message_handled_ms;
+    bool _warned_log_disarm; // true if we have sent a message warning to disarm for logging
 
     // next log list entry to send
     uint16_t _log_next_list_entry;
@@ -575,7 +614,6 @@ private:
     // can be used by other subsystems to detect if they should log data
     uint8_t _log_start_count;
 
-    bool should_handle_log_message() const;
     void handle_log_message(class GCS_MAVLINK &, const mavlink_message_t &msg);
 
     void handle_log_request_list(class GCS_MAVLINK &, const mavlink_message_t &msg);
@@ -592,6 +630,10 @@ private:
 
     /* end support for retrieving logs via mavlink: */
 
+#if HAL_LOGGER_FILE_CONTENTS_ENABLED
+    void log_file_content(FileContent &file_content, const char *filename);
+    void file_content_update(FileContent &file_content);
+#endif
 };
 
 namespace AP {

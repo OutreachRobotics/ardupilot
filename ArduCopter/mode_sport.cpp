@@ -1,7 +1,6 @@
 #include "Copter.h"
 #include <DEL_Helper/del_helper.h>
 
-#if MODE_SPORT_ENABLED == ENABLED
 
 /*
  * Init and run calls for sport flight mode
@@ -217,4 +216,3 @@ void ModeSport::run()
 
 }
 
-#endif

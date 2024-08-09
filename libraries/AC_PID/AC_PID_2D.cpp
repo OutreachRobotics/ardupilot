@@ -131,7 +131,6 @@ void AC_PID_2D::update_i(const Vector2f &limit)
 {
     _pid_info_x.limit = false;
     _pid_info_y.limit = false;
-    
     Vector2f delta_integrator = (_error * _ki) * _dt;
     float integrator_length = _integrator.length();
     _integrator += delta_integrator;
@@ -203,9 +202,6 @@ void AC_PID_2D::set_integrator(const Vector2f& error, const Vector2f& i)
 void AC_PID_2D::set_integrator(const Vector2f& i)
 {
     _integrator = i;
-    const float integrator_length = _integrator.length();
-    if (integrator_length > _kimax) {
-        _integrator *= (_kimax / integrator_length);
-    }
+    _integrator.limit_length(_kimax);
 }
 

@@ -22,7 +22,6 @@
 
 #include "SITL.h"
 #include "SITL_Input.h"
-#include <AP_Terrain/AP_Terrain.h>
 #include "SIM_Sprayer.h"
 #include "SIM_Gripper_Servo.h"
 #include "SIM_Gripper_EPM.h"
@@ -34,6 +33,7 @@
 #include "SIM_Buzzer.h"
 #include "SIM_Battery.h"
 #include <Filter/Filter.h>
+#include "SIM_JSON_Master.h"
 
 namespace SITL {
 
@@ -155,7 +155,11 @@ public:
     float get_battery_voltage() const { return battery_voltage; }
 
 protected:
+<<<<<<< HEAD
     SITL *sitl;
+=======
+    SIM *sitl;
+>>>>>>> Copter-4.2.3
     // origin of position vector
     Location origin;
     // home location
@@ -192,7 +196,9 @@ protected:
     float rpm[12];
     uint8_t rcin_chan_count;
     float rcin[12];
-    float range = -1.0f;                 // externally supplied rangefinder value, assumed to have been corrected for vehicle attitude
+
+    virtual float rangefinder_beam_width() const { return 0; }
+    virtual float perpendicular_distance_to_rangefinder_surface() const;
 
     struct {
         // data from simulated laser scanner, if available
@@ -250,7 +256,6 @@ protected:
 
     bool use_smoothing;
 
-    AP_Terrain *terrain;
     float ground_height_difference() const;
 
     virtual bool on_ground() const;

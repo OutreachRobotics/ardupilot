@@ -33,6 +33,7 @@ void Plane::read_rangefinder(void)
 
     rangefinder_height_update();
 }
+<<<<<<< HEAD
 
 /*
     Accel calibration
@@ -85,3 +86,5 @@ void Plane::rpm_update(void)
         }
     }
 }
+=======
+>>>>>>> Copter-4.2.3

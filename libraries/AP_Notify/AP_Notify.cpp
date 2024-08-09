@@ -123,6 +123,15 @@ AP_Notify *AP_Notify::_singleton;
 #define NOTIFY_LED_LEN_DEFAULT 1
 #endif
 
+#ifndef HAL_BUZZER_PIN
+#define HAL_BUZZER_PIN -1
+#endif
+
+#ifndef HAL_BUZZER_ON
+#define HAL_BUZZER_ON 1
+#define HAL_BUZZER_OFF 0
+#endif
+
 // table of user settable parameters
 const AP_Param::GroupInfo AP_Notify::var_info[] = {
 
@@ -136,7 +145,7 @@ const AP_Param::GroupInfo AP_Notify::var_info[] = {
     // @Param: BUZZ_TYPES
     // @DisplayName: Buzzer Driver Types
     // @Description: Controls what types of Buzzer will be enabled
-    // @Bitmask: 0:Built-in buzzer, 1:DShot, 2:UAVCAN
+    // @Bitmask: 0:Built-in buzzer, 1:DShot, 2:DroneCAN
     // @User: Advanced
     AP_GROUPINFO("BUZZ_TYPES", 1, AP_Notify, _buzzer_type, BUILD_DEFAULT_BUZZER_TYPE),
 
@@ -165,30 +174,26 @@ const AP_Param::GroupInfo AP_Notify::var_info[] = {
     AP_GROUPINFO("OREO_THEME", 4, AP_Notify, _oreo_theme, 0),
 #endif
 
-#if !defined(HAL_BUZZER_PIN)
     // @Param: BUZZ_PIN
     // @DisplayName: Buzzer pin
     // @Description: Enables to connect active buzzer to arbitrary pin. Requires 3-pin buzzer or additional MOSFET!
     // @Values: 0:Disabled
     // @User: Advanced
-    AP_GROUPINFO("BUZZ_PIN", 5, AP_Notify, _buzzer_pin, 0),
-#endif
+    AP_GROUPINFO("BUZZ_PIN", 5, AP_Notify, _buzzer_pin, HAL_BUZZER_PIN),
 
     // @Param: LED_TYPES
     // @DisplayName: LED Driver Types
     // @Description: Controls what types of LEDs will be enabled
-    // @Bitmask: 0:Built-in LED, 1:Internal ToshibaLED, 2:External ToshibaLED, 3:External PCA9685, 4:Oreo LED, 5:UAVCAN, 6:NCP5623 External, 7:NCP5623 Internal, 8:NeoPixel, 9:ProfiLED, 10:Scripting, 11:DShot
+    // @Bitmask: 0:Built-in LED, 1:Internal ToshibaLED, 2:External ToshibaLED, 3:External PCA9685, 4:Oreo LED, 5:DroneCAN, 6:NCP5623 External, 7:NCP5623 Internal, 8:NeoPixel, 9:ProfiLED, 10:Scripting, 11:DShot, 12:ProfiLED_SPI
     // @User: Advanced
     AP_GROUPINFO("LED_TYPES", 6, AP_Notify, _led_type, BUILD_DEFAULT_LED_TYPE),
 
-#if !defined(HAL_BUZZER_PIN)
     // @Param: BUZZ_ON_LVL
     // @DisplayName: Buzzer-on pin logic level
     // @Description: Specifies pin level that indicates buzzer should play
     // @Values: 0:LowIsOn,1:HighIsOn
     // @User: Advanced
-    AP_GROUPINFO("BUZZ_ON_LVL", 7, AP_Notify, _buzzer_level, 1),
-#endif
+    AP_GROUPINFO("BUZZ_ON_LVL", 7, AP_Notify, _buzzer_level, HAL_BUZZER_ON),
 
     // @Param: BUZZ_VOLUME
     // @DisplayName: Buzzer volume
@@ -311,6 +316,9 @@ void AP_Notify::add_backends(void)
             case Notify_LED_ProfiLED:
                 ADD_BACKEND(new ProfiLED());
                 break;
+            case Notify_LED_ProfiLED_SPI:
+                ADD_BACKEND(new ProfiLED_SPI());
+                break;
             case Notify_LED_OreoLED:
 #if HAL_OREO_LED_ENABLED
                 if (_oreo_theme) {
@@ -325,7 +333,7 @@ void AP_Notify::add_backends(void)
                 break;
 
             case Notify_LED_Scripting:
-#ifdef ENABLE_SCRIPTING
+#if AP_SCRIPTING_ENABLED
                 ADD_BACKEND(new ScriptingLED());
 #endif
                 break;
@@ -346,7 +354,7 @@ void AP_Notify::add_backends(void)
 // ChibiOS noise makers
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     ADD_BACKEND(new Buzzer());
-#if defined(HAL_PWM_ALARM) || HAL_DSHOT_ALARM
+#if HAL_PWM_COUNT > 0 || HAL_DSHOT_ALARM
     ADD_BACKEND(new AP_ToneAlarm());
 #endif
 
@@ -420,6 +428,16 @@ void AP_Notify::handle_rgb(uint8_t r, uint8_t g, uint8_t b, uint8_t rate_hz)
     for (uint8_t i = 0; i < _num_devices; i++) {
         if (_devices[i] != nullptr) {
             _devices[i]->rgb_control(r, g, b, rate_hz);
+        }
+    }
+}
+
+// handle RGB Per led from Scripting
+void AP_Notify::handle_rgb_id(uint8_t r, uint8_t g, uint8_t b, uint8_t id)
+{
+    for (uint8_t i = 0; i < _num_devices; i++) {
+        if (_devices[i] != nullptr) {
+            _devices[i]->rgb_set_id(r, g, b, id);
         }
     }
 }

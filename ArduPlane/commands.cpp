@@ -54,10 +54,6 @@ void Plane::set_next_WP(const struct Location &loc)
         prev_WP_loc = current_loc;
     }
 
-    // used to control FBW and limit the rate of climb
-    // -----------------------------------------------
-    set_target_altitude_location(next_WP_loc);
-
     // zero out our loiter vals to watch for missed waypoints
     loiter_angle_reset();
 
@@ -99,8 +95,15 @@ void Plane::set_guided_WP(void)
     
     loiter_angle_reset();
 
+<<<<<<< HEAD
     // cancel pending takeoff
     quadplane.guided_takeoff = false;
+=======
+#if HAL_QUADPLANE_ENABLED
+    // cancel pending takeoff
+    quadplane.guided_takeoff = false;
+#endif
+>>>>>>> Copter-4.2.3
 }
 
 /*
@@ -124,7 +127,7 @@ void Plane::update_home()
     }
     if (ahrs.home_is_set() && !ahrs.home_is_locked()) {
         Location loc;
-        if(ahrs.get_position(loc) && gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
+        if(ahrs.get_location(loc) && gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
             // we take the altitude directly from the GPS as we are
             // about to reset the baro calibration. We can't use AHRS
             // altitude or we can end up perpetuating a bias in

@@ -5,10 +5,19 @@
 #include "AP_HAL_Namespace.h"
 #include "utility/BetterStream.h"
 
+#ifndef HAL_UART_STATS_ENABLED
+#define HAL_UART_STATS_ENABLED !defined(HAL_NO_UARTDRIVER)
+
+#endif
+
 class ExpandingString;
 
 /* Pure virtual UARTDriver class */
 class AP_HAL::UARTDriver : public AP_HAL::BetterStream {
+private:
+    // option bits for port
+    uint16_t _last_options;
+
 public:
     UARTDriver() {}
     /* Do not allow copies */
@@ -17,6 +26,8 @@ public:
 
     // begin() implicitly clears rx/tx buffers, even if the port was already open (unless the UART is the console UART)
     virtual void begin(uint32_t baud) = 0;
+    virtual void begin_locked(uint32_t baud, uint32_t key) { begin(baud); }
+
 	/// Extended port open method
 	///
 	/// Allows for both opening with specified buffer sizes, and re-opening
@@ -59,8 +70,8 @@ public:
     virtual int16_t read_locked(uint32_t key) { return -1; }
     
     // control optional features
-    virtual bool set_options(uint16_t options) { return options==0; }
-    virtual uint8_t get_options(void) const { return 0; }
+    virtual bool set_options(uint16_t options) { _last_options = options; return options==0; }
+    virtual uint16_t get_options(void) const { return _last_options; }
 
     enum {
         OPTION_RXINV              = (1U<<0),  // invert RX line
@@ -75,6 +86,10 @@ public:
         OPTION_NODMA_TX           = (1U<<9), // don't use DMA for TX
         OPTION_MAVLINK_NO_FORWARD = (1U<<10), // don't forward MAVLink data to or from this device
         OPTION_NOFIFO             = (1U<<11), // disable hardware FIFO
+<<<<<<< HEAD
+=======
+        OPTION_NOSTREAMOVERRIDE   = (1U<<12), // don't allow GCS to override streamrates
+>>>>>>> Copter-4.2.3
     };
 
     enum flow_control {
@@ -128,6 +143,21 @@ public:
      */
     virtual bool is_dma_enabled() const { return false; }
 
+#if HAL_UART_STATS_ENABLED
     // request information on uart I/O for this uart, for @SYS/uarts.txt
     virtual void uart_info(ExpandingString &str) {}
+#endif
+
+    /*
+      software control of the CTS/RTS pins if available. Return false if
+      not available
+     */
+    virtual bool set_RTS_pin(bool high) { return false; };
+    virtual bool set_CTS_pin(bool high) { return false; };
+
+    // return true requested baud on USB port
+    virtual uint32_t get_usb_baud(void) const { return 0; }
+
+    // disable TX/RX pins for unusued uart
+    virtual void disable_rxtx(void) const {}
 };

@@ -18,6 +18,9 @@
  */
 
 #include "AP_Landing.h"
+
+#if HAL_LANDING_DEEPSTALL_ENABLED
+
 #include <GCS_MAVLink/GCS.h>
 #include <AP_HAL/AP_HAL.h>
 #include <SRV_Channel/SRV_Channel.h>
@@ -287,7 +290,7 @@ bool AP_Landing_Deepstall::verify_land(const Location &prev_WP_loc, Location &ne
             height_above_target = -height_above_target;
         } else {
             Location position;
-            if (landing.ahrs.get_position(position)) {
+            if (landing.ahrs.get_location(position)) {
                 height_above_target = (position.alt - landing_point.alt + approach_alt_offset * 100) * 1e-2f;
             } else {
                 height_above_target = approach_alt_offset;
@@ -484,7 +487,7 @@ bool AP_Landing_Deepstall::terminate(void) {
         landing.flags.in_progress = true;
         stage = DEEPSTALL_STAGE_LAND;
 
-        if(landing.ahrs.get_position(landing_point)) {
+        if(landing.ahrs.get_location(landing_point)) {
             build_approach_path(true);
         } else {
             hold_level = true;
@@ -610,7 +613,7 @@ bool AP_Landing_Deepstall::verify_breakout(const Location &current_loc, const Lo
 float AP_Landing_Deepstall::update_steering()
 {
     Location current_loc;
-    if ((!landing.ahrs.get_position(current_loc) || !landing.ahrs.healthy()) && !hold_level) {
+    if ((!landing.ahrs.get_location(current_loc) || !landing.ahrs.healthy()) && !hold_level) {
         // panic if no position source is available
         // continue the stall but target just holding the wings held level as deepstall should be a minimal
         // energy configuration on the aircraft, and if a position isn't available aborting would be worse
@@ -655,3 +658,5 @@ float AP_Landing_Deepstall::update_steering()
 
     return ds_PID.get_pid(error);
 }
+
+#endif  // HAL_LANDING_DEEPSTALL_ENABLED

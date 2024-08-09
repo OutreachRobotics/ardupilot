@@ -112,7 +112,7 @@ bool SLCAN::CANIface::push_Frame(AP_HAL::CANFrame &frame)
     frm.frame = frame;
     frm.flags = 0;
     frm.timestamp_us = AP_HAL::native_micros64();
-    return rx_queue_.push(frm);
+    return add_to_rx_queue(frm);
 }
 
 /**
@@ -330,8 +330,7 @@ int16_t SLCAN::CANIface::reportFrame(const AP_HAL::CANFrame& frame, uint64_t tim
     *p++ = '\r';
     const auto frame_size = unsigned(p - &buffer[0]);
 
-    if (_port->txspace() < _pending_frame_size) {
-        _pending_frame_size = frame_size;
+    if (_port->txspace() < frame_size) {
         return 0;
     }
     //Write to Serial

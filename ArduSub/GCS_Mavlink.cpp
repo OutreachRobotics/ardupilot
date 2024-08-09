@@ -2,16 +2,6 @@
 
 #include "GCS_Mavlink.h"
 
-/*
- *  !!NOTE!!
- *
- *  the use of NOINLINE separate functions for each message type avoids
- *  a compiler bug in gcc that would cause it to use far more stack
- *  space than is needed. Without the NOINLINE we use the sum of the
- *  stack needed for each message type. Please be careful to follow the
- *  pattern below when adding any new messages
- */
-
 MAV_TYPE GCS_Sub::frame_type() const
 {
     return MAV_TYPE_SUBMARINE;
@@ -171,7 +161,9 @@ void GCS_MAVLINK_Sub::send_pid_tuning()
                                     pid_info.FF*0.01f,
                                     pid_info.P*0.01f,
                                     pid_info.I*0.01f,
-                                    pid_info.D*0.01f);
+                                    pid_info.D*0.01f,
+                                    pid_info.slew_rate,
+                                    pid_info.Dmod);
         if (!HAVE_PAYLOAD_SPACE(chan, PID_TUNING)) {
             return;
         }
@@ -184,7 +176,9 @@ void GCS_MAVLINK_Sub::send_pid_tuning()
                                     pid_info.FF*0.01f,
                                     pid_info.P*0.01f,
                                     pid_info.I*0.01f,
-                                    pid_info.D*0.01f);
+                                    pid_info.D*0.01f,
+                                    pid_info.slew_rate,
+                                    pid_info.Dmod);
         if (!HAVE_PAYLOAD_SPACE(chan, PID_TUNING)) {
             return;
         }
@@ -197,7 +191,9 @@ void GCS_MAVLINK_Sub::send_pid_tuning()
                                     pid_info.FF*0.01f,
                                     pid_info.P*0.01f,
                                     pid_info.I*0.01f,
-                                    pid_info.D*0.01f);
+                                    pid_info.D*0.01f,
+                                    pid_info.slew_rate,
+                                    pid_info.Dmod);
         if (!HAVE_PAYLOAD_SPACE(chan, PID_TUNING)) {
             return;
         }
@@ -210,7 +206,9 @@ void GCS_MAVLINK_Sub::send_pid_tuning()
                                     pid_info.FF*0.01f,
                                     pid_info.P*0.01f,
                                     pid_info.I*0.01f,
-                                    pid_info.D*0.01f);
+                                    pid_info.D*0.01f,
+                                    pid_info.slew_rate,
+                                    pid_info.Dmod);
         if (!HAVE_PAYLOAD_SPACE(chan, PID_TUNING)) {
             return;
         }
@@ -236,7 +234,7 @@ bool GCS_MAVLINK_Sub::try_send_message(enum ap_message id)
         break;
 
     case MSG_TERRAIN:
-#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
+#if AP_TERRAIN_AVAILABLE
         CHECK_PAYLOAD_SIZE(TERRAIN_REQUEST);
         sub.terrain.send_request(chan);
 #endif
@@ -332,11 +330,11 @@ static const ap_message STREAM_RAW_SENSORS_msgs[] = {
     MSG_SCALED_PRESSURE,
     MSG_SCALED_PRESSURE2,
     MSG_SCALED_PRESSURE3,
-    MSG_SENSOR_OFFSETS
 };
 static const ap_message STREAM_EXTENDED_STATUS_msgs[] = {
     MSG_SYS_STATUS,
     MSG_POWER_STATUS,
+    MSG_MCU_STATUS,
     MSG_MEMINFO,
     MSG_CURRENT_WAYPOINT,
     MSG_GPS_RAW,
@@ -371,7 +369,7 @@ static const ap_message STREAM_EXTRA3_msgs[] = {
     MSG_SYSTEM_TIME,
     MSG_RANGEFINDER,
     MSG_DISTANCE_SENSOR,
-#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
+#if AP_TERRAIN_AVAILABLE
     MSG_TERRAIN,
 #endif
     MSG_BATTERY2,
@@ -407,16 +405,6 @@ const struct GCS_MAVLINK::stream_entries GCS_MAVLINK::all_stream_entries[] = {
 bool GCS_MAVLINK_Sub::handle_guided_request(AP_Mission::Mission_Command &cmd)
 {
     return sub.do_guided(cmd);
-}
-
-void GCS_MAVLINK_Sub::handle_change_alt_request(AP_Mission::Mission_Command &cmd)
-{
-    // add home alt if needed
-    if (cmd.content.location.relative_alt) {
-        cmd.content.location.alt += sub.ahrs.get_home().alt;
-    }
-
-    // To-Do: update target altitude for loiter or waypoint controller depending upon nav mode
 }
 
 MAV_RESULT GCS_MAVLINK_Sub::_handle_command_preflight_calibration_baro()
@@ -625,10 +613,7 @@ void GCS_MAVLINK_Sub::handleMessage(const mavlink_message_t &msg)
             if (packet.coordinate_frame == MAV_FRAME_LOCAL_OFFSET_NED ||
                     packet.coordinate_frame == MAV_FRAME_BODY_NED ||
                     packet.coordinate_frame == MAV_FRAME_BODY_OFFSET_NED) {
-                pos_vector += sub.inertial_nav.get_position();
-            } else {
-                // convert from alt-above-home to alt-above-ekf-origin
-                pos_vector.z = sub.pv_alt_above_origin(pos_vector.z);
+                pos_vector += sub.inertial_nav.get_position_neu_cm();
             }
         }
 
@@ -719,12 +704,14 @@ void GCS_MAVLINK_Sub::handleMessage(const mavlink_message_t &msg)
 
     case MAVLINK_MSG_ID_TERRAIN_DATA:
     case MAVLINK_MSG_ID_TERRAIN_CHECK:
-#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
+#if AP_TERRAIN_AVAILABLE
         sub.terrain.handle_data(chan, msg);
 #endif
         break;
 
     case MAVLINK_MSG_ID_SET_HOME_POSITION: {
+        send_received_message_deprecation_warning(STR_VALUE(MAVLINK_MSG_ID_SET_HOME_POSITION));
+
         mavlink_set_home_position_t packet;
         mavlink_msg_set_home_position_decode(&msg, &packet);
         if ((packet.latitude == 0) && (packet.longitude == 0) && (packet.altitude == 0)) {
@@ -771,7 +758,7 @@ uint64_t GCS_MAVLINK_Sub::capabilities() const
             MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_LOCAL_NED |
             MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_GLOBAL_INT |
             MAV_PROTOCOL_CAPABILITY_FLIGHT_TERMINATION |
-#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
+#if AP_TERRAIN_AVAILABLE
             (sub.terrain.enabled() ? MAV_PROTOCOL_CAPABILITY_TERRAIN : 0) |
 #endif
             MAV_PROTOCOL_CAPABILITY_SET_ATTITUDE_TARGET |
@@ -799,3 +786,47 @@ int32_t GCS_MAVLINK_Sub::global_position_int_relative_alt() const {
     }
     return GCS_MAVLINK::global_position_int_relative_alt();
 }
+
+#if HAL_HIGH_LATENCY2_ENABLED
+int16_t GCS_MAVLINK_Sub::high_latency_target_altitude() const
+{
+    AP_AHRS &ahrs = AP::ahrs();
+    struct Location global_position_current;
+    UNUSED_RESULT(ahrs.get_location(global_position_current));
+
+    //return units are m
+    if (sub.control_mode == AUTO || sub.control_mode == GUIDED) {
+        return 0.01 * (global_position_current.alt + sub.pos_control.get_pos_error_z_cm());
+    }
+    return 0;
+    
+}
+
+uint8_t GCS_MAVLINK_Sub::high_latency_tgt_heading() const
+{
+    // return units are deg/2
+    if (sub.control_mode == AUTO || sub.control_mode == GUIDED) {
+        // need to convert -18000->18000 to 0->360/2
+        return wrap_360_cd(sub.wp_nav.get_wp_bearing_to_destination()) / 200;
+    }
+    return 0;      
+}
+    
+uint16_t GCS_MAVLINK_Sub::high_latency_tgt_dist() const
+{
+    // return units are dm
+    if (sub.control_mode == AUTO || sub.control_mode == GUIDED) {
+        return MIN(sub.wp_nav.get_wp_distance_to_destination() * 0.001, UINT16_MAX);
+    }
+    return 0;
+}
+
+uint8_t GCS_MAVLINK_Sub::high_latency_tgt_airspeed() const
+{
+    // return units are m/s*5
+    if (sub.control_mode == AUTO || sub.control_mode == GUIDED) {
+        return MIN((sub.pos_control.get_vel_desired_cms().length()/100) * 5, UINT8_MAX);
+    }
+    return 0;
+}
+#endif // HAL_HIGH_LATENCY2_ENABLED

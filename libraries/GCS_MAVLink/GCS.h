@@ -3,6 +3,14 @@
 // protocols.
 #pragma once
 
+#include <AP_HAL/AP_HAL_Boards.h>
+
+#ifndef HAL_GCS_ENABLED
+#define HAL_GCS_ENABLED 1
+#endif
+
+#if HAL_GCS_ENABLED
+
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Common/AP_Common.h>
 #include "GCS_MAVLink.h"
@@ -19,6 +27,8 @@
 #include <AP_Filesystem/AP_Filesystem_Available.h>
 #include <AP_GPS/AP_GPS.h>
 #include <AP_VisualOdom/AP_VisualOdom.h>
+#include <AP_OpticalFlow/AP_OpticalFlow.h>
+#include <AP_OpenDroneID/AP_OpenDroneID.h>
 
 #include "MissionItemProtocol_Waypoints.h"
 #include "MissionItemProtocol_Rally.h"
@@ -29,7 +39,13 @@
 
 #define GCS_DEBUG_SEND_MESSAGE_TIMINGS 0
 
-#ifndef HAL_NO_GCS
+#ifndef HAL_HIGH_LATENCY2_ENABLED
+#define HAL_HIGH_LATENCY2_ENABLED !HAL_MINIMIZE_FEATURES
+#endif
+
+#ifndef HAL_MAVLINK_INTERVALS_FROM_FILES_ENABLED
+#define HAL_MAVLINK_INTERVALS_FROM_FILES_ENABLED (HAVE_FILESYSTEM_SUPPORT && BOARD_FLASH_SIZE > 1024)
+#endif
 
 // macros used to determine if a message will fit in the space available.
 
@@ -87,6 +103,37 @@ public:
     // saveable rate of each stream
     AP_Int16        streamRates[GCS_MAVLINK_NUM_STREAM_RATES];
 };
+
+#if HAL_MAVLINK_INTERVALS_FROM_FILES_ENABLED
+class DefaultIntervalsFromFiles
+{
+
+public:
+
+    DefaultIntervalsFromFiles(uint16_t max_num);
+    ~DefaultIntervalsFromFiles();
+
+    void set(ap_message id, uint16_t interval);
+    uint16_t num_intervals() const {
+        return _num_intervals;
+    }
+    bool get_interval_for_ap_message_id(ap_message id, uint16_t &interval) const;
+    ap_message id_at(uint8_t ofs) const;
+    uint16_t interval_at(uint8_t ofs) const;
+
+private:
+
+    struct from_file_default_interval {
+        ap_message id;
+        uint16_t interval;
+    };
+
+    from_file_default_interval *_intervals;
+
+    uint16_t _num_intervals;
+    uint16_t _max_intervals;
+};
+#endif
 
 ///
 /// @class	GCS_MAVLINK
@@ -223,6 +270,9 @@ public:
     void send_meminfo(void);
     void send_fence_status() const;
     void send_power_status(void);
+#if HAL_WITH_MCU_MONITORING
+    void send_mcu_status(void);
+#endif
     void send_battery_status(const uint8_t instance) const;
     bool send_battery_status();
     void send_distance_sensor();
@@ -233,7 +283,7 @@ public:
     virtual void send_nav_controller_output() const = 0;
     virtual void send_pid_tuning() = 0;
     void send_ahrs2();
-    void send_system_time();
+    void send_system_time() const;
     void send_rc_channels() const;
     void send_rc_channels_raw() const;
     void send_raw_imu();
@@ -242,12 +292,13 @@ public:
     void send_scaled_pressure();
     void send_scaled_pressure2();
     virtual void send_scaled_pressure3(); // allow sub to override this
-    void send_sensor_offsets();
-    virtual void send_simstate() const;
+    void send_simstate() const;
     void send_sim_state() const;
     void send_ahrs();
     void send_battery2();
+#if AP_OPTICALFLOW_ENABLED
     void send_opticalflow();
+#endif
     virtual void send_attitude() const;
     virtual void send_attitude_quaternion() const;
     void send_autopilot_version() const;
@@ -260,6 +311,7 @@ public:
     void send_gimbal_report() const;
     void send_home_position() const;
     void send_gps_global_origin() const;
+    virtual void send_attitude_target() {};
     virtual void send_position_target_global_int() { };
     virtual void send_position_target_local_ned() { };
     void send_servo_output_raw();
@@ -271,6 +323,12 @@ public:
     void send_generator_status() const;
     virtual void send_winch_status() const {};
     void send_water_depth() const;
+    int8_t battery_remaining_pct(const uint8_t instance) const;
+
+#if HAL_HIGH_LATENCY2_ENABLED
+    void send_high_latency2() const;
+#endif // HAL_HIGH_LATENCY2_ENABLED
+    void send_uavionix_adsb_out_status() const;
 
     // lock a channel, preventing use by MAVLink
     void lock(bool _lock) {
@@ -408,6 +466,8 @@ protected:
     void handle_obstacle_distance(const mavlink_message_t &msg);
     void handle_obstacle_distance_3d(const mavlink_message_t &msg);
 
+    void handle_adsb_message(const mavlink_message_t &msg);
+
     void handle_osd_param_config(const mavlink_message_t &msg) const;
 
     void handle_common_param_message(const mavlink_message_t &msg);
@@ -446,6 +506,10 @@ protected:
 
     virtual void send_banner();
 
+    // send a (textual) message to the GCS that a received message has
+    // been deprecated
+    void send_received_message_deprecation_warning(const char *message);
+
     void handle_device_op_read(const mavlink_message_t &msg);
     void handle_device_op_write(const mavlink_message_t &msg);
 
@@ -462,6 +526,7 @@ protected:
     }  _timesync_request;
 
     void handle_statustext(const mavlink_message_t &msg) const;
+    void handle_named_value(const mavlink_message_t &msg) const;
 
     bool telemetry_delayed() const;
     virtual uint32_t telem_delay() const = 0;
@@ -501,8 +566,18 @@ protected:
     MAV_RESULT handle_command_get_home_position(const mavlink_command_long_t &packet);
     MAV_RESULT handle_command_do_fence_enable(const mavlink_command_long_t &packet);
     MAV_RESULT handle_command_debug_trap(const mavlink_command_long_t &packet);
+    MAV_RESULT handle_command_set_ekf_source_set(const mavlink_command_long_t &packet);
 
+    /*
+      handle MAV_CMD_CAN_FORWARD and CAN_FRAME messages for CAN over MAVLink
+     */
+    void can_frame_callback(uint8_t bus, const AP_HAL::CANFrame &);
+    MAV_RESULT handle_can_forward(const mavlink_command_long_t &packet, const mavlink_message_t &msg);
+    void handle_can_frame(const mavlink_message_t &msg) const;
+
+#if AP_OPTICALFLOW_ENABLED
     void handle_optical_flow(const mavlink_message_t &msg);
+#endif
 
     MAV_RESULT handle_fixed_mag_cal_yaw(const mavlink_command_long_t &packet);
 
@@ -526,16 +601,37 @@ protected:
     virtual int16_t vfr_hud_throttle() const { return 0; }
     virtual float vfr_hud_alt() const;
 
+#if HAL_HIGH_LATENCY2_ENABLED
+    virtual int16_t high_latency_target_altitude() const { return 0; }
+    virtual uint8_t high_latency_tgt_heading() const { return 0; }
+    virtual uint16_t high_latency_tgt_dist() const { return 0; }
+    virtual uint8_t high_latency_tgt_airspeed() const { return 0; }
+    virtual uint8_t high_latency_wind_speed() const { return 0; }
+    virtual uint8_t high_latency_wind_direction() const { return 0; }
+    int8_t high_latency_air_temperature() const;
+#endif // HAL_HIGH_LATENCY2_ENABLED
+
     static constexpr const float magic_force_arm_value = 2989.0f;
     static constexpr const float magic_force_disarm_value = 21196.0f;
 
     void manual_override(RC_Channel *c, int16_t value_in, uint16_t offset, float scaler, const uint32_t tnow, bool reversed = false);
+
+    uint8_t receiver_rssi() const;
 
     /*
       correct an offboard timestamp in microseconds to a local time
       since boot in milliseconds
      */
     uint32_t correct_offboard_timestamp_usec_to_ms(uint64_t offboard_usec, uint16_t payload_size);
+
+    // converts a COMMAND_LONG packet to a COMMAND_INT packet, where
+    // the command-long packet is assumed to be in the supplied frame.
+    // If location is not present in the command then just omit frame.
+    static void convert_COMMAND_LONG_to_COMMAND_INT(const mavlink_command_long_t &in, mavlink_command_int_t &out, MAV_FRAME frame = MAV_FRAME_GLOBAL_RELATIVE_ALT);
+
+    // methods to extract a Location object from a command_long or command_int
+    bool location_from_command_t(const mavlink_command_long_t &in, MAV_FRAME in_frame, Location &out);
+    bool location_from_command_t(const mavlink_command_int_t &in, Location &out);
 
 private:
 
@@ -550,6 +646,11 @@ private:
 
     MAV_RESULT _set_mode_common(const MAV_MODE base_mode, const uint32_t custom_mode);
 
+    // send a (textual) message to the GCS that a received message has
+    // been deprecated
+    uint32_t last_deprecation_warning_send_time_ms;
+    const char *last_deprecation_message;
+
     void service_statustext(void);
 
     virtual void        handleMessage(const mavlink_message_t &msg) = 0;
@@ -557,7 +658,6 @@ private:
     MAV_RESULT handle_servorelay_message(const mavlink_command_long_t &packet);
 
     static bool command_long_stores_location(const MAV_CMD command);
-    static void convert_COMMAND_LONG_to_COMMAND_INT(const mavlink_command_long_t &in, mavlink_command_int_t &out);
 
     bool calibrate_gyros();
 
@@ -654,6 +754,13 @@ private:
     // boolean that indicated that message intervals have been set
     // from streamrates:
     bool deferred_messages_initialised;
+#if HAL_MAVLINK_INTERVALS_FROM_FILES_ENABLED
+    // read configuration files from (e.g.) SD and ROMFS, set
+    // intervals from same
+    void initialise_message_intervals_from_config_files();
+    // read file, set message intervals from it:
+    void get_intervals_from_filepath(const char *path, DefaultIntervalsFromFiles &);
+#endif
     // return interval deferred message bucket should be sent after.
     // When sending parameters and waypoints this may be longer than
     // the interval specified in "deferred"
@@ -783,13 +890,14 @@ private:
     void send_distance_sensor(const class AP_RangeFinder_Backend *sensor, const uint8_t instance) const;
 
     virtual bool handle_guided_request(AP_Mission::Mission_Command &cmd) = 0;
-    virtual void handle_change_alt_request(AP_Mission::Mission_Command &cmd) = 0;
+    virtual void handle_change_alt_request(AP_Mission::Mission_Command &cmd) {};
     void handle_common_mission_message(const mavlink_message_t &msg);
 
     void handle_vicon_position_estimate(const mavlink_message_t &msg);
     void handle_vision_position_estimate(const mavlink_message_t &msg);
     void handle_global_vision_position_estimate(const mavlink_message_t &msg);
     void handle_att_pos_mocap(const mavlink_message_t &msg);
+    void handle_odometry(const mavlink_message_t &msg);
     void handle_common_vision_position_estimate_data(const uint64_t usec,
                                                      const float x,
                                                      const float y,
@@ -815,6 +923,12 @@ private:
     void load_signing_key(void);
     bool signing_enabled(void) const;
     static void save_signing_timestamp(bool force_save_now);
+
+#if HAL_MAVLINK_INTERVALS_FROM_FILES_ENABLED
+    // structure containing default intervals read from files for this
+    // link:
+    DefaultIntervalsFromFiles *default_intervals_from_files;
+#endif
 
     // alternative protocol handler support
     struct {
@@ -852,12 +966,6 @@ private:
     uint32_t last_mavlink_stats_logged;
 
     uint8_t last_battery_status_idx;
-
-    // send_sensor_offsets decimates its send rate using this counter:
-    // FIXME: decimate this instead when initialising the message
-    // intervals from the stream rates.  Consider the implications of
-    // doing so vis-a-vis the fact it will consume a bucket.
-    uint8_t send_sensor_offsets_counter;
 
     // if we've ever sent a DISTANCE_SENSOR message out of an
     // orientation we continue to send it out, even if it is not
@@ -976,6 +1084,9 @@ public:
 #if !HAL_MINIMIZE_FEATURES
     // LTM backend
     AP_LTM_Telem ltm_telemetry;
+#endif
+
+#if AP_DEVO_TELEM_ENABLED
     // Devo backend
     AP_DEVO_Telem devo_telemetry;
 #endif
@@ -1122,7 +1233,14 @@ private:
 GCS &gcs();
 
 // send text when we do have a GCS
+#if !defined(HAL_BUILD_AP_PERIPH)
 #define GCS_SEND_TEXT(severity, format, args...) gcs().send_text(severity, format, ##args)
+#else
+extern "C" {
+void can_printf(const char *fmt, ...);
+}
+#define GCS_SEND_TEXT(severity, format, args...) (void)severity; can_printf(format, ##args)
+#endif
 
 #elif defined(HAL_BUILD_AP_PERIPH) && !defined(STM32F1)
 
@@ -1132,9 +1250,9 @@ void can_printf(const char *fmt, ...);
 }
 #define GCS_SEND_TEXT(severity, format, args...) can_printf(format, ##args)
 
-#else // HAL_NO_GCS
+#else // HAL_GCS_ENABLED
 // empty send text when we have no GCS
 #define GCS_SEND_TEXT(severity, format, args...)
 
-#endif // HAL_NO_GCS
+#endif // HAL_GCS_ENABLED
 

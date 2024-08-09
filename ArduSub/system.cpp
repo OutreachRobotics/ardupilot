@@ -40,17 +40,17 @@ void Sub::init_ardupilot()
     // Detection won't work until after BoardConfig.init()
     switch (AP_BoardConfig::get_board_type()) {
     case AP_BoardConfig::PX4_BOARD_PIXHAWK2:
-        AP_Param::set_default_by_name("GND_EXT_BUS", 0);
+        AP_Param::set_default_by_name("BARO_EXT_BUS", 0);
         break;
     case AP_BoardConfig::PX4_BOARD_PIXHAWK:
-        AP_Param::set_by_name("GND_EXT_BUS", 1);
+        AP_Param::set_by_name("BARO_EXT_BUS", 1);
         break;
     default:
-        AP_Param::set_default_by_name("GND_EXT_BUS", 1);
+        AP_Param::set_default_by_name("BARO_EXT_BUS", 1);
         break;
     }
-#else
-    AP_Param::set_default_by_name("GND_EXT_BUS", 1);
+#elif CONFIG_HAL_BOARD != HAL_BOARD_LINUX
+    AP_Param::set_default_by_name("BARO_EXT_BUS", 1);
 #endif
     celsius.init(barometer.external_bus());
 
@@ -62,7 +62,9 @@ void Sub::init_ardupilot()
 #endif
 
     // initialise rc channels including setting mode
+    rc().convert_options(RC_Channel::AUX_FUNC::ARMDISARM_UNUSED, RC_Channel::AUX_FUNC::ARMDISARM);
     rc().init();
+
 
     init_rc_in();               // sets up rc channels from radio
     init_rc_out();              // sets up motors and output to escs
@@ -83,13 +85,11 @@ void Sub::init_ardupilot()
     AP::compass().set_log_bit(MASK_LOG_COMPASS);
     AP::compass().init();
 
-    // init Location class
-#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
-    Location::set_terrain(&terrain);
-    wp_nav.set_terrain(&terrain);
+#if AP_AIRSPEED_ENABLED
+    airspeed.set_log_bit(MASK_LOG_IMU);
 #endif
 
-#if OPTFLOW == ENABLED
+#if AP_OPTICALFLOW_ENABLED
     // initialise optical flow sensor
     optflow.init(MASK_LOG_OPTFLOW);
 #endif
@@ -155,11 +155,9 @@ void Sub::init_ardupilot()
 
     startup_INS_ground();
 
-#ifdef ENABLE_SCRIPTING
+#if AP_SCRIPTING_ENABLED
     g2.scripting.init();
-#endif // ENABLE_SCRIPTING
-
-    g2.airspeed.init();
+#endif // AP_SCRIPTING_ENABLED
 
     // we don't want writes to the serial port to cause us to pause
     // mid-flight, so set the serial ports non-blocking once we are
@@ -183,7 +181,7 @@ void Sub::startup_INS_ground()
 {
     // initialise ahrs (may push imu calibration into the mpu6000 if using that device).
     ahrs.init();
-    ahrs.set_vehicle_class(AHRS_VEHICLE_SUBMARINE);
+    ahrs.set_vehicle_class(AP_AHRS::VehicleClass::SUBMARINE);
 
     // Warm up and calibrate gyro offsets
     ins.init(scheduler.get_loop_rate_hz());
@@ -235,7 +233,7 @@ bool Sub::optflow_position_ok()
 
     // return immediately if neither optflow nor visual odometry is enabled
     bool enabled = false;
-#if OPTFLOW == ENABLED
+#if AP_OPTICALFLOW_ENABLED
     if (optflow.enabled()) {
         enabled = true;
     }

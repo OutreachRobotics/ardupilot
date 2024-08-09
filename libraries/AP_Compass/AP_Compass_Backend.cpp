@@ -5,6 +5,7 @@
 
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
+#include <AP_BoardConfig/AP_BoardConfig.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -20,6 +21,30 @@ void AP_Compass_Backend::rotate_field(Vector3f &mag, uint8_t instance)
         mag.rotate(MAG_BOARD_ORIENTATION);
     }
     mag.rotate(state.rotation);
+
+#ifdef HAL_HEATER_MAG_OFFSET
+    /*
+      apply compass compensations for boards that have a heater which
+      interferes with an internal compass. This needs to be applied
+      before the board orientation so it is independent of
+      AHRS_ORIENTATION
+     */
+    if (!is_external(instance)) {
+        const uint32_t dev_id = uint32_t(_compass._state[Compass::StateIndex(instance)].dev_id);
+        static const struct offset {
+            uint32_t dev_id;
+            Vector3f ofs;
+        } offsets[] = HAL_HEATER_MAG_OFFSET;
+        const auto *bc = AP::boardConfig();
+        if (bc) {
+            for (const auto &o : offsets) {
+                if (o.dev_id == dev_id) {
+                    mag += o.ofs * bc->get_heater_duty_cycle() * 0.01;
+                }
+            }
+        }
+    }
+#endif
 
     if (!state.external) {
         // and add in AHRS_ORIENTATION setting if not an external compass
@@ -45,15 +70,14 @@ void AP_Compass_Backend::rotate_field(Vector3f &mag, uint8_t instance)
 
 void AP_Compass_Backend::publish_raw_field(const Vector3f &mag, uint8_t instance)
 {
-    Compass::mag_state &state = _compass._state[Compass::StateIndex(instance)];
-
     // note that we do not set last_update_usec here as otherwise the
     // EKF and DCM would end up consuming compass data at the full
     // sensor rate. We want them to consume only the filtered fields
-    state.last_update_ms = AP_HAL::millis();
 #if COMPASS_CAL_ENABLED
     auto& cal = _compass._calibrator[_compass._get_priority(Compass::StateIndex(instance))];
     if (cal != nullptr) {
+        Compass::mag_state &state = _compass._state[Compass::StateIndex(instance)];
+        state.last_update_ms = AP_HAL::millis();
         cal->new_sample(mag);
     }
 #endif

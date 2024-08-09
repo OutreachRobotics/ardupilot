@@ -14,7 +14,6 @@
 
 // run at 400Hz on all systems
 # define MAIN_LOOP_RATE    400
-# define MAIN_LOOP_SECONDS 0.0025f
 
 #ifndef SURFACE_DEPTH_DEFAULT
 # define SURFACE_DEPTH_DEFAULT -10.0f // pressure sensor reading 10cm depth means craft is considered surfaced
@@ -98,12 +97,6 @@
 
 #ifndef EKF_ORIGIN_MAX_DIST_M
 # define EKF_ORIGIN_MAX_DIST_M         50000   // EKF origin and waypoints (including home) must be within 50km
-#endif
-
-//////////////////////////////////////////////////////////////////////////////
-//  OPTICAL_FLOW
-#ifndef OPTFLOW
-# define OPTFLOW       DISABLED
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -244,8 +237,4 @@
 
 #ifndef AC_RALLY
 #define AC_RALLY   DISABLED
-#endif
-
-#ifndef AC_TERRAIN
-#define AC_TERRAIN DISABLED // Requires Rally enabled as well
 #endif

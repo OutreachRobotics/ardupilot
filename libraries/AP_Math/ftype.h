@@ -27,6 +27,10 @@ typedef double ftype;
 #define ceilF(x) ceil(x)
 #define fminF(x,y) fmin(x,y)
 #define fmodF(x,y) fmod(x,y)
+<<<<<<< HEAD
+=======
+#define fabsF(x) fabs(x)
+>>>>>>> Copter-4.2.3
 #define toftype todouble
 #else
 typedef float ftype;
@@ -45,6 +49,10 @@ typedef float ftype;
 #define ceilF(x) ceilf(x)
 #define fminF(x,y) fminf(x,y)
 #define fmodF(x,y) fmodf(x,y)
+<<<<<<< HEAD
+=======
+#define fabsF(x) fabsf(x)
+>>>>>>> Copter-4.2.3
 #define toftype tofloat
 #endif
 
@@ -53,3 +61,24 @@ typedef float ftype;
 #else
 #define ZERO_FARRAY(a) memset(a, 0, sizeof(a))
 #endif
+<<<<<<< HEAD
+=======
+
+/*
+ * @brief: Check whether a float is zero
+ */
+inline bool is_zero(const float x) {
+    return fabsf(x) < FLT_EPSILON;
+}
+
+/*
+ * @brief: Check whether a double is zero
+ */
+inline bool is_zero(const double x) {
+#ifdef ALLOW_DOUBLE_MATH_FUNCTIONS
+  return fabs(x) < FLT_EPSILON;
+#else
+  return fabsf(static_cast<float>(x)) < FLT_EPSILON;
+#endif
+}
+>>>>>>> Copter-4.2.3

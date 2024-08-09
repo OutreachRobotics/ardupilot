@@ -21,6 +21,11 @@
 #include "AP_Math.h"
 #include <AP_InternalError/AP_InternalError.h>
 
+#define HALF_SQRT_2_PlUS_SQRT_2 0.92387953251128673848313610506011 // sqrt(2 + sqrt(2)) / 2
+#define HALF_SQRT_2_MINUS_SQTR_2 0.38268343236508972626808144923416 // sqrt(2 - sqrt(2)) / 2
+#define HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO 0.65328148243818828788676000840496 // sqrt((2 + sqrt(2))/2) / 2
+#define HALF_SQRT_HALF_TIMES_TWO_MINUS_SQRT_TWO 0.27059805007309845059637609665515 // sqrt((2 - sqrt(2))/2) / 2
+
 // return the rotation matrix equivalent for this quaternion
 template <typename T>
 void QuaternionT<T>::rotation_matrix(Matrix3d &m) const
@@ -46,7 +51,11 @@ void QuaternionT<T>::rotation_matrix(Matrix3d &m) const
     m.c.z = 1.0f-2.0f*(q2q2 + q3q3);
 }
 
+<<<<<<< HEAD
 // return the rotation matrix equivalent for this quaternion
+=======
+// populate the supplied rotation matrix equivalent from this quaternion
+>>>>>>> Copter-4.2.3
 template <typename T>
 void QuaternionT<T>::rotation_matrix(Matrix3f &m) const
 {
@@ -71,7 +80,7 @@ void QuaternionT<T>::rotation_matrix(Matrix3f &m) const
     m.c.z = 1.0f-2.0f*(q2q2 + q3q3);
 }
 
-// return the rotation matrix equivalent for this quaternion
+// make this quaternion equivalent to the supplied matrix
 // Thanks to Martin John Baker
 // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
 template <typename T>
@@ -137,9 +146,9 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         return;
 
     case ROTATION_YAW_45:
-        q1 = 0.92387956f;
+        q1 = HALF_SQRT_2_PlUS_SQRT_2;
         q2 = q3 = 0;
-        q4 = 0.38268343f;
+        q4 = HALF_SQRT_2_MINUS_SQTR_2;
         return;
 
     case ROTATION_YAW_90:
@@ -149,9 +158,9 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         return;
 
     case ROTATION_YAW_135:
-        q1 = 0.38268343f;
+        q1 = HALF_SQRT_2_MINUS_SQTR_2;
         q2 = q3 = 0;
-        q4 = 0.92387956f;
+        q4 = HALF_SQRT_2_PlUS_SQRT_2;
         return;
 
     case ROTATION_YAW_180:
@@ -160,9 +169,9 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         return;
 
     case ROTATION_YAW_225:
-        q1 = -0.38268343f;
+        q1 = -HALF_SQRT_2_MINUS_SQTR_2;
         q2 = q3 = 0;
-        q4 = 0.92387956f;
+        q4 = HALF_SQRT_2_PlUS_SQRT_2;
         return;
 
     case ROTATION_YAW_270:
@@ -172,9 +181,9 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         return;
 
     case ROTATION_YAW_315:
-        q1 = 0.92387956f;
+        q1 = HALF_SQRT_2_PlUS_SQRT_2;
         q2 = q3 = 0;
-        q4 = -0.38268343f;
+        q4 = -HALF_SQRT_2_MINUS_SQTR_2;
         return;
 
     case ROTATION_ROLL_180:
@@ -184,19 +193,20 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
 
     case ROTATION_ROLL_180_YAW_45:
         q1 = q4 = 0;
-        q2 = 0.92387956f;
-        q3 = 0.38268343f;
+        q2 = HALF_SQRT_2_PlUS_SQRT_2;
+        q3 = HALF_SQRT_2_MINUS_SQTR_2;
         return;
 
     case ROTATION_ROLL_180_YAW_90:
+    case ROTATION_PITCH_180_YAW_270:
         q1 = q4 = 0;
         q2 = q3 = HALF_SQRT_2;
         return;
 
     case ROTATION_ROLL_180_YAW_135:
         q1 = q4 = 0;
-        q2 = 0.38268343f;
-        q3 = 0.92387956f;
+        q2 = HALF_SQRT_2_MINUS_SQTR_2;
+        q3 = HALF_SQRT_2_PlUS_SQRT_2;
         return;
 
     case ROTATION_PITCH_180:
@@ -206,11 +216,12 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
 
     case ROTATION_ROLL_180_YAW_225:
         q1 = q4 = 0;
-        q2 = -0.38268343f;
-        q3 = 0.92387956f;
+        q2 = -HALF_SQRT_2_MINUS_SQTR_2;
+        q3 = HALF_SQRT_2_PlUS_SQRT_2;
         return;
 
     case ROTATION_ROLL_180_YAW_270:
+    case ROTATION_PITCH_180_YAW_90:
         q1 = q4 = 0;
         q2 = -HALF_SQRT_2;
         q3 = HALF_SQRT_2;
@@ -218,8 +229,8 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
 
     case ROTATION_ROLL_180_YAW_315:
         q1 = q4 = 0;
-        q2 = 0.92387956f;
-        q3 = -0.38268343f;
+        q2 = HALF_SQRT_2_PlUS_SQRT_2;
+        q3 = -HALF_SQRT_2_MINUS_SQTR_2;
         return;
 
     case ROTATION_ROLL_90:
@@ -228,9 +239,9 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         return;
 
     case ROTATION_ROLL_90_YAW_45:
-        q1 = 0.65328151f;
-        q2 = 0.65328145f;
-        q3 = q4 = 0.27059802f;
+        q1 = HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
+        q2 = HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
+        q3 = q4 = HALF_SQRT_HALF_TIMES_TWO_MINUS_SQRT_TWO;
         return;
 
     case ROTATION_ROLL_90_YAW_90:
@@ -238,9 +249,9 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         return;
 
     case ROTATION_ROLL_90_YAW_135:
-        q1 = q2 = 0.27059802f;
-        q3 = 0.65328145f;
-        q4 = 0.65328151f;
+        q1 = q2 = HALF_SQRT_HALF_TIMES_TWO_MINUS_SQRT_TWO;
+        q3 = HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
+        q4 = HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
         return;
 
     case ROTATION_ROLL_270:
@@ -250,10 +261,10 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         return;
 
     case ROTATION_ROLL_270_YAW_45:
-        q1 = 0.65328151f;
-        q2 = -0.65328145f;
-        q3 = -0.27059802f;
-        q4 = 0.27059802f;
+        q1 = HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
+        q2 = -HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
+        q3 = -HALF_SQRT_HALF_TIMES_TWO_MINUS_SQRT_TWO;
+        q4 = HALF_SQRT_HALF_TIMES_TWO_MINUS_SQRT_TWO;
         return;
 
     case ROTATION_ROLL_270_YAW_90:
@@ -262,10 +273,10 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         return;
 
     case ROTATION_ROLL_270_YAW_135:
-        q1 = 0.27059802f;
-        q2 = -0.27059802f;
-        q3 = -0.65328145f;
-        q4 = 0.65328151f;
+        q1 = HALF_SQRT_HALF_TIMES_TWO_MINUS_SQRT_TWO;
+        q2 = -HALF_SQRT_HALF_TIMES_TWO_MINUS_SQRT_TWO;
+        q3 = -HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
+        q4 = HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
         return;
 
     case ROTATION_PITCH_90:
@@ -277,17 +288,6 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         q1 = HALF_SQRT_2;
         q2 = q4 = 0;
         q3 = -HALF_SQRT_2;
-        return;
-
-    case ROTATION_PITCH_180_YAW_90:
-        q1 = q4 = 0;
-        q2 = -HALF_SQRT_2;
-        q3 = HALF_SQRT_2;
-        return;
-
-    case ROTATION_PITCH_180_YAW_270:
-        q1 = q4 = 0;
-        q2 = q3 = HALF_SQRT_2;
         return;
 
     case ROTATION_ROLL_90_PITCH_90:
@@ -343,29 +343,41 @@ void QuaternionT<T>::from_rotation(enum Rotation rotation)
         return;
 
     case ROTATION_ROLL_90_PITCH_68_YAW_293:
-        q1 = 0.26774535f;
-        q2 = 0.70698798f;
-        q3 = 0.01295743f;
-        q4 = -0.65445596f;
+        q1 = 0.26774500501681575137524760066299;
+        q2 = 0.70698804688952421315661922562867;
+        q3 = 0.012957683254962659713527273197542;
+        q4 = -0.65445596665363614530264158020145;
         return;
 
     case ROTATION_PITCH_315:
-        q1 = 0.92387956f;
+        q1 = HALF_SQRT_2_PlUS_SQRT_2;
         q2 = q4 = 0;
-        q3 = -0.38268343f;
+        q3 = -HALF_SQRT_2_MINUS_SQTR_2;
         return;
 
     case ROTATION_ROLL_90_PITCH_315:
-        q1 = 0.65328151f;
-        q2 = 0.65328145f;
-        q3 = -0.27059802f;
-        q4 = 0.27059802f;
+        q1 = HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
+        q2 = HALF_SQRT_HALF_TIMES_TWO_PLUS_SQRT_TWO;
+        q3 = -HALF_SQRT_HALF_TIMES_TWO_MINUS_SQRT_TWO;
+        q4 = HALF_SQRT_HALF_TIMES_TWO_MINUS_SQRT_TWO;
         return;
 
     case ROTATION_PITCH_7:
-        q1 = 0.99813479f;
+        q1 = 0.99813479842186692003735970502021;
         q2 = q4 = 0;
-        q3 = 0.06104854f;
+        q3 = 0.061048539534856872956769535676358;
+        return;
+
+    case ROTATION_ROLL_45:
+        q1 = HALF_SQRT_2_PlUS_SQRT_2;
+        q2 = HALF_SQRT_2_MINUS_SQTR_2;
+        q3 = q4 = 0.0;
+        return;
+
+    case ROTATION_ROLL_315:
+        q1 = HALF_SQRT_2_PlUS_SQRT_2;
+        q2 = -HALF_SQRT_2_MINUS_SQTR_2;
+        q3 = q4 = 0.0;
         return;
 
     case ROTATION_CUSTOM:
@@ -417,6 +429,11 @@ void QuaternionT<T>::from_euler(T roll, T pitch, T yaw)
     q3 = cr2*sp2*cy2 + sr2*cp2*sy2;
     q4 = cr2*cp2*sy2 - sr2*sp2*cy2;
 }
+template <typename T>
+void QuaternionT<T>::from_euler(const Vector3<T> &v)
+{
+    from_euler(v[0], v[1], v[2]);
+}
 
 // create a quaternion from Euler angles applied in yaw, roll, pitch order
 // instead of the normal yaw, pitch, roll order
@@ -434,7 +451,11 @@ template <typename T>
 void QuaternionT<T>::from_axis_angle(Vector3<T> v)
 {
     const T theta = v.length();
+<<<<<<< HEAD
     if (is_zero(theta)) {
+=======
+    if (::is_zero(theta)) {
+>>>>>>> Copter-4.2.3
         q1 = 1.0f;
         q2=q3=q4=0.0f;
         return;
@@ -449,7 +470,7 @@ template <typename T>
 void QuaternionT<T>::from_axis_angle(const Vector3<T> &axis, T theta)
 {
     // axis must be a unit vector as there is no check for length
-    if (is_zero(theta)) {
+    if (::is_zero(theta)) {
         q1 = 1.0f;
         q2=q3=q4=0.0f;
         return;
@@ -478,7 +499,11 @@ void QuaternionT<T>::to_axis_angle(Vector3<T> &v) const
 {
     const T l = sqrtF(sq(q2)+sq(q3)+sq(q4));
     v = Vector3<T>(q2,q3,q4);
+<<<<<<< HEAD
     if (!is_zero(l)) {
+=======
+    if (!::is_zero(l)) {
+>>>>>>> Copter-4.2.3
         v /= l;
         v *= wrap_PI(2.0f * atan2F(l,q1));
     }
@@ -490,7 +515,11 @@ template <typename T>
 void QuaternionT<T>::from_axis_angle_fast(Vector3<T> v)
 {
     const T theta = v.length();
+<<<<<<< HEAD
     if (is_zero(theta)) {
+=======
+    if (::is_zero(theta)) {
+>>>>>>> Copter-4.2.3
         q1 = 1.0f;
         q2=q3=q4=0.0f;
         return;
@@ -520,7 +549,11 @@ template <typename T>
 void QuaternionT<T>::rotate_fast(const Vector3<T> &v)
 {
     const T theta = v.length();
+<<<<<<< HEAD
     if (is_zero(theta)) {
+=======
+    if (::is_zero(theta)) {
+>>>>>>> Copter-4.2.3
         return;
     }
     const T t2 = 0.5*theta;
@@ -598,6 +631,16 @@ template <typename T>
 T QuaternionT<T>::length(void) const
 {
     return sqrtF(sq(q1) + sq(q2) + sq(q3) + sq(q4));
+<<<<<<< HEAD
+=======
+}
+
+// gets the length squared of the quaternion
+template <typename T>
+T QuaternionT<T>::length_squared() const
+{
+    return (T)(q1*q1 + q2*q2 + q3*q3 + q4*q4);
+>>>>>>> Copter-4.2.3
 }
 
 // return the reverse rotation of this quaternion
@@ -620,13 +663,58 @@ template <typename T>
 void QuaternionT<T>::normalize(void)
 {
     const T quatMag = length();
+<<<<<<< HEAD
     if (!is_zero(quatMag)) {
+=======
+    if (!::is_zero(quatMag)) {
+>>>>>>> Copter-4.2.3
         const T quatMagInv = 1.0f/quatMag;
         q1 *= quatMagInv;
         q2 *= quatMagInv;
         q3 *= quatMagInv;
         q4 *= quatMagInv;
+    } else {
+        // The code goes here if the quaternion is [0,0,0,0]. This shouldn't happen.
+        INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
     }
+}
+
+<<<<<<< HEAD
+template <typename T>
+QuaternionT<T> QuaternionT<T>::operator*(const QuaternionT<T> &v) const
+{
+    QuaternionT<T> ret;
+    const T &w1 = q1;
+    const T &x1 = q2;
+    const T &y1 = q3;
+    const T &z1 = q4;
+
+=======
+// Checks if each element of the quaternion is zero
+template <typename T>
+bool QuaternionT<T>::is_zero(void) const {
+    return ::is_zero(q1) && ::is_zero(q2) && ::is_zero(q3) && ::is_zero(q4);
+}
+
+// zeros the quaternion to [0, 0, 0, 0], an invalid quaternion
+// See initialize() if you want the zero rotation quaternion
+template <typename T>
+void QuaternionT<T>::zero(void)
+{
+    q1 = q2 = q3 = q4 = 0.0;
+}
+
+// Checks if the quaternion is unit_length within a tolerance
+// Returns True: if its magnitude is close to unit length +/- 1E-3
+// This limit is somewhat greater than sqrt(FLT_EPSL)
+template <typename T>
+bool QuaternionT<T>::is_unit_length(void) const
+{
+    if (fabsF(length_squared() - 1) < 1E-3) {
+        return true;
+    }
+
+    return false;
 }
 
 template <typename T>
@@ -638,6 +726,7 @@ QuaternionT<T> QuaternionT<T>::operator*(const QuaternionT<T> &v) const
     const T &y1 = q3;
     const T &z1 = q4;
 
+>>>>>>> Copter-4.2.3
     const T w2 = v.q1;
     const T x2 = v.q2;
     const T y2 = v.q3;
@@ -709,6 +798,14 @@ QuaternionT<T> QuaternionT<T>::operator/(const QuaternionT<T> &v) const
     const T &quat2 = q3;
     const T &quat3 = q4;
 
+<<<<<<< HEAD
+=======
+    if (is_zero()) {
+        // The code goes here if the quaternion is [0,0,0,0]. This shouldn't happen.
+        INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
+    }
+
+>>>>>>> Copter-4.2.3
     const T rquat0 = v.q1;
     const T rquat1 = v.q2;
     const T rquat2 = v.q3;

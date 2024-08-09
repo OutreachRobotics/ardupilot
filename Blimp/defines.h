@@ -124,7 +124,7 @@ enum DevOptions {
     DevOptionSetAttitudeTarget_ThrustAsThrust = 4,
 };
 
-//  Logging parameters
+//  Logging parameters - only 32 messages are available to the vehicle here.
 enum LoggingParameters {
     LOG_CONTROL_TUNING_MSG,
     LOG_DATA_INT16_MSG,
@@ -132,12 +132,19 @@ enum LoggingParameters {
     LOG_DATA_INT32_MSG,
     LOG_DATA_UINT32_MSG,
     LOG_DATA_FLOAT_MSG,
-    LOG_MOTBATT_MSG,
     LOG_PARAMTUNE_MSG,
     LOG_HELI_MSG,
     LOG_GUIDEDTARGET_MSG,
     LOG_SYSIDD_MSG,
     LOG_SYSIDS_MSG,
+    LOG_FINI_MSG,
+    LOG_FINO_MSG,
+    LOG_PIDD_MSG,
+    LOG_PIVN_MSG,
+    LOG_PIVE_MSG,
+    LOG_PIVD_MSG,
+    LOG_PIVY_MSG,
+
 };
 
 #define MASK_LOG_ATTITUDE_FAST          (1<<0)

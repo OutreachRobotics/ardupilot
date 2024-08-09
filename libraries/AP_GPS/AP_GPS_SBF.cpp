@@ -21,9 +21,11 @@
 #include "AP_GPS.h"
 #include "AP_GPS_SBF.h"
 #include <GCS_MAVLink/GCS.h>
+#include <AP_InternalError/AP_InternalError.h>
 #include <stdio.h>
 #include <ctype.h>
 
+#if AP_GPS_SBF_ENABLED
 extern const AP_HAL::HAL& hal;
 
 #define SBF_DEBUGGING 0
@@ -414,6 +416,8 @@ AP_GPS_SBF::process_message(void)
             state.location.lat = (int32_t)(temp.Latitude * RAD_TO_DEG_DOUBLE * (double)1e7);
             state.location.lng = (int32_t)(temp.Longitude * RAD_TO_DEG_DOUBLE * (double)1e7);
             state.location.alt = (int32_t)(((float)temp.Height - temp.Undulation) * 1e2f);
+            state.have_undulation = true;
+            state.undulation = temp.Undulation;
         }
 
         if (temp.NrSV != 255) {
@@ -613,3 +617,4 @@ bool AP_GPS_SBF::prepare_for_arming(void) {
 
     return is_logging;
 }
+#endif

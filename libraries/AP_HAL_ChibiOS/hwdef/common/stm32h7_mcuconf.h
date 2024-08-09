@@ -19,7 +19,9 @@
 #pragma once
 
 // we want to cope with both revision XY chips and newer chips
+#ifndef STM32H750xx
 #define STM32_ENFORCE_H7_REV_XY
+#endif
 
 #ifndef STM32_LSECLK
 #define STM32_LSECLK 32768U
@@ -47,6 +49,7 @@
 #define STM32H743_MCUCONF
 #define STM32H753_MCUCONF
 #define STM32H745_MCUCONF
+#define STM32H750_MCUCONF
 #define STM32H755_MCUCONF
 #define STM32H747_MCUCONF
 #define STM32H757_MCUCONF
@@ -73,7 +76,11 @@
 #define STM32_VOS                           STM32_VOS_SCALE1
 #define STM32_PWR_CR1                       (PWR_CR1_SVOS_1 | PWR_CR1_SVOS_0)
 #define STM32_PWR_CR2                       (PWR_CR2_BREN)
+#ifdef SMPS_PWR
+#define STM32_PWR_CR3                       (PWR_CR3_SMPSEN | PWR_CR3_USB33DEN)
+#else
 #define STM32_PWR_CR3                       (PWR_CR3_LDOEN | PWR_CR3_USB33DEN)
+#endif
 #define STM32_PWR_CPUCR                     0
 
 /*
@@ -94,7 +101,7 @@
 #define STM32_HSE_ENABLED                   FALSE
 #define STM32_HSI_ENABLED                   TRUE
 #define STM32_PLL1_DIVM_VALUE               4
-#define STM32_PLL2_DIVM_VALUE               4
+#define STM32_PLL2_DIVM_VALUE               8
 #define STM32_PLL3_DIVM_VALUE               4
 #define STM32_PLLSRC                        STM32_PLLSRC_HSI_CK
 #define STM32_MCO1SEL                       STM32_MCO1SEL_HSI_CK
@@ -121,7 +128,7 @@
 #define STM32_HSE_ENABLED                   TRUE
 #define STM32_HSI_ENABLED                   FALSE
 #define STM32_PLL1_DIVM_VALUE               3
-#define STM32_PLL2_DIVM_VALUE               3
+#define STM32_PLL2_DIVM_VALUE               2
 #define STM32_PLL3_DIVM_VALUE               6
 
 #elif STM32_HSECLK == 25000000U
@@ -129,7 +136,7 @@
 #define STM32_HSE_ENABLED                   TRUE
 #define STM32_HSI_ENABLED                   FALSE
 #define STM32_PLL1_DIVM_VALUE               2
-#define STM32_PLL2_DIVM_VALUE               2
+#define STM32_PLL2_DIVM_VALUE               5
 #define STM32_PLL3_DIVM_VALUE               5
 #else
 #error "Unsupported HSE clock"
@@ -142,27 +149,51 @@
 #define STM32_PLL1_DIVQ_VALUE               8
 #define STM32_PLL1_DIVR_VALUE               2
 
-#define STM32_PLL2_DIVN_VALUE               16
-#define STM32_PLL2_DIVP_VALUE               1
-#define STM32_PLL2_DIVQ_VALUE               4
-#define STM32_PLL2_DIVR_VALUE               2
+#define STM32_PLL2_DIVN_VALUE               45
+#define STM32_PLL2_DIVP_VALUE               2
+#define STM32_PLL2_DIVQ_VALUE               5
+#define STM32_PLL2_DIVR_VALUE               1
 
 #define STM32_PLL3_DIVN_VALUE               15
 #define STM32_PLL3_DIVP_VALUE               3
 #define STM32_PLL3_DIVQ_VALUE               5
 #define STM32_PLL3_DIVR_VALUE               8
 
-#elif (STM32_HSECLK == 8000000U) || (STM32_HSECLK == 16000000U) || (STM32_HSECLK == 24000000U)
+#elif (STM32_HSECLK == 8000000U) || (STM32_HSECLK == 16000000U)
 // common clock tree for multiples of 8MHz crystals
+#ifdef STM32H750xx
+#define STM32_PLL1_DIVN_VALUE               120
+#else
 #define STM32_PLL1_DIVN_VALUE               100
+#endif
 #define STM32_PLL1_DIVP_VALUE               2
 #define STM32_PLL1_DIVQ_VALUE               8
 #define STM32_PLL1_DIVR_VALUE               2
 
-#define STM32_PLL2_DIVN_VALUE               25
+#define STM32_PLL2_DIVN_VALUE               45
 #define STM32_PLL2_DIVP_VALUE               2
-#define STM32_PLL2_DIVQ_VALUE               4
-#define STM32_PLL2_DIVR_VALUE               4
+#define STM32_PLL2_DIVQ_VALUE               5
+#define STM32_PLL2_DIVR_VALUE               1
+
+#define STM32_PLL3_DIVN_VALUE               72
+#define STM32_PLL3_DIVP_VALUE               3
+#define STM32_PLL3_DIVQ_VALUE               6
+#define STM32_PLL3_DIVR_VALUE               9
+
+#elif STM32_HSECLK == 24000000U
+#ifdef STM32H750xx
+#define STM32_PLL1_DIVN_VALUE               120
+#else
+#define STM32_PLL1_DIVN_VALUE               100
+#endif
+#define STM32_PLL1_DIVP_VALUE               2
+#define STM32_PLL1_DIVQ_VALUE               8
+#define STM32_PLL1_DIVR_VALUE               2
+
+#define STM32_PLL2_DIVN_VALUE               30
+#define STM32_PLL2_DIVP_VALUE               2
+#define STM32_PLL2_DIVQ_VALUE               5
+#define STM32_PLL2_DIVR_VALUE               1
 
 #define STM32_PLL3_DIVN_VALUE               72
 #define STM32_PLL3_DIVP_VALUE               3
@@ -175,10 +206,10 @@
 #define STM32_PLL1_DIVQ_VALUE               8
 #define STM32_PLL1_DIVR_VALUE               2
 
-#define STM32_PLL2_DIVN_VALUE               12
-#define STM32_PLL2_DIVP_VALUE               1
-#define STM32_PLL2_DIVQ_VALUE               2
-#define STM32_PLL2_DIVR_VALUE               3
+#define STM32_PLL2_DIVN_VALUE               72
+#define STM32_PLL2_DIVP_VALUE               2
+#define STM32_PLL2_DIVQ_VALUE               5
+#define STM32_PLL2_DIVR_VALUE               1
 
 #define STM32_PLL3_DIVN_VALUE               48
 #define STM32_PLL3_DIVP_VALUE               3
@@ -245,8 +276,8 @@
 #ifndef STM32_CKPERSEL
 #define STM32_CKPERSEL                      STM32_CKPERSEL_HSE_CK
 #endif
-#define STM32_SDMMCSEL                      STM32_SDMMCSEL_PLL2_R_CK
-#define STM32_QSPISEL                       STM32_QSPISEL_HCLK
+#define STM32_SDMMCSEL                      STM32_SDMMCSEL_PLL1_Q_CK
+#define STM32_QSPISEL                       STM32_QSPISEL_PLL2_R_CK
 #define STM32_FMCSEL                        STM32_QSPISEL_HCLK
 #define STM32_SWPSEL                        STM32_SWPSEL_PCLK1
 #define STM32_FDCANSEL                      STM32_FDCANSEL_PLL2_Q_CK
@@ -292,7 +323,6 @@
 #define STM32_IRQ_FDCAN2_PRIORITY           10
 
 #define STM32_IRQ_MDMA_PRIORITY             9
-
 #define STM32_IRQ_QUADSPI1_PRIORITY         10
 
 #define STM32_IRQ_SDMMC1_PRIORITY           9
@@ -329,7 +359,9 @@
 #define STM32_ADC_DUAL_MODE                 FALSE
 #define STM32_ADC_COMPACT_SAMPLES           FALSE
 #define STM32_ADC_USE_ADC12                 TRUE
-#define STM32_ADC_USE_ADC3                  FALSE
+#ifndef STM32H750xx
+#define STM32_ADC_USE_ADC3                  TRUE
+#endif
 #define STM32_ADC_ADC12_DMA_PRIORITY        2
 #define STM32_ADC_ADC3_DMA_PRIORITY         2
 #define STM32_ADC_ADC12_IRQ_PRIORITY        5
@@ -388,7 +420,7 @@
 #define STM32_I2C_I2C2_DMA_PRIORITY         3
 #define STM32_I2C_I2C3_DMA_PRIORITY         3
 #define STM32_I2C_I2C4_DMA_PRIORITY         3
-#define STM32_I2C_DMA_ERROR_HOOK(i2cp)      osalSysHalt("DMA failure")
+#define STM32_I2C_DMA_ERROR_HOOK(i2cp)      STM32_DMA_ERROR_HOOK(i2cp)
 
 /*
  * ICU driver system settings.
@@ -495,7 +527,7 @@
 #define STM32_SPI_SPI4_IRQ_PRIORITY         10
 #define STM32_SPI_SPI5_IRQ_PRIORITY         10
 #define STM32_SPI_SPI6_IRQ_PRIORITY         10
-#define STM32_SPI_DMA_ERROR_HOOK(spip)      osalSysHalt("DMA failure")
+#define STM32_SPI_DMA_ERROR_HOOK(spip)      STM32_DMA_ERROR_HOOK(spip)
 
 /*
  * ST driver system settings.
@@ -522,7 +554,7 @@
 #define STM32_UART_USART6_DMA_PRIORITY      0
 #define STM32_UART_UART7_DMA_PRIORITY       0
 #define STM32_UART_UART8_DMA_PRIORITY       0
-#define STM32_UART_DMA_ERROR_HOOK(uartp)    osalSysHalt("DMA failure")
+#define STM32_UART_DMA_ERROR_HOOK(uartp)    STM32_DMA_ERROR_HOOK(uartp)
 
 #define STM32_IRQ_LPUART1_PRIORITY          12
 
@@ -552,4 +584,34 @@
 #ifndef STM32_SDC_MAX_CLOCK
 #define STM32_SDC_MAX_CLOCK                 12500000
 #endif
+
+#ifndef STM32_WSPI_USE_QUADSPI1
+#define STM32_WSPI_USE_QUADSPI1                  FALSE
+#endif
+
+#if STM32_WSPI_USE_QUADSPI1
+#define STM32_WSPI_QUADSPI1_MDMA_CHANNEL    STM32_MDMA_CHANNEL_ID_ANY
+#define STM32_WSPI_QUADSPI1_MDMA_PRIORITY   1
+#define STM32_WSPI_QUADSPI1_PRESCALER_VALUE ((STM32_QSPICLK / HAL_QSPI1_CLK) - 1)
+#endif
+
+/*
+  we use a fixed allocation of BDMA streams. We previously dynamically
+  allocated these, but bugs in the chip make that unreliable. This is
+  a tested set of allocations that is known to work on boards that are
+  using all 3 of ADC3, I2C4 and SPI6. They are the only peripherals
+  that can use BDMA, so fixed allocation is possible as we have 8
+  streams and a maximum of 6 needed.
+
+  The layout is chosen to:
+
+   - avoid stream 0, as this doesn't work on ADC3 or SPI6_RX for no known reason
+   - leave a gap between the peripheral types, as we have previously found that we sometimes
+     lost SPI6 BDMA completion interrupts if SPI6 and I2c4 are neighbours
+ */
+#define STM32_I2C_I2C4_RX_BDMA_STREAM 1
+#define STM32_I2C_I2C4_TX_BDMA_STREAM 2
+#define STM32_SPI_SPI6_RX_BDMA_STREAM 4
+#define STM32_SPI_SPI6_TX_BDMA_STREAM 5
+#define STM32_ADC_ADC3_BDMA_STREAM 7
 

@@ -13,10 +13,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- *   AP_BoardConfig - px4 driver loading and setup
+ *   AP_BoardConfig - driver loading and setup
  */
 
+
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+#include <hal.h>
+#endif
 #include "AP_BoardConfig.h"
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Math/crc.h>
@@ -29,10 +33,9 @@ extern const AP_HAL::HAL& hal;
  */
 void AP_BoardConfig::board_init_safety()
 {
-#if HAL_HAVE_SAFETY_SWITCH
     bool force_safety_off = (state.safety_enable.get() == 0);
     if (!force_safety_off && hal.util->was_watchdog_safety_off()) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Forcing safety off for watchdog\n");
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Forcing safety off for watchdog\n");
         force_safety_off = true;
     }
     if (force_safety_off) {
@@ -43,7 +46,24 @@ void AP_BoardConfig::board_init_safety()
             hal.scheduler->delay(20);
         }
     }
+}
+
+/*
+  init debug pins. We set debug pins as input if BRD_OPTIONS bit for debug enable is not set
+  this prevents possible ESD issues on the debug pins
+ */
+void AP_BoardConfig::board_init_debug()
+{
+#ifndef HAL_BUILD_AP_PERIPH
+    if ((_options & BOARD_OPTION_DEBUG_ENABLE) == 0) {
+#ifdef HAL_GPIO_PIN_JTCK_SWCLK
+        palSetLineMode(HAL_GPIO_PIN_JTCK_SWCLK, PAL_MODE_INPUT);
 #endif
+#ifdef HAL_GPIO_PIN_JTMS_SWDIO
+        palSetLineMode(HAL_GPIO_PIN_JTMS_SWDIO, PAL_MODE_INPUT);
+#endif
+    }
+#endif // HAL_BUILD_AP_PERIPH
 }
 
 /*
@@ -132,6 +152,8 @@ void AP_BoardConfig::board_setup_drivers(void)
     case PX4_BOARD_PIXHAWK_PRO:
     case PX4_BOARD_PCNC1:
     case PX4_BOARD_MINDPXV2:
+    case FMUV6_BOARD_HOLYBRO_6X:
+    case FMUV6_BOARD_CUAV_6X:
         break;
     default:
         config_error("Unknown board type");
@@ -281,6 +303,11 @@ bool AP_BoardConfig::check_ms5611(const char* devname) {
 #define INV2_WHOAMI_ICM20948 0xEA
 #define INV2_WHOAMI_ICM20649 0xE1
 
+#define INV3REG_WHOAMI        0x75
+
+#define INV3_WHOAMI_ICM42688  0x47
+#define INV3_WHOAMI_ICM42670  0x67
+
 /*
   validation of the board type
  */
@@ -393,8 +420,7 @@ void AP_BoardConfig::board_autodetect(void)
     state.board_type.set_and_notify(PX4_BOARD_FMUV5);
     hal.console->printf("Detected FMUv5\n");
 #elif defined(HAL_CHIBIOS_ARCH_FMUV6)
-    state.board_type.set_and_notify(PX4_BOARD_FMUV5);
-    hal.console->printf("Detected FMUv6\n");
+    detect_fmuv6_variant();
 #elif defined(CONFIG_ARCH_BOARD_VRBRAIN_V51) || defined(HAL_CHIBIOS_ARCH_BRAINV51)
     state.board_type.set_and_notify(VRX_BOARD_BRAIN51);
     hal.console->printf("Detected VR Brain 5.1\n");
@@ -515,3 +541,29 @@ void AP_BoardConfig::board_setup()
 #endif
 }
 
+
+#ifdef HAL_CHIBIOS_ARCH_FMUV6
+
+#define BMI088REG_CHIPID 0x00
+#define CHIPID_BMI088_G 0x0F
+
+/*
+  detect which FMUV6 variant we are running on
+ */
+void AP_BoardConfig::detect_fmuv6_variant()
+{
+    if (((spi_check_register_inv2("icm20649", INV2REG_WHOAMI, INV2_WHOAMI_ICM20649) ||
+          spi_check_register("bmi088_g", BMI088REG_CHIPID, CHIPID_BMI088_G)) && // alternative config
+         spi_check_register("icm42688", INV3REG_WHOAMI, INV3_WHOAMI_ICM42688) &&
+         spi_check_register("icm42670", INV3REG_WHOAMI, INV3_WHOAMI_ICM42670))) {
+        state.board_type.set_and_notify(FMUV6_BOARD_HOLYBRO_6X);
+        hal.console->printf("Detected Holybro 6X\n");
+    } else if ((spi_check_register_inv2("icm20649_2", INV2REG_WHOAMI, INV2_WHOAMI_ICM20649) &&
+                spi_check_register("icm42688", INV3REG_WHOAMI, INV3_WHOAMI_ICM42688) &&
+                spi_check_register("bmi088_g", BMI088REG_CHIPID, CHIPID_BMI088_G))) {
+        state.board_type.set_and_notify(FMUV6_BOARD_CUAV_6X);
+        hal.console->printf("Detected CUAV 6X\n");
+    }
+
+}
+#endif

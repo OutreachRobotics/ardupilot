@@ -33,7 +33,9 @@
 #endif
 #endif
 
+#ifndef COMPASS_CAL_ENABLED
 #define COMPASS_CAL_ENABLED !defined(HAL_BUILD_AP_PERIPH)
+#endif
 #define COMPASS_MOT_ENABLED !defined(HAL_BUILD_AP_PERIPH)
 #define COMPASS_LEARN_ENABLED !defined(HAL_BUILD_AP_PERIPH)
 
@@ -68,6 +70,10 @@
 
 #define MAX_CONNECTED_MAGS (COMPASS_MAX_UNREG_DEV+COMPASS_MAX_INSTANCES)
 
+#ifndef AP_SIM_COMPASS_ENABLED
+#define AP_SIM_COMPASS_ENABLED (CONFIG_HAL_BOARD == HAL_BOARD_SITL)
+#endif
+
 #include "CompassCalibrator.h"
 
 class CompassLearn;
@@ -100,7 +106,9 @@ public:
     ///
     bool read();
 
-    bool enabled() const { return _enabled; }
+    // available returns true if the compass is both enabled and has
+    // been initialised
+    bool available() const { return _enabled && init_done; }
 
     /// Calculate the tilt-compensated heading_ variables.
     ///
@@ -169,13 +177,15 @@ public:
         _per_motor.calibration_end();
     }
 #endif
-    
-    void start_calibration_all(bool retry=false, bool autosave=false, float delay_sec=0.0f, bool autoreboot = false);
+
+    // start_calibration_all will only return false if there are no
+    // compasses to calibrate.
+    bool start_calibration_all(bool retry=false, bool autosave=false, float delay_sec=0.0f, bool autoreboot = false);
 
     void cancel_calibration_all();
 
     bool compass_cal_requires_reboot() const { return _cal_requires_reboot; }
-    bool is_calibrating();
+    bool is_calibrating() const;
 
     // indicate which bit in LOG_BITMASK indicates we should log compass readings
     void set_log_bit(uint32_t log_bit) { _log_bit = log_bit; }
@@ -330,7 +340,8 @@ public:
       fast compass calibration given vehicle position and yaw
      */
     MAV_RESULT mag_cal_fixed_yaw(float yaw_deg, uint8_t compass_mask,
-                                 float lat_deg, float lon_deg);
+                                 float lat_deg, float lon_deg,
+                                 bool force_use=false);
 
 #if HAL_MSP_COMPASS_ENABLED
     void handle_msp(const MSP::msp_compass_data_message_t &pkt);
@@ -456,9 +467,6 @@ private:
 
     // enable automatic declination code
     AP_Int8     _auto_declination;
-
-    // first-time-around flag used by offset nulling
-    bool        _null_init_done;
 
     // stores which bit is used to indicate we should log compass readings
     uint32_t _log_bit = -1;

@@ -28,25 +28,42 @@ typedef Vector3f Vector3p;
 // update_vel_accel - single axis projection of velocity, vel, forwards in time based on a time step of dt and acceleration of accel.
 // the velocity is not moved in the direction of limit if limit is not set to zero.
 // limit - specifies if the system is unable to continue to accelerate.
+<<<<<<< HEAD
 // vel_error - specifies the direction of the velocity error useded in limit handling.
+=======
+// vel_error - specifies the direction of the velocity error used in limit handling.
+>>>>>>> Copter-4.2.3
 void update_vel_accel(float& vel, float accel, float dt, float limit, float vel_error);
 
 // update_pos_vel_accel - single axis projection of position and velocity forward in time based on a time step of dt and acceleration of accel.
 // the position and velocity is not moved in the direction of limit if limit is not set to zero.
 // limit - specifies if the system is unable to continue to accelerate.
+<<<<<<< HEAD
 // pos_error and vel_error - specifies the direction of the velocity error useded in limit handling.
 void update_pos_vel_accel(postype_t & pos, float& vel, float accel, float dt, float limit, float pos_error, float vel_error);
+=======
+// pos_error and vel_error - specifies the direction of the velocity error used in limit handling.
+void update_pos_vel_accel(postype_t& pos, float& vel, float accel, float dt, float limit, float pos_error, float vel_error);
+>>>>>>> Copter-4.2.3
 
 // update_vel_accel - dual axis projection of position and velocity, pos and vel, forwards in time based on a time step of dt and acceleration of accel.
 // the velocity is not moved in the direction of limit if limit is not set to zero.
 // limit - specifies if the system is unable to continue to accelerate.
+<<<<<<< HEAD
 // pos_error and vel_error - specifies the direction of the velocity error useded in limit handling.
+=======
+// pos_error and vel_error - specifies the direction of the velocity error used in limit handling.
+>>>>>>> Copter-4.2.3
 void update_vel_accel_xy(Vector2f& vel, const Vector2f& accel, float dt, const Vector2f& limit, const Vector2f& vel_error);
 
 // update_pos_vel_accel - dual axis projection of position and velocity, pos and vel, forwards in time based on a time step of dt and acceleration of accel.
 // the position and velocity is not moved in the direction of limit if limit is not set to zero.
 // limit - specifies if the system is unable to continue to accelerate.
+<<<<<<< HEAD
 // pos_error and vel_error - specifies the direction of the velocity error useded in limit handling.
+=======
+// pos_error and vel_error - specifies the direction of the velocity error used in limit handling.
+>>>>>>> Copter-4.2.3
 void update_pos_vel_accel_xy(Vector2p& pos, Vector2f& vel, const Vector2f& accel, float dt, const Vector2f& limit, const Vector2f& pos_error, const Vector2f& vel_error);
 
 /* shape_accel calculates a jerk limited path from the current acceleration to an input acceleration.
@@ -87,7 +104,11 @@ void shape_vel_accel(float vel_input, float accel_input,
                      float jerk_max, float dt, bool limit_total_accel);
 
 // 2D version
+<<<<<<< HEAD
 void shape_vel_accel_xy(const Vector2f &vel_input1, const Vector2f& accel_input,
+=======
+void shape_vel_accel_xy(const Vector2f& vel_input1, const Vector2f& accel_input,
+>>>>>>> Copter-4.2.3
                         const Vector2f& vel, Vector2f& accel,
                         float accel_max, float jerk_max, float dt, bool limit_total_accel);
 
@@ -139,4 +160,23 @@ float stopping_distance(float velocity, float p, float accel_max);
 
 // kinematic_limit calculates the maximum acceleration or velocity in a given direction.
 // based on horizontal and vertical limits.
+<<<<<<< HEAD
 float kinematic_limit(Vector3f direction, float max_xy, float max_z_pos, float max_z_neg);
+=======
+float kinematic_limit(Vector3f direction, float max_xy, float max_z_pos, float max_z_neg);
+
+// input_expo calculates the expo function on the normalised input.
+// The input must be in the range of -1 to 1.
+// The expo should be less than 1.0 but limited to be less than 0.95.
+float input_expo(float input, float expo);
+
+/*
+  convert a maximum lean angle in degrees to an accel limit in m/s/s
+ */
+float angle_to_accel(float angle_deg);
+
+/*
+  convert a maximum accel in m/s/s to a lean angle in degrees
+ */
+float accel_to_angle(float accel);
+>>>>>>> Copter-4.2.3

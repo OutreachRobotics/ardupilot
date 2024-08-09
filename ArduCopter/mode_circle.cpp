@@ -33,7 +33,7 @@ void ModeCircle::run()
     pos_control->set_max_speed_accel_z(-get_pilot_speed_dn(), g.pilot_speed_up, g.pilot_accel_z);
 
     // get pilot's desired yaw rate (or zero if in radio failsafe)
-    float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+    float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
     if (!is_zero(target_yaw_rate)) {
         pilot_yaw_override = true;
     }
@@ -89,6 +89,9 @@ void ModeCircle::run()
 
     // get pilot desired climb rate (or zero if in radio failsafe)
     float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+
+    // get avoidance adjusted climb rate
+    target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
 
     // if not armed set throttle to zero and exit immediately
     if (is_disarmed_or_landed()) {

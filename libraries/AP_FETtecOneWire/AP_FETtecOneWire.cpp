@@ -20,10 +20,16 @@
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <GCS_MAVLink/GCS.h>
+<<<<<<< HEAD
 #include <AP_Math/AP_Math.h>
 
 #include "AP_FETtecOneWire.h"
 #if HAL_AP_FETTEC_ONEWIRE_ENABLED
+=======
+
+#include "AP_FETtecOneWire.h"
+#if AP_FETTEC_ONEWIRE_ENABLED
+>>>>>>> Copter-4.2.3
 
 extern const AP_HAL::HAL& hal;
 
@@ -142,7 +148,11 @@ void AP_FETtecOneWire::init()
 
     // initialise ESC ids.  This enforces that the FETtec ESC ids
     // inside FETtec ESCs need to be contiguous and start at ID 1
+<<<<<<< HEAD
     // which required by fast-throttle commands.
+=======
+    // which is required by fast-throttle commands.
+>>>>>>> Copter-4.2.3
     uint8_t esc_offset = 0;  // offset into our device-driver dynamically-allocated array of ESCs
     uint8_t esc_id = 1;      // ESC ids inside FETtec protocol are one-indexed
     uint8_t servo_chan_offset = 0;  // offset into _motor_mask_parameter array
@@ -874,4 +884,8 @@ void AP_FETtecOneWire::led_color(const uint8_t r, const uint8_t g, const uint8_t
 }
 #endif  // HAL_AP_FETTEC_ESC_LIGHT
 
+<<<<<<< HEAD
 #endif  // HAL_AP_FETTEC_ONEWIRE_ENABLED
+=======
+#endif  // AP_FETTEC_ONEWIRE_ENABLED
+>>>>>>> Copter-4.2.3

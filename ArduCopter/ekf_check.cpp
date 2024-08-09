@@ -132,7 +132,7 @@ bool Copter::ekf_over_threshold()
     }
 
     bool optflow_healthy = false;
-#if OPTFLOW == ENABLED
+#if AP_OPTICALFLOW_ENABLED
     optflow_healthy = optflow.healthy();
 #endif
     if (!optflow_healthy && (vel_variance >= (2.0f * g.fs_ekf_thresh))) {
@@ -225,7 +225,6 @@ void Copter::check_ekf_reset()
         AP::logger().Write_Event(LogEvent::EKF_YAW_RESET);
     }
 
-#if AP_AHRS_NAVEKF_AVAILABLE && (HAL_NAVEKF2_AVAILABLE || HAL_NAVEKF3_AVAILABLE)
     // check for change in primary EKF, reset attitude target and log.  AC_PosControl handles position target adjustment
     if ((ahrs.get_primary_core_index() != ekf_primary_core) && (ahrs.get_primary_core_index() != -1)) {
         attitude_control->inertial_frame_reset();
@@ -233,7 +232,6 @@ void Copter::check_ekf_reset()
         AP::logger().Write_Error(LogErrorSubsystem::EKF_PRIMARY, LogErrorCode(ekf_primary_core));
         gcs().send_text(MAV_SEVERITY_WARNING, "EKF primary changed:%d", (unsigned)ekf_primary_core);
     }
-#endif
 }
 
 // check for high vibrations affecting altitude control
@@ -264,23 +262,7 @@ void Copter::check_vibration()
 
     const bool is_vibration_affected = ahrs.is_vibration_affected();
     const bool bad_vibe_detected = (innovation_checks_valid && innov_velD_posD_positive && (vel_variance > 1.0f)) || is_vibration_affected;
-    const bool do_bad_vibe_actions = (g2.fs_vibe_enabled == 1) && bad_vibe_detected && motors->armed();
-
-    // static uint32_t frame_count=0;
-    // frame_count++;
-    // if (frame_count > 10) {
-    //     frame_count=0;
-    //     AP::logger().Write(
-    //         "CEVC",
-    //         "TimeUS,icv,ivpp,vv,iva,dbva",
-    //         "Qbbfbb",
-    //         AP_HAL::micros64(),
-    //         innovation_checks_valid,
-    //         innov_velD_posD_positive,
-    //         vel_variance,
-    //         is_vibration_affected,
-    //         do_bad_vibe_actions);
-    // }
+    const bool do_bad_vibe_actions = (g2.fs_vibe_enabled == 1) && bad_vibe_detected && motors->armed() && !flightmode->has_manual_throttle();
 
     if (!vibration_check.high_vibes) {
         // initialise timers
@@ -289,7 +271,7 @@ void Copter::check_vibration()
         }
         // check if failure has persisted for at least 1 second
         if (now - vibration_check.start_ms > 1000) {
-            // switch ekf to use resistant gains
+            // switch position controller to use resistant gains
             vibration_check.clear_ms = 0;
             vibration_check.high_vibes = true;
             pos_control->set_vibe_comp(true);
@@ -303,7 +285,7 @@ void Copter::check_vibration()
         }
         // turn off vibration compensation after 15 seconds
         if (now - vibration_check.clear_ms > 15000) {
-            // restore ekf gains, reset timers and update user
+            // restore position controller gains, reset timers and update user
             vibration_check.start_ms = 0;
             vibration_check.high_vibes = false;
             pos_control->set_vibe_comp(false);

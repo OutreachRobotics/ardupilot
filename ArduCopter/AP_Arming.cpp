@@ -58,11 +58,13 @@ bool AP_Arming_Copter::run_pre_arm_checks(bool display_failure)
 
     return parameter_checks(display_failure)
         & motor_checks(display_failure)
-        & pilot_throttle_checks(display_failure)
         & oa_checks(display_failure)
         & gcs_failsafe_check(display_failure)
         & winch_checks(display_failure)
         & alt_checks(display_failure)
+#if AP_AIRSPEED_ENABLED
+        & AP_Arming::airspeed_checks(display_failure)
+#endif
         & AP_Arming::pre_arm_checks(display_failure);
 }
 
@@ -81,29 +83,12 @@ bool AP_Arming_Copter::barometer_checks(bool display_failure)
         nav_filter_status filt_status = copter.inertial_nav.get_filter_status();
         bool using_baro_ref = (!filt_status.flags.pred_horiz_pos_rel && filt_status.flags.pred_horiz_pos_abs);
         if (using_baro_ref) {
-            if (fabsf(copter.inertial_nav.get_altitude() - copter.baro_alt) > PREARM_MAX_ALT_DISPARITY_CM) {
+            if (fabsf(copter.inertial_nav.get_position_z_up_cm() - copter.baro_alt) > PREARM_MAX_ALT_DISPARITY_CM) {
                 check_failed(ARMING_CHECK_BARO, display_failure, "Altitude disparity");
                 ret = false;
             }
         }
     }
-    return ret;
-}
-
-bool AP_Arming_Copter::compass_checks(bool display_failure)
-{
-    bool ret = AP_Arming::compass_checks(display_failure);
-
-    if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_COMPASS)) {
-        // check compass offsets have been set.  AP_Arming only checks
-        // this if learning is off; Copter *always* checks.
-        char failure_msg[50] = {};
-        if (!AP::compass().configured(failure_msg, ARRAY_SIZE(failure_msg))) {
-            check_failed(ARMING_CHECK_COMPASS, display_failure, "%s", failure_msg);
-            ret = false;
-        }
-    }
-
     return ret;
 }
 
@@ -248,7 +233,7 @@ bool AP_Arming_Copter::parameter_checks(bool display_failure)
                 }
                 break;
             case AC_WPNav::TerrainSource::TERRAIN_FROM_TERRAINDATABASE:
-#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
+#if AP_TERRAIN_AVAILABLE
                 if (!copter.terrain.enabled()) {
                     check_failed(ARMING_CHECK_PARAMETERS, display_failure, failure_template, "terrain disabled");
                     return false;
@@ -361,25 +346,6 @@ bool AP_Arming_Copter::motor_checks(bool display_failure)
     return true;
 }
 
-bool AP_Arming_Copter::pilot_throttle_checks(bool display_failure)
-{
-    // check throttle is above failsafe throttle
-    // this is near the bottom to allow other failures to be displayed before checking pilot throttle
-    if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_RC)) {
-        if (copter.g.failsafe_throttle != FS_THR_DISABLED && copter.channel_throttle->get_radio_in() < copter.g.failsafe_throttle_value) {
-            #if FRAME_CONFIG == HELI_FRAME
-            const char *failmsg = "Collective below Failsafe";
-            #else
-            const char *failmsg = "Throttle below Failsafe";
-            #endif
-            check_failed(ARMING_CHECK_RC, display_failure, "%s", failmsg);
-            return false;
-        }
-    }
-
-    return true;
-}
-
 bool AP_Arming_Copter::oa_checks(bool display_failure)
 {
 #if AC_OAPATHPLANNER_ENABLED == ENABLED
@@ -425,10 +391,10 @@ bool AP_Arming_Copter::gps_checks(bool display_failure)
     #endif
 
     // check if flight mode requires GPS
-    bool mode_requires_gps = copter.flightmode->requires_GPS();
+    bool mode_requires_gps = copter.flightmode->requires_GPS() || fence_requires_gps || (copter.simple_mode == Copter::SimpleMode::SUPERSIMPLE);
 
     // call parent gps checks
-    if (mode_requires_gps || fence_requires_gps) {
+    if (mode_requires_gps) {
         if (!AP_Arming::gps_checks(display_failure)) {
             AP_Notify::flags.pre_arm_gps_check = false;
             return false;
@@ -442,7 +408,7 @@ bool AP_Arming_Copter::gps_checks(bool display_failure)
     }
 
     // return true if GPS is not required
-    if (!mode_requires_gps && !fence_requires_gps) {
+    if (!mode_requires_gps) {
         AP_Notify::flags.pre_arm_gps_check = true;
         return true;
     }
@@ -512,7 +478,7 @@ bool AP_Arming_Copter::mandatory_gps_checks(bool display_failure)
     bool mode_requires_gps = copter.flightmode->requires_GPS();
 
     // always check if inertial nav has started and is ready
-    const AP_AHRS_NavEKF &ahrs = AP::ahrs_navekf();
+    const auto &ahrs = AP::ahrs();
     char failure_msg[50] = {};
     if (!ahrs.pre_arm_check(mode_requires_gps, failure_msg, sizeof(failure_msg))) {
         check_failed(display_failure, "AHRS: %s", failure_msg);
@@ -647,8 +613,8 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
     // }
 #define ALLOW_ARM_NO_COMPASS
 #ifndef ALLOW_ARM_NO_COMPASS
-    // if external source of heading is available, we can skip compass health check
-    if (!ahrs.is_ext_nav_used_for_yaw()) {
+    // if non-compass is source of heading we can skip compass health check
+    if (!ahrs.using_noncompass_for_yaw()) {
         const Compass &_compass = AP::compass();
         // check compass health
         if (!_compass.healthy()) {
@@ -676,12 +642,8 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
         return false;
     }
 
-    // if we are not using Emergency Stop switch option, force Estop false to ensure motors
-    // can run normally
-    if (!rc().find_channel_for_option(RC_Channel::AUX_FUNC::MOTOR_ESTOP)){
-        SRV_Channels::set_emergency_stop(false);
-        // if we are using motor Estop switch, it must not be in Estop position
-    } else if (SRV_Channels::get_emergency_stop()){
+    // if we are using motor Estop switch, it must not be in Estop position
+    if (SRV_Channels::get_emergency_stop()){
         check_failed(true, "Motor Emergency Stopped");
         return false;
     }
@@ -763,7 +725,7 @@ bool AP_Arming_Copter::mandatory_checks(bool display_failure)
         result = false;
     }
 
-    return result;
+    return result & AP_Arming::mandatory_checks(display_failure);
 }
 
 void AP_Arming_Copter::set_pre_arm_check(bool b)
@@ -815,7 +777,7 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
     // --------------------
     copter.init_simple_bearing();
 
-    AP_AHRS_NavEKF &ahrs = AP::ahrs_navekf();
+    auto &ahrs = AP::ahrs();
 
     copter.initial_armed_bearing = ahrs.yaw_sensor;
 
@@ -833,7 +795,7 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
         }
 
         // remember the height when we armed
-        copter.arming_altitude_m = copter.inertial_nav.get_altitude() * 0.01;
+        copter.arming_altitude_m = copter.inertial_nav.get_position_z_up_cm() * 0.01;
     }
     copter.update_super_simple_bearing(false);
 
@@ -842,8 +804,6 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
     copter.g2.smart_rtl.set_home(copter.position_ok());
 #endif
 
-    // enable gps velocity based centrefugal force compensation
-    ahrs.set_correct_centrifugal(true);
     hal.util->set_soft_armed(true);
 
 #if SPRAYER_ENABLED == ENABLED
@@ -876,7 +836,7 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
     copter.ap.in_arming_delay = true;
 
     // assumed armed without a arming, switch. Overridden in switches.cpp
-    copter.ap.armed_with_switch = false;
+    copter.ap.armed_with_airmode_switch = false;
 
     gcs().start_herelink_record();
 
@@ -907,7 +867,7 @@ bool AP_Arming_Copter::disarm(const AP_Arming::Method method, bool do_disarm_che
     gcs().send_text(MAV_SEVERITY_INFO, "Disarming motors");
 #endif
 
-    AP_AHRS_NavEKF &ahrs = AP::ahrs_navekf();
+    auto &ahrs = AP::ahrs();
 
     // save compass offsets learned by the EKF if enabled
     Compass &compass = AP::compass();
@@ -943,8 +903,6 @@ bool AP_Arming_Copter::disarm(const AP_Arming::Method method, bool do_disarm_che
 
     AP::logger().set_vehicle_armed(false);
 
-    // disable gps velocity based centrefugal force compensation
-    ahrs.set_correct_centrifugal(false);
     hal.util->set_soft_armed(false);
 
     copter.ap.in_arming_delay = false;

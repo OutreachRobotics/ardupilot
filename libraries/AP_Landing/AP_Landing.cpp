@@ -138,17 +138,6 @@ const AP_Param::GroupInfo AP_Landing::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("FLAP_PERCNT", 13, AP_Landing, flap_percent, 0),
 
-    // @Param: TYPE
-    // @DisplayName: Auto-landing type
-    // @Description: Specifies the auto-landing type to use
-    // @Values: 0:Standard Glide Slope, 1:Deepstall
-    // @User: Standard
-    AP_GROUPINFO("TYPE",    14, AP_Landing, type, TYPE_STANDARD_GLIDE_SLOPE),
-
-    // @Group: DS_
-    // @Path: AP_Landing_Deepstall.cpp
-    AP_SUBGROUPINFO(deepstall, "DS_", 15, AP_Landing, AP_Landing_Deepstall),
-
     // @Param: OPTIONS
     // @DisplayName: Landing options bitmask
     // @Description: Bitmask of options to use with landing.
@@ -156,11 +145,26 @@ const AP_Param::GroupInfo AP_Landing::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("OPTIONS", 16, AP_Landing, _options, 0),
 
+    // @Param: TYPE
+    // @DisplayName: Auto-landing type
+    // @Description: Specifies the auto-landing type to use
+    // @Values: 0:Standard Glide Slope, 1:Deepstall
+    // @User: Standard
+    AP_GROUPINFO_FLAGS("TYPE",    14, AP_Landing, type, TYPE_STANDARD_GLIDE_SLOPE, AP_PARAM_FLAG_ENABLE),
+
+#if HAL_LANDING_DEEPSTALL_ENABLED
+    // @Group: DS_
+    // @Path: AP_Landing_Deepstall.cpp
+    AP_SUBGROUPINFO(deepstall, "DS_", 15, AP_Landing, AP_Landing_Deepstall),
+#endif
+
+    // additional global params should be placed in the list above TYPE to avoid the enable flag hiding the deepstall params
+
     AP_GROUPEND
 };
 
     // constructor
-AP_Landing::AP_Landing(AP_Mission &_mission, AP_AHRS &_ahrs, AP_SpdHgtControl *_SpdHgt_Controller, AP_Navigation *_nav_controller, AP_Vehicle::FixedWing &_aparm,
+AP_Landing::AP_Landing(AP_Mission &_mission, AP_AHRS &_ahrs, AP_TECS *_tecs_Controller, AP_Navigation *_nav_controller, AP_Vehicle::FixedWing &_aparm,
                        set_target_altitude_proportion_fn_t _set_target_altitude_proportion_fn,
                        constrain_target_altitude_location_fn_t _constrain_target_altitude_location_fn,
                        adjusted_altitude_cm_fn_t _adjusted_altitude_cm_fn,
@@ -169,7 +173,7 @@ AP_Landing::AP_Landing(AP_Mission &_mission, AP_AHRS &_ahrs, AP_SpdHgtControl *_
                        update_flight_stage_fn_t _update_flight_stage_fn) :
     mission(_mission)
     ,ahrs(_ahrs)
-    ,SpdHgt_Controller(_SpdHgt_Controller)
+    ,tecs_Controller(_tecs_Controller)
     ,nav_controller(_nav_controller)
     ,aparm(_aparm)
     ,set_target_altitude_proportion_fn(_set_target_altitude_proportion_fn)
@@ -178,7 +182,9 @@ AP_Landing::AP_Landing(AP_Mission &_mission, AP_AHRS &_ahrs, AP_SpdHgtControl *_
     ,adjusted_relative_altitude_cm_fn(_adjusted_relative_altitude_cm_fn)
     ,disarm_if_autoland_complete_fn(_disarm_if_autoland_complete_fn)
     ,update_flight_stage_fn(_update_flight_stage_fn)
+#if HAL_LANDING_DEEPSTALL_ENABLED
     ,deepstall(*this)
+#endif
 {
     AP_Param::setup_object_defaults(this, var_info);
 }
@@ -193,9 +199,11 @@ void AP_Landing::do_land(const AP_Mission::Mission_Command& cmd, const float rel
     case TYPE_STANDARD_GLIDE_SLOPE:
         type_slope_do_land(cmd, relative_altitude);
         break;
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         deepstall.do_land(cmd, relative_altitude);
         break;
+#endif
     default:
         // a incorrect type is handled in the verify_land
         break;
@@ -218,10 +226,12 @@ bool AP_Landing::verify_land(const Location &prev_WP_loc, Location &next_WP_loc,
         success = type_slope_verify_land(prev_WP_loc, next_WP_loc, current_loc,
                 height, sink_rate, wp_proportion, last_flying_ms, is_armed, is_flying, rangefinder_state_in_range);
         break;
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         success = deepstall.verify_land(prev_WP_loc, next_WP_loc, current_loc,
                                              height, sink_rate, wp_proportion, last_flying_ms, is_armed, is_flying, rangefinder_state_in_range);
         break;
+#endif
     default:
         // returning TRUE while executing verify_land() will increment the
         // mission index which in many cases will trigger an RTL for end-of-mission
@@ -240,9 +250,11 @@ bool AP_Landing::verify_abort_landing(const Location &prev_WP_loc, Location &nex
     case TYPE_STANDARD_GLIDE_SLOPE:
         type_slope_verify_abort_landing(prev_WP_loc, next_WP_loc, throttle_suppressed);
         break;
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         deepstall.verify_abort_landing(prev_WP_loc, next_WP_loc, throttle_suppressed);
         break;
+#endif
     default:
         break;
     }
@@ -274,7 +286,9 @@ void AP_Landing::adjust_landing_slope_for_rangefinder_bump(AP_Vehicle::FixedWing
     case TYPE_STANDARD_GLIDE_SLOPE:
         type_slope_adjust_landing_slope_for_rangefinder_bump(rangefinder_state, prev_WP_loc, next_WP_loc, current_loc, wp_distance, target_altitude_offset_cm);
         break;
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
+#endif
     default:
         break;
     }
@@ -287,8 +301,10 @@ bool AP_Landing::send_landing_message(mavlink_channel_t chan) {
     }
 
     switch (type) {
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return deepstall.send_deepstall_message(chan);
+#endif
     case TYPE_STANDARD_GLIDE_SLOPE:
     default:
         return false;
@@ -304,7 +320,9 @@ bool AP_Landing::is_flaring(void) const
     switch (type) {
     case TYPE_STANDARD_GLIDE_SLOPE:
         return type_slope_is_flaring();
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
+#endif
     default:
         return false;
     }
@@ -324,8 +342,10 @@ bool AP_Landing::is_on_approach(void) const
     switch (type) {
     case TYPE_STANDARD_GLIDE_SLOPE:
         return type_slope_is_on_approach();
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return deepstall.is_on_approach();
+#endif
     default:
         return false;
     }
@@ -341,8 +361,10 @@ bool AP_Landing::is_ground_steering_allowed(void) const
     switch (type) {
     case TYPE_STANDARD_GLIDE_SLOPE:
         return type_slope_is_on_approach();
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return false;
+#endif
     default:
         return true;
     }
@@ -359,7 +381,9 @@ bool AP_Landing::is_expecting_impact(void) const
     switch (type) {
     case TYPE_STANDARD_GLIDE_SLOPE:
         return type_slope_is_expecting_impact();
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
+#endif
     default:
         return false;
     }
@@ -372,8 +396,10 @@ bool AP_Landing::override_servos(void) {
     }
 
     switch (type) {
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return deepstall.override_servos();
+#endif
     case TYPE_STANDARD_GLIDE_SLOPE:
     default:
         return false;
@@ -385,8 +411,10 @@ bool AP_Landing::override_servos(void) {
 const AP_Logger::PID_Info* AP_Landing::get_pid_info(void) const
 {
     switch (type) {
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return &deepstall.get_pid_info();
+#endif
     case TYPE_STANDARD_GLIDE_SLOPE:
     default:
         return nullptr;
@@ -408,7 +436,9 @@ void AP_Landing::setup_landing_glide_slope(const Location &prev_WP_loc, const Lo
     case TYPE_STANDARD_GLIDE_SLOPE:
         type_slope_setup_landing_glide_slope(prev_WP_loc, next_WP_loc, current_loc, target_altitude_offset_cm);
         break;
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
+#endif
     default:
         break;
     }
@@ -473,7 +503,9 @@ int32_t AP_Landing::constrain_roll(const int32_t desired_roll_cd, const int32_t 
     switch (type) {
     case TYPE_STANDARD_GLIDE_SLOPE:
         return type_slope_constrain_roll(desired_roll_cd, level_roll_limit_cd);
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
+#endif
     default:
         return desired_roll_cd;
     }
@@ -487,8 +519,10 @@ bool AP_Landing::get_target_altitude_location(Location &location)
     }
 
     switch (type) {
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return deepstall.get_target_altitude_location(location);
+#endif
     case TYPE_STANDARD_GLIDE_SLOPE:
     default:
         return false;
@@ -535,13 +569,15 @@ int32_t AP_Landing::get_target_airspeed_cm(void)
     switch (type) {
     case TYPE_STANDARD_GLIDE_SLOPE:
         return type_slope_get_target_airspeed_cm();
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return deepstall.get_target_airspeed_cm();
+#endif
     default:
         // don't return the landing airspeed, because if type is invalid we have
         // no postive indication that the land airspeed has been configured or
         // how it was meant to be utilized
-        return SpdHgt_Controller->get_target_airspeed();
+        return tecs_Controller->get_target_airspeed();
     }
 }
 
@@ -557,9 +593,11 @@ bool AP_Landing::request_go_around(void)
     case TYPE_STANDARD_GLIDE_SLOPE:
         success = type_slope_request_go_around();
         break;
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         success = deepstall.request_go_around();
         break;
+#endif
     default:
         break;
     }
@@ -584,8 +622,10 @@ bool AP_Landing::is_complete(void) const
     switch (type) {
     case TYPE_STANDARD_GLIDE_SLOPE:
         return type_slope_is_complete();
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return false;
+#endif
     default:
         return true;
     }
@@ -597,9 +637,11 @@ void AP_Landing::Log(void) const
     case TYPE_STANDARD_GLIDE_SLOPE:
         type_slope_log();
         break;
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         deepstall.Log();
         break;
+#endif
     default:
         break;
     }
@@ -617,8 +659,10 @@ bool AP_Landing::is_throttle_suppressed(void) const
     switch (type) {
     case TYPE_STANDARD_GLIDE_SLOPE:
         return type_slope_is_throttle_suppressed();
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return deepstall.is_throttle_suppressed();
+#endif
     default:
         return false;
     }
@@ -640,8 +684,10 @@ bool AP_Landing::is_flying_forward(void) const
     }
 
     switch (type) {
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return deepstall.is_flying_forward();
+#endif
     case TYPE_STANDARD_GLIDE_SLOPE:
     default:
         return true;
@@ -654,8 +700,10 @@ bool AP_Landing::is_flying_forward(void) const
  */
 bool AP_Landing::terminate(void) {
     switch (type) {
+#if HAL_LANDING_DEEPSTALL_ENABLED
     case TYPE_DEEPSTALL:
         return deepstall.terminate();
+#endif
     case TYPE_STANDARD_GLIDE_SLOPE:
     default:
         return false;

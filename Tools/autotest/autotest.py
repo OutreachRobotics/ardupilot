@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-APM automatic test suite.
+ArduPilot automatic test suite.
 
 Andrew Tridgell, October 2011
 
@@ -29,6 +29,7 @@ import antennatracker
 import quadplane
 import balancebot
 import sailboat
+import helicopter
 
 import examples
 from pysim import util
@@ -116,9 +117,16 @@ def build_binaries():
 
     # copy the script (and various libraries used by the script) as it
     # changes git branch, which can change the script while running
-    for thing in "build_binaries.py", "generate_manifest.py", "gen_stable.py", "build_binaries_history.py":
+    for thing in [
+            "board_list.py",
+            "build_binaries_history.py",
+            "build_binaries.py",
+            "build_sizes/build_sizes.py",
+            "generate_manifest.py",
+            "gen_stable.py",
+    ]:
         orig = util.reltopdir('Tools/scripts/%s' % thing)
-        copy = util.reltopdir('./%s' % thing)
+        copy = util.reltopdir('./%s' % os.path.basename(thing))
         shutil.copy2(orig, copy)
 
     if util.run_cmd("./build_binaries.py", directory=util.reltopdir('.')) != 0:
@@ -143,7 +151,7 @@ def build_examples(**kwargs):
 
 def build_unit_tests(**kwargs):
     """Build tests."""
-    for target in ['linux']:
+    for target in ['linux', 'sitl']:
         print("Running build.unit_tests for %s" % target)
         try:
             util.build_tests(target, **kwargs)
@@ -163,20 +171,22 @@ def run_unit_test(test):
 
 def run_unit_tests():
     """Run all unit tests files."""
-    binary_dir = util.reltopdir(os.path.join('build',
-                                             'linux',
-                                             'tests',
-                                             ))
-    tests = glob.glob("%s/*" % binary_dir)
     success = True
     fail_list = []
-    for test in tests:
-        try:
-            run_unit_test(test)
-        except subprocess.CalledProcessError:
-            print("Exception running (%s)" % test)
-            fail_list.append(os.path.basename(test))
-            success = False
+    for target in ['linux', 'sitl']:
+        binary_dir = util.reltopdir(os.path.join('build',
+                                                 target,
+                                                 'tests',
+                                                 ))
+        tests = glob.glob("%s/*" % binary_dir)
+        for test in tests:
+            try:
+                run_unit_test(test)
+            except subprocess.CalledProcessError:
+                print("Exception running (%s)" % test)
+                fail_list.append(target + '/' + os.path.basename(test))
+                success = False
+
     print("Failing tests:")
     for failure in fail_list:
         print("  %s" % failure)
@@ -214,7 +224,8 @@ def all_vehicles():
             'ArduCopter',
             'Rover',
             'AntennaTracker',
-            'ArduSub')
+            'ArduSub',
+            'Blimp')
 
 
 def build_parameters():
@@ -311,6 +322,7 @@ __bin_names = {
     "Helicopter": "arducopter-heli",
     "QuadPlane": "arduplane",
     "Sub": "ardusub",
+    "Blimp": "blimp",
     "BalanceBot": "ardurover",
     "Sailboat": "ardurover",
     "SITLPeriphGPS": "sitl_periph_gp.AP_Periph",
@@ -383,7 +395,7 @@ tester_class_map = {
     "test.Rover": rover.AutoTestRover,
     "test.BalanceBot": balancebot.AutoTestBalanceBot,
     "test.Sailboat": sailboat.AutoTestSailboat,
-    "test.Helicopter": arducopter.AutoTestHeli,
+    "test.Helicopter": helicopter.AutoTestHelicopter,
     "test.Sub": ardusub.AutoTestSub,
     "test.Tracker": antennatracker.AutoTestTracker,
     "test.CAN": arducopter.AutoTestCAN,
@@ -430,8 +442,11 @@ def run_step(step):
         "clean": not opts.no_clean,
         "configure": not opts.no_configure,
         "math_check_indexes": opts.math_check_indexes,
+        "ekf_single": opts.ekf_single,
+        "postype_single": opts.postype_single,
         "extra_configure_args": opts.waf_configure_args,
         "coverage": opts.coverage,
+        "sitl_32bit" : opts.sitl_32bit,
     }
 
     if opts.Werror:
@@ -446,6 +461,9 @@ def run_step(step):
 
     if step == 'build.Copter':
         vehicle_binary = 'bin/arducopter'
+
+    if step == 'build.Blimp':
+        vehicle_binary = 'bin/blimp'
 
     if step == 'build.Tracker':
         vehicle_binary = 'bin/antennatracker'
@@ -499,6 +517,7 @@ def run_step(step):
         "viewerip": opts.viewerip,
         "use_map": opts.map,
         "valgrind": opts.valgrind,
+        "callgrind": opts.callgrind,
         "gdb": opts.gdb,
         "gdb_no_tui": opts.gdb_no_tui,
         "lldb": opts.lldb,
@@ -508,8 +527,10 @@ def run_step(step):
         "frame": opts.frame,
         "_show_test_timings": opts.show_test_timings,
         "force_ahrs_type": opts.force_ahrs_type,
+        "replay": opts.replay,
         "logs_dir": buildlogs_dirpath(),
         "sup_binaries": supplementary_binaries,
+        "reset_after_every_test": opts.reset_after_every_test,
     }
     if opts.speedup is not None:
         fly_opts["speedup"] = opts.speedup
@@ -693,9 +714,18 @@ def run_tests(steps):
     global results
 
     corefiles = glob.glob("core*")
+    corefiles.extend(glob.glob("ap-*.core"))
     if corefiles:
         print('Removing corefiles: %s' % str(corefiles))
         for f in corefiles:
+            os.unlink(f)
+
+    diagnostic_files = []
+    for p in "dumpstack.sh_*", "dumpcore.sh_*", "autotest-*tlog":
+        diagnostic_files.extend(glob.glob(p))
+    if diagnostic_files:
+        print('Removing diagnostic files: %s' % str(diagnostic_files))
+        for f in diagnostic_files:
             os.unlink(f)
 
     passed = True
@@ -898,9 +928,13 @@ if __name__ == "__main__":
                            help='do not clean before building',
                            dest="no_clean")
     group_build.add_option("--debug",
-                           default=False,
+                           default=None,
                            action='store_true',
-                           help='make built binaries debug binaries')
+                           help='make built SITL binaries debug binaries')
+    group_build.add_option("--no-debug",
+                           default=None,
+                           action='store_true',
+                           help='do not make built SITL binaries debug binaries')
     group_build.add_option("--coverage",
                            default=False,
                            action='store_true',
@@ -910,6 +944,21 @@ if __name__ == "__main__":
                            action="store_true",
                            dest="math_check_indexes",
                            help="enable checking of math indexes")
+    group_build.add_option("--postype-single",
+                           default=False,
+                           action="store_true",
+                           dest="postype_single",
+                           help="force single precision copter position controller")
+    group_build.add_option("--ekf-single",
+                           default=False,
+                           action="store_true",
+                           dest="ekf_single",
+                           help="force single precision EKF")
+    group_build.add_option("--sitl-32bit",
+                           default=False,
+                           action='store_true',
+                           dest="sitl_32bit",
+                           help="compile sitl using 32-bit")
     parser.add_option_group(group_build)
 
     group_sim = optparse.OptionGroup(parser, "Simulation options")
@@ -921,6 +970,10 @@ if __name__ == "__main__":
                          default=False,
                          action='store_true',
                          help='run ArduPilot binaries under valgrind')
+    group_sim.add_option("", "--callgrind",
+                         action='store_true',
+                         default=False,
+                         help="enable valgrind for performance analysis (slow!!)")
     group_sim.add_option("--gdb",
                          default=False,
                          action='store_true',
@@ -950,6 +1003,9 @@ if __name__ == "__main__":
                          dest="force_ahrs_type",
                          default=None,
                          help="force a specific AHRS type (e.g. 10 for SITL-ekf")
+    group_sim.add_option("", "--replay",
+                         action='store_true',
+                         help="enable replay logging for tests")
     parser.add_option_group(group_sim)
 
     group_completion = optparse.OptionGroup(parser, "Completion helpers")
@@ -965,14 +1021,30 @@ if __name__ == "__main__":
                                 type='string',
                                 default="",
                                 help='list available subtests for a vehicle e.g Copter')
+    group_completion.add_option("--reset-after-every-test",
+                                action='store_true',
+                                default=False,
+                                help='reset everything after every test run')
     parser.add_option_group(group_completion)
 
     opts, args = parser.parse_args()
+
+    # canonicalise on opts.debug:
+    if opts.debug is None and opts.no_debug is None:
+        # default is to create debug SITL binaries
+        opts.debug = True
+    elif opts.debug is not None and opts.no_debug is not None:
+        if opts.debug == opts.no_debug:
+            raise ValueError("no_debug != !debug")
+    elif opts.no_debug is not None:
+        opts.debug = not opts.no_debug
 
     if opts.timeout is None:
         opts.timeout = 5400
         # adjust if we're running in a regime which may slow us down e.g. Valgrind
         if opts.valgrind:
+            opts.timeout *= 10
+        elif opts.callgrind:
             opts.timeout *= 10
         elif opts.gdb:
             opts.timeout = None
@@ -1015,6 +1087,9 @@ if __name__ == "__main__":
         'build.Sub',
         'defaults.Sub',
         'test.Sub',
+
+        'build.Blimp',
+        'defaults.Blimp',
 
         'build.SITLPeriphGPS',
         'test.CAN',

@@ -51,7 +51,7 @@ bool NavEKF3_core::setup_core(uint8_t _imu_index, uint8_t _core_index)
         // Wait for the configuration of all GPS units to be confirmed. Until this has occurred the GPS driver cannot provide a correct time delay
         float gps_delay_sec = 0;
         if (!dal.gps().get_lag(selected_gps, gps_delay_sec)) {
-#ifndef HAL_NO_GCS
+#if HAL_GCS_ENABLED
             const uint32_t now = dal.millis();
             if (now - lastInitFailReport_ms > 10000) {
                 lastInitFailReport_ms = now;
@@ -90,7 +90,11 @@ bool NavEKF3_core::setup_core(uint8_t _imu_index, uint8_t _core_index)
     // set the observation buffer length to handle the minimum time of arrival between observations in combination
     // with the worst case delay from current time to ekf fusion time
     // allow for worst case 50% extension of the ekf fusion time horizon delay due to timing jitter
+<<<<<<< HEAD
     uint16_t ekf_delay_ms = maxTimeDelay_ms + (int)(ceilF((float)maxTimeDelay_ms * 0.5f));
+=======
+    uint16_t ekf_delay_ms = maxTimeDelay_ms + (int)(ceilF((ftype)maxTimeDelay_ms * 0.5f));
+>>>>>>> Copter-4.2.3
     obs_buffer_length = (ekf_delay_ms / frontend->sensorIntervalMin_ms) + 1;
 
     // limit to be no longer than the IMU buffer (we can't process data faster than the EKF prediction rate)
@@ -99,8 +103,10 @@ bool NavEKF3_core::setup_core(uint8_t _imu_index, uint8_t _core_index)
     // calculate buffer size for optical flow data
     const uint8_t flow_buffer_length = MIN((ekf_delay_ms / frontend->flowIntervalMin_ms) + 1, imu_buffer_length);
 
+#if EK3_FEATURE_EXTERNAL_NAV
     // calculate buffer size for external nav data
     const uint8_t extnav_buffer_length = MIN((ekf_delay_ms / frontend->extNavIntervalMin_ms) + 1, imu_buffer_length);
+#endif // EK3_FEATURE_EXTERNAL_NAV
 
     if(!storedGPS.init(obs_buffer_length)) {
         return false;
@@ -159,15 +165,7 @@ bool NavEKF3_core::setup_core(uint8_t _imu_index, uint8_t _core_index)
         return false;
     }
 #endif
-
-    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "EKF3 IMU%u buffs IMU=%u OBS=%u OF=%u EN:%u dt=%.4f",
-                    (unsigned)imu_index,
-                    (unsigned)imu_buffer_length,
-                    (unsigned)obs_buffer_length,
-                    (unsigned)flow_buffer_length,
-                    (unsigned)extnav_buffer_length,
-                    (double)dtEkfAvg);
-
+ 
     if ((yawEstimator == nullptr) && (frontend->_gsfRunMask & (1U<<core_index))) {
         // check if there is enough memory to create the EKF-GSF object
         if (dal.available_memory() < sizeof(EKFGSF_yaw) + 1024) {
@@ -290,7 +288,7 @@ void NavEKF3_core::InitialiseVariables()
     velErrintegral.zero();
     posErrintegral.zero();
     gpsGoodToAlign = false;
-    gpsNotAvailable = true;
+    gpsIsInUse = false;
     motorsArmed = false;
     prevMotorsArmed = false;
     memset(&gpsCheckStatus, 0, sizeof(gpsCheckStatus));
@@ -465,6 +463,7 @@ void NavEKF3_core::InitialiseVariablesMag()
     magYawResetRequest = false;
     posDownAtLastMagReset = stateStruct.position.z;
     yawInnovAtLastMagReset = 0.0f;
+    stateStruct.quat.initialise();
     quatAtLastMagReset = stateStruct.quat;
     magFieldLearned = false;
     storedMag.reset();
@@ -786,7 +785,7 @@ void NavEKF3_core::UpdateStrapdownEquationsNED()
     // calculate a magnitude of the filtered nav acceleration (required for GPS
     // variance estimation)
     accNavMag = velDotNEDfilt.length();
-    accNavMagHoriz = norm(velDotNEDfilt.x , velDotNEDfilt.y);
+    accNavMagHoriz = velDotNEDfilt.xy().length();
 
     // if we are not aiding, then limit the horizontal magnitude of acceleration
     // to prevent large manoeuvre transients disturbing the attitude
@@ -943,7 +942,11 @@ void NavEKF3_core::calcOutputStates()
 
         // calculate a gain that provides tight tracking of the estimator states and
         // adjust for changes in time delay to maintain consistent damping ratio of ~0.7
+<<<<<<< HEAD
         ftype timeDelay = 1e-3f * (float)(imuDataNew.time_ms - imuDataDelayed.time_ms);
+=======
+        ftype timeDelay = 1e-3f * (ftype)(imuDataNew.time_ms - imuDataDelayed.time_ms);
+>>>>>>> Copter-4.2.3
         timeDelay = MAX(timeDelay, dtIMUavg);
         ftype errorGain = 0.5f / timeDelay;
 
@@ -954,6 +957,17 @@ void NavEKF3_core::calcOutputStates()
         // calculate velocity and position tracking errors
         Vector3F velErr = (stateStruct.velocity - outputDataDelayed.velocity);
         Vector3F posErr = (stateStruct.position - outputDataDelayed.position);
+<<<<<<< HEAD
+=======
+
+        if (badIMUdata) {
+            // When IMU accel is bad,  calculate an integral that will be used to drive the difference
+            // between the output state and internal EKF state at the delayed time horizon to zero.
+            badImuVelErrIntegral += (stateStruct.velocity.z - outputDataNew.velocity.z);
+        } else {
+            badImuVelErrIntegral = velErrintegral.z;
+        }
+>>>>>>> Copter-4.2.3
 
         // collect magnitude tracking error for diagnostics
         outputTrackError.x = deltaAngErr.length();
@@ -969,8 +983,21 @@ void NavEKF3_core::calcOutputStates()
         // use a PI feedback to calculate a correction that will be applied to the output state history
         posErrintegral += posErr;
         velErrintegral += velErr;
+<<<<<<< HEAD
         Vector3F velCorrection = velErr * velPosGain + velErrintegral * sq(velPosGain) * 0.1f;
         Vector3F posCorrection = posErr * velPosGain + posErrintegral * sq(velPosGain) * 0.1f;
+=======
+        Vector3F posCorrection = posErr * velPosGain + posErrintegral * sq(velPosGain) * 0.1F;
+        Vector3F velCorrection;
+        velCorrection.x = velErr.x * velPosGain + velErrintegral.x * sq(velPosGain) * 0.1F;
+        velCorrection.y = velErr.y * velPosGain + velErrintegral.y * sq(velPosGain) * 0.1F;
+        if (badIMUdata) {
+            velCorrection.z = velErr.z * velPosGain + badImuVelErrIntegral * sq(velPosGain) * 0.07F;
+            velErrintegral.z = badImuVelErrIntegral;
+        } else {
+            velCorrection.z = velErr.z * velPosGain + velErrintegral.z * sq(velPosGain) * 0.1F;
+        }
+>>>>>>> Copter-4.2.3
 
         // loop through the output filter state history and apply the corrections to the velocity and position states
         // this method is too expensive to use for the attitude states due to the quaternion operations required
@@ -1934,7 +1961,11 @@ void NavEKF3_core::ConstrainVariances()
         zeroCols(P,13,15);
         zeroRows(P,13,15);
         for (uint8_t i=0; i<=2; i++) {
+<<<<<<< HEAD
             const uint8_t stateIndex = 1 + 13;
+=======
+            const uint8_t stateIndex = i + 13;
+>>>>>>> Copter-4.2.3
             P[stateIndex][stateIndex] = fmaxF(P[stateIndex][stateIndex], minStateVarTarget);
         }
     }

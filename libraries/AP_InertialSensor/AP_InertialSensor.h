@@ -17,7 +17,7 @@
 #define INS_MAX_INSTANCES 3
 #endif
 #define INS_MAX_BACKENDS  2*INS_MAX_INSTANCES
-#define INS_MAX_NOTCHES 4
+#define INS_MAX_NOTCHES 12
 #ifndef INS_VIBRATION_CHECK_INSTANCES
   #if HAL_MEM_CLASS >= HAL_MEM_CLASS_300
     #define INS_VIBRATION_CHECK_INSTANCES INS_MAX_INSTANCES
@@ -35,19 +35,29 @@
 #define HAL_INS_TEMPERATURE_CAL_ENABLE !HAL_MINIMIZE_FEATURES && BOARD_FLASH_SIZE > 1024
 #endif
 
+#ifndef HAL_INS_NUM_HARMONIC_NOTCH_FILTERS
+#define HAL_INS_NUM_HARMONIC_NOTCH_FILTERS 2
+#endif
+
+// time for the estimated gyro rates to converge
+#ifndef HAL_INS_CONVERGANCE_MS
+#define HAL_INS_CONVERGANCE_MS 30000
+#endif
 
 #include <stdint.h>
 
 #include <AP_AccelCal/AP_AccelCal.h>
-#include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/utility/RingBuffer.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_ExternalAHRS/AP_ExternalAHRS.h>
 #include <Filter/LowPassFilter2p.h>
 #include <Filter/LowPassFilter.h>
-#include <Filter/NotchFilter.h>
 #include <Filter/HarmonicNotchFilter.h>
 #include <AP_Math/polyfit.h>
+
+#ifndef AP_SIM_INS_ENABLED
+#define AP_SIM_INS_ENABLED (CONFIG_HAL_BOARD == HAL_BOARD_SITL)
+#endif
 
 class AP_InertialSensor_Backend;
 class AuxiliaryBus;
@@ -102,7 +112,7 @@ public:
     // a function called by the main thread at the main loop rate:
     void periodic();
 
-    bool calibrate_trim(float &trim_roll, float &trim_pitch);
+    bool calibrate_trim(Vector3f &trim_rad);
 
     /// calibrating - returns true if the gyros or accels are currently being calibrated
     bool calibrating() const;
@@ -157,7 +167,7 @@ public:
     bool get_gyro_health(uint8_t instance) const { return (instance<_gyro_count) ? _gyro_healthy[instance] : false; }
     bool get_gyro_health(void) const { return get_gyro_health(_primary_gyro); }
     bool get_gyro_health_all(void) const;
-    uint8_t get_gyro_count(void) const { return _gyro_count; }
+    uint8_t get_gyro_count(void) const { return MIN(INS_MAX_INSTANCES, _accel_count); }
     bool gyro_calibrated_ok(uint8_t instance) const { return _gyro_cal_ok[instance]; }
     bool gyro_calibrated_ok_all() const;
     bool use_gyro(uint8_t instance) const;
@@ -166,7 +176,7 @@ public:
     bool get_accel_health(uint8_t instance) const { return (instance<_accel_count) ? _accel_healthy[instance] : false; }
     bool get_accel_health(void) const { return get_accel_health(_primary_accel); }
     bool get_accel_health_all(void) const;
-    uint8_t get_accel_count(void) const { return _accel_count; }
+    uint8_t get_accel_count(void) const { return MIN(INS_MAX_INSTANCES, _accel_count); }
     bool accel_calibrated_ok_all() const;
     bool use_accel(uint8_t instance) const;
 
@@ -213,10 +223,10 @@ public:
     float get_gyro_drift_rate(void) const { return ToRad(0.5f/60); }
 
     // update gyro and accel values from accumulated samples
-    void update(void);
+    void update(void) __RAMFUNC__;
 
     // wait for a sample to be available
-    void wait_for_sample(void);
+    void wait_for_sample(void) __RAMFUNC__;
 
     // class level parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -238,42 +248,14 @@ public:
     uint8_t get_primary_accel(void) const { return _primary_accel; }
     uint8_t get_primary_gyro(void) const { return _primary_gyro; }
 
-    // Update the harmonic notch frequency
-    void update_harmonic_notch_freq_hz(float scaled_freq);
-    // Update the harmonic notch frequencies
-    void update_harmonic_notch_frequencies_hz(uint8_t num_freqs, const float scaled_freq[]);
-
     // get the gyro filter rate in Hz
     uint16_t get_gyro_filter_hz(void) const { return _gyro_filter_cutoff; }
 
     // get the accel filter rate in Hz
     uint16_t get_accel_filter_hz(void) const { return _accel_filter_cutoff; }
 
-    // harmonic notch current center frequency
-    float get_gyro_dynamic_notch_center_freq_hz(void) const { return _calculated_harmonic_notch_freq_hz[0]; }
-
-    // set of harmonic notch current center frequencies
-    const float* get_gyro_dynamic_notch_center_frequencies_hz(void) const { return _calculated_harmonic_notch_freq_hz; }
-
-    // number of harmonic notch current center frequencies
-    uint8_t get_num_gyro_dynamic_notch_center_frequencies(void) const { return _num_calculated_harmonic_notch_frequencies; }
-
-    // harmonic notch reference center frequency
-    float get_gyro_harmonic_notch_center_freq_hz(void) const { return _harmonic_notch_filter.center_freq_hz(); }
-
-    // harmonic notch reference scale factor
-    float get_gyro_harmonic_notch_reference(void) const { return _harmonic_notch_filter.reference(); }
-
-    // harmonic notch tracking mode
-    HarmonicNotchDynamicMode get_gyro_harmonic_notch_tracking_mode(void) const { return _harmonic_notch_filter.tracking_mode(); }
-
-    // harmonic notch harmonics
-    uint8_t get_gyro_harmonic_notch_harmonics(void) const { return _harmonic_notch_filter.harmonics(); }
-
-    // harmonic notch options
-    bool has_harmonic_option(HarmonicNotchFilterParams::Options option) {
-        return _harmonic_notch_filter.hasOption(option);
-    }
+    // write out harmonic notch log messages
+    void write_notch_log_messages() const;
 
     // indicate which bit in LOG_BITMASK indicates raw logging enabled
     void set_log_raw_bit(uint32_t log_raw_bit) { _log_raw_bit = log_raw_bit; }
@@ -295,9 +277,6 @@ public:
     // check for vibration movement. True when all axis show nearly zero movement
     bool is_still();
 
-    // return true if harmonic notch enabled
-    bool gyro_harmonic_notch_enabled(void) const { return _harmonic_notch_filter.enabled(); }
-
     AuxiliaryBus *get_auxiliary_bus(int16_t backend_id) { return get_auxiliary_bus(backend_id, 0); }
     AuxiliaryBus *get_auxiliary_bus(int16_t backend_id, uint8_t instance);
 
@@ -317,7 +296,7 @@ public:
     bool get_primary_accel_cal_sample_avg(uint8_t sample_num, Vector3f& ret) const;
 
     // Returns newly calculated trim values if calculated
-    bool get_new_trim(float& trim_roll, float &trim_pitch);
+    bool get_new_trim(Vector3f &trim_rad);
 
     // initialise and register accel calibrator
     // called during the startup of accel cal
@@ -327,7 +306,9 @@ public:
     void acal_update();
 
     // simple accel calibration
+#if HAL_GCS_ENABLED
     MAV_RESULT simple_accel_cal();
+#endif
 
     bool accel_cal_requires_reboot() const { return _accel_cal_requires_reboot; }
 
@@ -351,7 +332,7 @@ public:
         };
 
         void init();
-        void sample(uint8_t instance, IMU_SENSOR_TYPE _type, uint64_t sample_us, const Vector3f &sample);
+        void sample(uint8_t instance, IMU_SENSOR_TYPE _type, uint64_t sample_us, const Vector3f &sample) __RAMFUNC__;
 
         // a function called by the main thread at the main loop rate:
         void periodic();
@@ -390,7 +371,7 @@ public:
         void rotate_to_next_sensor();
         void update_doing_sensor_rate_logging();
 
-        bool should_log(uint8_t instance, IMU_SENSOR_TYPE type);
+        bool should_log(uint8_t instance, IMU_SENSOR_TYPE type) __RAMFUNC__;
         void push_data_to_log();
 
         // Logging functions
@@ -436,6 +417,39 @@ public:
     // force save of current calibration as valid
     void force_save_calibration(void);
 
+    // structure per harmonic notch filter. This is public to allow for
+    // easy iteration
+    class HarmonicNotch {
+    public:
+        HarmonicNotchFilterParams params;
+        HarmonicNotchFilterVector3f filter[INS_MAX_INSTANCES];
+
+        uint8_t num_dynamic_notches;
+
+        // the current center frequency for the notch
+        float calculated_notch_freq_hz[INS_MAX_NOTCHES];
+        uint8_t num_calculated_notch_frequencies;
+
+        // Update the harmonic notch frequency
+        void update_notch_freq_hz(float scaled_freq);
+
+        // Update the harmonic notch frequencies
+        void update_notch_frequencies_hz(uint8_t num_freqs, const float scaled_freq[]);
+
+        // runtime update of notch parameters
+        void update_params(uint8_t instance, bool converging, float gyro_rate);
+
+        // Update the harmonic notch frequencies
+        void update_freq_hz(float scaled_freq);
+        void update_frequencies_hz(uint8_t num_freqs, const float scaled_freq[]);
+        
+    private:
+        // support for updating harmonic filter at runtime
+        float last_center_freq_hz[INS_MAX_INSTANCES];
+        float last_bandwidth_hz[INS_MAX_INSTANCES];
+        float last_attenuation_dB[INS_MAX_INSTANCES];
+    } harmonic_notches[HAL_INS_NUM_HARMONIC_NOTCH_FILTERS];
+
 private:
     // load backend drivers
     bool _add_backend(AP_InertialSensor_Backend *backend);
@@ -449,7 +463,7 @@ private:
     // blog post describing the method: http://chionophilous.wordpress.com/2011/10/24/accelerometer-calibration-iv-1-implementing-gauss-newton-on-an-atmega/
     // original sketch available at http://rolfeschmidt.com/mathtools/skimetrics/adxl_gn_calibration.pde
 
-    bool _calculate_trim(const Vector3f &accel_sample, float& trim_roll, float& trim_pitch);
+    bool _calculate_trim(const Vector3f &accel_sample, Vector3f &trim_rad);
 
     // save gyro calibration values to eeprom
     void _save_gyro_calibration();
@@ -495,17 +509,6 @@ private:
 #endif
     bool _new_accel_data[INS_MAX_INSTANCES];
     bool _new_gyro_data[INS_MAX_INSTANCES];
-
-    // optional notch filter on gyro
-    NotchFilterParams _notch_filter;
-    NotchFilterVector3f _gyro_notch_filter[INS_MAX_INSTANCES];
-
-    // optional harmonic notch filter on gyro
-    HarmonicNotchFilterParams _harmonic_notch_filter;
-    HarmonicNotchFilterVector3f _gyro_harmonic_notch_filter[INS_MAX_INSTANCES];
-    // the current center frequency for the notch
-    float _calculated_harmonic_notch_freq_hz[INS_MAX_NOTCHES];
-    uint8_t _num_calculated_harmonic_notch_frequencies;
 
     // Most recent gyro reading
     Vector3f _gyro[INS_MAX_INSTANCES];
@@ -666,8 +669,7 @@ private:
     // Returns AccelCalibrator objects pointer for specified acceleromter
     AccelCalibrator* _acal_get_calibrator(uint8_t i) override { return i<get_accel_count()?&(_accel_calibrator[i]):nullptr; }
 
-    float _trim_pitch;
-    float _trim_roll;
+    Vector3f _trim_rad;
     bool _new_trim;
 
     bool _accel_cal_requires_reboot;

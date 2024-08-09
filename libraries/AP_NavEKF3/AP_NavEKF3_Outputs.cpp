@@ -380,9 +380,11 @@ void NavEKF3_core::getMagXYZ(Vector3f &magXYZ) const
 // return true if offsets are valid
 bool NavEKF3_core::getMagOffsets(uint8_t mag_idx, Vector3f &magOffsets) const
 {
-    if (!dal.get_compass()) {
+    const auto &compass = dal.compass();
+    if (!compass.available()) {
         return false;
     }
+
     // compass offsets are valid if we have finalised magnetic field initialisation, magnetic field learning is not prohibited,
     // primary compass is valid and state variances have converged
     const float maxMagVar = 5E-6f;
@@ -390,12 +392,16 @@ bool NavEKF3_core::getMagOffsets(uint8_t mag_idx, Vector3f &magOffsets) const
     if ((mag_idx == magSelectIndex) &&
             finalInflightMagInit &&
             !inhibitMagStates &&
-            dal.get_compass()->healthy(magSelectIndex) &&
+            compass.healthy(magSelectIndex) &&
             variancesConverged) {
+<<<<<<< HEAD
         magOffsets = dal.get_compass()->get_offsets(magSelectIndex) - stateStruct.body_magfield.tofloat()*1000.0;
+=======
+        magOffsets = compass.get_offsets(magSelectIndex) - stateStruct.body_magfield.tofloat()*1000.0;
+>>>>>>> Copter-4.2.3
         return true;
     } else {
-        magOffsets = dal.get_compass()->get_offsets(magSelectIndex);
+        magOffsets = compass.get_offsets(magSelectIndex);
         return false;
     }
 }
@@ -459,7 +465,7 @@ bool NavEKF3_core::getVelInnovationsAndVariancesForSource(AP_NavEKF_Source::Sour
     switch (source) {
     case AP_NavEKF_Source::SourceXY::GPS:
         // check for timeouts
-        if (AP_HAL::millis() - gpsVelInnovTime_ms > 500) {
+        if (dal.millis() - gpsVelInnovTime_ms > 500) {
             return false;
         }
         innovations = gpsVelInnov.tofloat();
@@ -468,13 +474,25 @@ bool NavEKF3_core::getVelInnovationsAndVariancesForSource(AP_NavEKF_Source::Sour
 #if EK3_FEATURE_EXTERNAL_NAV
     case AP_NavEKF_Source::SourceXY::EXTNAV:
         // check for timeouts
-        if (AP_HAL::millis() - extNavVelInnovTime_ms > 500) {
+        if (dal.millis() - extNavVelInnovTime_ms > 500) {
             return false;
         }
         innovations = extNavVelInnov.tofloat();
         variances = extNavVelVarInnov.tofloat();
         return true;
 #endif // EK3_FEATURE_EXTERNAL_NAV
+    case AP_NavEKF_Source::SourceXY::OPTFLOW:
+        // check for timeouts
+        if (dal.millis() - flowInnovTime_ms > 500) {
+            return false;
+        }
+        innovations.x = flowInnov[0];
+        innovations.y = flowInnov[1];
+        innovations.z = 0;
+        variances.x = flowVarInnov[0];
+        variances.y = flowVarInnov[1];
+        variances.z = 0;
+        return true;
     default:
         // variances are not available for this source
         return false;

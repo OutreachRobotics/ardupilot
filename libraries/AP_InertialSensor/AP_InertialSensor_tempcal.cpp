@@ -16,10 +16,11 @@
   IMU temperature calibration handling
  */
 
+#define AP_INLINE_VECTOR_OPS
+
 #include "AP_InertialSensor.h"
 
 #if HAL_INS_TEMPERATURE_CAL_ENABLE
-
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Common/ExpandingString.h>
@@ -302,7 +303,7 @@ void AP_InertialSensor::TCal::Learn::add_sample(const Vector3f &sample, float te
     }
 
     const float tdiff = T - TEMP_REFERENCE;
-
+#if HAL_LOGGING_ENABLED
     AP::logger().Write("TCLR", "TimeUS,I,SType,Temp,X,Y,Z,NSamp",
                        "s#------",
                        "F000000-",
@@ -313,6 +314,7 @@ void AP_InertialSensor::TCal::Learn::add_sample(const Vector3f &sample, float te
                        T,
                        st.sum.x, st.sum.y, st.sum.z,
                        st.sum_count);
+#endif
     
     
     st.pfit.update(tdiff, st.sum);

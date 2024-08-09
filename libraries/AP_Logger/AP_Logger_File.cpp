@@ -40,10 +40,9 @@ extern const AP_HAL::HAL& hal;
   constructor
  */
 AP_Logger_File::AP_Logger_File(AP_Logger &front,
-                               LoggerMessageWriter_DFLogStart *writer,
-                               const char *log_directory) :
+                               LoggerMessageWriter_DFLogStart *writer) :
     AP_Logger_Backend(front, writer),
-    _log_directory(log_directory)
+    _log_directory(HAL_BOARD_LOG_DIRECTORY)
 {
     df_stats_clear();
 }
@@ -149,17 +148,14 @@ void AP_Logger_File::periodic_1Hz()
             // we register the IO timer callback
             GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "AP_Logger: stuck thread (%s)", last_io_operation);
         }
-        if (io_thread_warning_decimation_counter++ > 57) {
+        if (io_thread_warning_decimation_counter++ > 30) {
             io_thread_warning_decimation_counter = 0;
         }
-        // If you try to close the file here then it will almost
-        // certainly block.  Since this is the main thread, this is
-        // likely to cause a crash.
+    }
 
-        // semaphore_write_fd not taken here as if the io thread is
-        // dead it may not release lock...
-        _write_fd = -1;
-        _initialised = false;
+    if (rate_limiter == nullptr && _front._params.file_ratemax > 0) {
+        // setup rate limiting
+        rate_limiter = new AP_Logger_RateLimiter(_front, _front._params.file_ratemax);
     }
 }
 
@@ -205,6 +201,29 @@ int64_t AP_Logger_File::disk_space()
     return AP::FS().disk_space(_log_directory);
 }
 
+/*
+  convert a dirent to a log number
+ */
+bool AP_Logger_File::dirent_to_log_num(const dirent *de, uint16_t &log_num) const
+{
+    uint8_t length = strlen(de->d_name);
+    if (length < 5) {
+        return false;
+    }
+    if (strncmp(&de->d_name[length-4], ".BIN", 4) != 0) {
+        // doesn't end in .BIN
+        return false;
+    }
+
+    uint16_t thisnum = strtoul(de->d_name, nullptr, 10);
+    if (thisnum > MAX_LOG_FILES) {
+        return false;
+    }
+    log_num = thisnum;
+    return true;
+}
+
+
 // find_oldest_log - find oldest log in _log_directory
 // returns 0 if no log was found
 uint16_t AP_Logger_File::find_oldest_log()
@@ -234,19 +253,9 @@ uint16_t AP_Logger_File::find_oldest_log()
     EXPECT_DELAY_MS(3000);
     for (struct dirent *de=AP::FS().readdir(d); de; de=AP::FS().readdir(d)) {
         EXPECT_DELAY_MS(3000);
-        uint8_t length = strlen(de->d_name);
-        if (length < 5) {
-            // not long enough for \d+[.]BIN
-            continue;
-        }
-        if (strncmp(&de->d_name[length-4], ".BIN", 4)) {
-            // doesn't end in .BIN
-            continue;
-        }
-
-        uint16_t thisnum = strtoul(de->d_name, nullptr, 10);
-        if (thisnum > MAX_LOG_FILES) {
-            // ignore files above our official maximum...
+        uint16_t thisnum;
+        if (!dirent_to_log_num(de, thisnum)) {
+            // not a log filename
             continue;
         }
         if (current_oldest_log == 0) {
@@ -509,7 +518,7 @@ uint16_t AP_Logger_File::find_last_log()
     FileData *fd = AP::FS().load_file(fname);
     free(fname);
     if (fd != nullptr) {
-        ret = strtol((const char *)fd->data, NULL, 10);
+        ret = strtol((const char *)fd->data, nullptr, 10);
         delete fd;
     }
     return ret;
@@ -533,9 +542,6 @@ uint32_t AP_Logger_File::_get_log_size(const uint16_t log_num)
     struct stat st;
     EXPECT_DELAY_MS(3000);
     if (AP::FS().stat(fname, &st) != 0) {
-        if (_open_error_ms == 0) {
-            printf("Unable to fetch Log File Size (%s): %s\n", fname, strerror(errno));
-        }
         free(fname);
         return 0;
     }
@@ -665,29 +671,37 @@ void AP_Logger_File::get_log_info(const uint16_t list_entry, uint32_t &size, uin
 }
 
 
-
 /*
   get the number of logs - note that the log numbers must be consecutive
  */
 uint16_t AP_Logger_File::get_num_logs()
 {
-    uint16_t ret = 0;
+    auto *d = AP::FS().opendir(_log_directory);
+    if (d == nullptr) {
+        return 0;
+    }
     uint16_t high = find_last_log();
-    uint16_t i;
-    for (i=high; i>0; i--) {
-        if (! log_exists(i)) {
-            break;
+    uint16_t ret = high;
+    uint16_t smallest_above_last = 0;
+
+    EXPECT_DELAY_MS(2000);
+    for (struct dirent *de=AP::FS().readdir(d); de; de=AP::FS().readdir(d)) {
+        EXPECT_DELAY_MS(100);
+        uint16_t thisnum;
+        if (!dirent_to_log_num(de, thisnum)) {
+            // not a log filename
+            continue;
         }
-        ret++;
-    }
-    if (i == 0) {
-        for (i=MAX_LOG_FILES; i>high; i--) {
-            if (! log_exists(i)) {
-                break;
-            }
-            ret++;
+        if (thisnum > high && (smallest_above_last == 0 || thisnum < smallest_above_last)) {
+            smallest_above_last = thisnum;
         }
     }
+    AP::FS().closedir(d);
+    if (smallest_above_last != 0) {
+        // we have wrapped, add in the logs with high numbers
+        ret += (MAX_LOG_FILES - smallest_above_last) + 1;
+    }
+
     return ret;
 }
 
@@ -888,13 +902,13 @@ void AP_Logger_File::flush(void)
 
 void AP_Logger_File::io_timer(void)
 {
+    uint32_t tnow = AP_HAL::millis();
+    _io_timer_heartbeat = tnow;
+
     if (start_new_log_pending) {
         start_new_log();
         start_new_log_pending = false;
     }
-
-    uint32_t tnow = AP_HAL::millis();
-    _io_timer_heartbeat = tnow;
 
     if (erase.log_num != 0) {
         // continue erase
@@ -1005,17 +1019,20 @@ void AP_Logger_File::io_timer(void)
 bool AP_Logger_File::io_thread_alive() const
 {
     if (!hal.scheduler->is_system_initialized()) {
-        // the system has long pauses during initialisation
-        return false;
+        // the system has long pauses during initialisation, assume still OK
+        return true;
     }
     // if the io thread hasn't had a heartbeat in a while then it is
-    // considered dead. Three seconds is enough time for a sdcard remount.
-    uint32_t timeout_ms = 3000;
+#if CONFIG_HAL_BOARD == HAL_BOARD_ESP32
+    uint32_t timeout_ms = 10000;
+#else
+    uint32_t timeout_ms = 5000;
+#endif
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL && !defined(HAL_BUILD_AP_PERIPH)
     // the IO thread is working with hardware - writing to a physical
     // disk.  Unfortunately these hardware devices do not obey our
     // SITL speedup options, so we allow for it here.
-    SITL::SITL *sitl = AP::sitl();
+    SITL::SIM *sitl = AP::sitl();
     if (sitl != nullptr) {
         timeout_ms *= sitl->speedup;
     }

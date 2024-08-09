@@ -75,7 +75,8 @@ void Vector3<T>::rotate(enum Rotation rotation)
         x = tmp; z = -z;
         return;
     }
-    case ROTATION_ROLL_180_YAW_90: {
+    case ROTATION_ROLL_180_YAW_90:
+    case ROTATION_PITCH_180_YAW_270: {
         tmp = x; x = y; y = tmp; z = -z;
         return;
     }
@@ -95,7 +96,8 @@ void Vector3<T>::rotate(enum Rotation rotation)
         x = tmp; z = -z;
         return;
     }
-    case ROTATION_ROLL_180_YAW_270: {
+    case ROTATION_ROLL_180_YAW_270: 
+    case ROTATION_PITCH_180_YAW_90: {
         tmp = x; x = -y; y = -tmp; z = -z;
         return;
     }
@@ -159,16 +161,6 @@ void Vector3<T>::rotate(enum Rotation rotation)
         tmp = z; z = x; x = -tmp;
         return;
     }
-    case ROTATION_PITCH_180_YAW_90: {
-        z = -z;
-        tmp = -x; x = -y; y = tmp;
-        return;
-    }
-    case ROTATION_PITCH_180_YAW_270: {
-        x = -x; z = -z;
-        tmp = x; x = y; y = -tmp;
-        return;
-    }
     case ROTATION_ROLL_90_PITCH_90: {
         tmp = z; z = y; y = -tmp;
         tmp = z; z = -x; x = tmp;
@@ -224,9 +216,15 @@ void Vector3<T>::rotate(enum Rotation rotation)
         T tmpx = x;
         T tmpy = y;
         T tmpz = z;
+<<<<<<< HEAD
         x =  0.143039f * tmpx +  0.368776f * tmpy + -0.918446f * tmpz;
         y = -0.332133f * tmpx + -0.856289f * tmpy + -0.395546f * tmpz;
         z = -0.932324f * tmpx +  0.361625f * tmpy +  0.000000f * tmpz;
+=======
+        x =  0.14303897231223747232853327204793 * tmpx +  0.36877648650320382639478111741482 * tmpy + -0.91844638134308709265241077446262 * tmpz;
+        y = -0.33213277779664740485543461545603 * tmpx + -0.85628942146641884303193137384369 * tmpy + -0.39554550256296522325882847326284 * tmpz;
+        z = -0.93232380121551217122544130688766 * tmpx +  0.36162457008209242248497616856184 * tmpy +  0.00000000000000002214311861220361 * tmpz;
+>>>>>>> Copter-4.2.3
         return;
     }
     case ROTATION_PITCH_315: {
@@ -243,12 +241,29 @@ void Vector3<T>::rotate(enum Rotation rotation)
         return;
     }
     case ROTATION_PITCH_7: {
+<<<<<<< HEAD
         const T sin_pitch = 0.12186934340514748f; // sinF(pitch);
         const T cos_pitch = 0.992546151641322f; // cosF(pitch);
+=======
+        const T sin_pitch = 0.1218693434051474899781908334262; // sinF(pitch);
+        const T cos_pitch = 0.99254615164132198312785249072476; // cosF(pitch);
+>>>>>>> Copter-4.2.3
         T tmpx = x;
         T tmpz = z;
         x =  cos_pitch * tmpx + sin_pitch * tmpz;
         z = -sin_pitch * tmpx + cos_pitch * tmpz;
+        return;
+    }
+    case ROTATION_ROLL_45: {
+        tmp = HALF_SQRT_2*(ftype)(y - z);
+        z   = HALF_SQRT_2*(ftype)(y + z);
+        y = tmp;
+        return;
+    }
+    case ROTATION_ROLL_315: {
+        tmp = HALF_SQRT_2*(ftype)(y + z);
+        z   = HALF_SQRT_2*(ftype)(z - y);
+        y = tmp;
         return;
     }
     case ROTATION_CUSTOM: 
@@ -583,7 +598,7 @@ void Vector3<T>::segment_to_segment_closest_point(const Vector3<T>& seg1_start, 
         }
     }
     // finally do the division to get tc
-    tc = (fabsf(tN) < FLT_EPSILON ? 0.0 : tN / tD);
+    tc = (::is_zero(tN) ? 0.0 : tN / tD);
 
     // closest point on seg2
     closest_point = seg2_start + line2*tc;
@@ -599,7 +614,7 @@ bool Vector3<T>::segment_plane_intersect(const Vector3<T>& seg_start, const Vect
     T D = plane_normal * u;
     T N = -(plane_normal * w);
 
-    if (fabsf(D) < FLT_EPSILON) {
+    if (::is_zero(D)) {
         if (::is_zero(N)) {
             // segment lies in this plane
             return true;

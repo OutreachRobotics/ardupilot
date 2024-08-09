@@ -34,25 +34,28 @@ AP_ESC_Telem::AP_ESC_Telem()
     _singleton = this;
 }
 
-// return the average motor frequency in Hz for dynamic filtering
-float AP_ESC_Telem::get_average_motor_frequency_hz() const
+// return the average motor RPM
+float AP_ESC_Telem::get_average_motor_rpm(uint32_t servo_channel_mask) const
 {
-    float motor_freq = 0.0f;
+    float rpm_avg = 0.0f;
     uint8_t valid_escs = 0;
 
-    // average the rpm of each motor and convert to Hz
+    // average the rpm of each motor
     for (uint8_t i = 0; i < ESC_TELEM_MAX_ESCS; i++) {
-        float rpm;
-        if (get_rpm(i, rpm)) {
-            motor_freq += rpm * (1.0f / 60.0f);
-            valid_escs++;
+        if (BIT_IS_SET(servo_channel_mask,i)) {
+            float rpm;
+            if (get_rpm(i, rpm)) {
+                rpm_avg += rpm;
+                valid_escs++;
+            }
         }
     }
+
     if (valid_escs > 0) {
-        motor_freq /= valid_escs;
+        rpm_avg /= valid_escs;
     }
 
-    return motor_freq;
+    return rpm_avg;
 }
 
 // return all the motor frequencies in Hz for dynamic filtering
@@ -71,16 +74,28 @@ uint8_t AP_ESC_Telem::get_motor_frequencies_hz(uint8_t nfreqs, float* freqs) con
     return MIN(valid_escs, nfreqs);
 }
 
+// get mask of ESCs that sent valid telemetry data in the last
+// ESC_TELEM_DATA_TIMEOUT_MS
+uint16_t AP_ESC_Telem::get_active_esc_mask() const {
+    uint16_t ret = 0;
+    const uint32_t now = AP_HAL::millis();
+    for (uint8_t i = 0; i < ESC_TELEM_MAX_ESCS; i++) {
+        if (now - _telem_data[i].last_update_ms >= ESC_TELEM_DATA_TIMEOUT_MS) {
+            continue;
+        }
+        if (_telem_data[i].last_update_ms == 0) {
+            // have never seen telem from this ESC
+            continue;
+        }
+        ret |= (1U << i);
+    }
+    return ret;
+}
+
 // return number of active ESCs present
 uint8_t AP_ESC_Telem::get_num_active_escs() const {
-    uint8_t nmotors = 0;
-    uint32_t now = AP_HAL::millis();
-    for (uint8_t i = 0; i < ESC_TELEM_MAX_ESCS; i++) {
-        if (now - _telem_data[i].last_update_ms < ESC_TELEM_DATA_TIMEOUT_MS) {
-            nmotors++;
-        }
-    }
-    return nmotors;
+    uint16_t active = get_active_esc_mask();
+    return __builtin_popcount(active);
 }
 
 // get an individual ESC's slewed rpm if available, returns true on success
@@ -149,6 +164,22 @@ bool AP_ESC_Telem::get_motor_temperature(uint8_t esc_index, int16_t& temp) const
     return true;
 }
 
+// get the highest ESC temperature in centi-degrees if available, returns true if there is valid data for at least one ESC
+bool AP_ESC_Telem::get_highest_motor_temperature(int16_t& temp) const
+{
+    uint8_t valid_escs = 0;
+
+    for (uint8_t i = 0; i < ESC_TELEM_MAX_ESCS; i++) {
+        int16_t temp_temp;
+        if (get_motor_temperature(i, temp_temp)) {
+            temp = MAX(temp, temp_temp);
+            valid_escs++;
+        }
+    }
+
+    return valid_escs > 0;
+}
+
 // get an individual ESC's current in Ampere if available, returns true on success
 bool AP_ESC_Telem::get_current(uint8_t esc_index, float& amps) const
 {
@@ -200,6 +231,7 @@ bool AP_ESC_Telem::get_usage_seconds(uint8_t esc_index, uint32_t& usage_s) const
 // send ESC telemetry messages over MAVLink
 void AP_ESC_Telem::send_esc_telemetry_mavlink(uint8_t mav_chan)
 {
+#if HAL_GCS_ENABLED
     static_assert(ESC_TELEM_MAX_ESCS <= 12, "AP_ESC_Telem::send_esc_telemetry_mavlink() only supports up-to 12 motors");
 
     if (!_have_data) {
@@ -264,6 +296,7 @@ void AP_ESC_Telem::send_esc_telemetry_mavlink(uint8_t mav_chan)
                 break;
         }
     }
+#endif // HAL_GCS_ENABLED
 }
 
 // record an update to the telemetry data together with timestamp
@@ -337,7 +370,7 @@ void AP_ESC_Telem::update()
 {
     AP_Logger *logger = AP_Logger::get_singleton();
 
-    // Push received telemtry data into the logging system
+    // Push received telemetry data into the logging system
     if (logger && logger->logging_enabled()) {
 
         for (uint8_t i = 0; i < ESC_TELEM_MAX_ESCS; i++) {
@@ -346,6 +379,8 @@ void AP_ESC_Telem::update()
 
                 float rpm = 0.0f;
                 get_rpm(i, rpm);
+                float rawrpm = 0.0f;
+                get_raw_rpm(i, rawrpm);
 
                 // Write ESC status messages
                 //   id starts from 0
@@ -353,7 +388,7 @@ void AP_ESC_Telem::update()
                 //   voltage is in Volt
                 //   current is in Ampere
                 //   esc_temp is in centi-degrees Celsius
-                //   current_tot is in mili-Ampere hours
+                //   current_tot is in milli-Ampere hours
                 //   motor_temp is in centi-degrees Celsius
                 //   error_rate is in percentage
                 const struct log_Esc pkt{
@@ -361,6 +396,7 @@ void AP_ESC_Telem::update()
                     time_us     : AP_HAL::micros64(),
                     instance    : i,
                     rpm         : (int32_t) rpm * 100,
+                    raw_rpm     : (int32_t) rawrpm * 100,
                     voltage     : _telem_data[i].voltage,
                     current     : _telem_data[i].current,
                     esc_temp    : _telem_data[i].temperature_cdeg,

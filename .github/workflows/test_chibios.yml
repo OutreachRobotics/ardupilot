@@ -23,16 +23,21 @@ jobs:
             periph-build,
             iofirmware,
             CubeOrange-bootloader,
-            revo-bootloader
+            revo-bootloader,
+            stm32h7-debug,
+            fmuv3,
+            revo-mini,
+            MatekF405-Wing,
+            configure-all
+            CubeOrange-ODID,
         ]
         toolchain: [
             chibios,  # GCC-6
-            chibios-clang,
         ]
-        gcc: [6, 9]
-        exclude:
-          - gcc: 9
-            toolchain: chibios-clang
+        gcc: [10]
+        include:
+          - config: stm32h7
+            toolchain: chibios-py2
 
     steps:
       # git checkout the PR
@@ -65,9 +70,9 @@ jobs:
           CI_BUILD_TARGET: ${{matrix.config}}
         shell: bash
         run: |
-          if [[ ${{ matrix.toolchain }} = "chibios-clang" ]]; then
-            export CC=clang-7
-            export CXX=clang++-7
+          if [[ ${{ matrix.toolchain }} == "chibios-clang" ]]; then
+            export CC=clang
+            export CXX=clang++
           fi
           PATH="/usr/lib/ccache:/opt/gcc-arm-none-eabi-${{matrix.gcc}}/bin:$PATH"
           PATH="/github/home/.local/bin:$PATH"

@@ -1,7 +1,7 @@
 #include "Copter.h"
 #include <utility>
 
-#if !HAL_MINIMIZE_FEATURES && OPTFLOW == ENABLED
+#if !HAL_MINIMIZE_FEATURES && AP_OPTICALFLOW_ENABLED
 
 /*
   implement FLOWHOLD mode, for position hold using optical flow
@@ -106,7 +106,7 @@ bool ModeFlowHold::init(bool ignore_checks)
     flow_pi_xy.set_dt(1.0/copter.scheduler.get_loop_rate_hz());
 
     // start with INS height
-    last_ins_height = copter.inertial_nav.get_altitude() * 0.01;
+    last_ins_height = copter.inertial_nav.get_position_z_up_cm() * 0.01;
     height_offset = 0;
 
     return true;
@@ -130,7 +130,7 @@ void ModeFlowHold::flowhold_flow_to_angle(Vector2f &bf_angles, bool stick_input)
     Vector2f sensor_flow = flow_filter.apply(raw_flow);
 
     // scale by height estimate, limiting it to height_min to height_max
-    float ins_height = copter.inertial_nav.get_altitude() * 0.01;
+    float ins_height = copter.inertial_nav.get_position_z_up_cm() * 0.01;
     float height_estimate = ins_height + height_offset;
 
     // compensate for height, this converts to (approx) m/s
@@ -215,7 +215,7 @@ void ModeFlowHold::flowhold_flow_to_angle(Vector2f &bf_angles, bool stick_input)
 // @Field: Iy: Integral part of PI controller, Y-Axis
 
     if (log_counter++ % 20 == 0) {
-        AP::logger().Write("FHLD", "TimeUS,SFx,SFy,Ax,Ay,Qual,Ix,Iy", "Qfffffff",
+        AP::logger().WriteStreaming("FHLD", "TimeUS,SFx,SFy,Ax,Ay,Qual,Ix,Iy", "Qfffffff",
                                                AP_HAL::micros64(),
                                                (double)sensor_flow.x, (double)sensor_flow.y,
                                                (double)bf_angles.x, (double)bf_angles.y,
@@ -246,7 +246,7 @@ void ModeFlowHold::run()
     target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), copter.g.pilot_speed_up);
 
     // get pilot's desired yaw rate
-    float target_yaw_rate = get_pilot_desired_yaw_rate(copter.channel_yaw->get_control_in());
+    float target_yaw_rate = get_pilot_desired_yaw_rate(copter.channel_yaw->norm_input_dz());
 
     // Flow Hold State Machine Determination
     AltHoldModeState flowhold_state = get_alt_hold_state(target_climb_rate);
@@ -314,8 +314,8 @@ void ModeFlowHold::run()
     // calculate alt-hold angles
     int16_t roll_in = copter.channel_roll->get_control_in();
     int16_t pitch_in = copter.channel_pitch->get_control_in();
-    float angle_max = copter.attitude_control->get_althold_lean_angle_max();
-    get_pilot_desired_lean_angles(bf_angles.x, bf_angles.y, angle_max, attitude_control->get_althold_lean_angle_max());
+    float angle_max = copter.aparm.angle_max;
+    get_pilot_desired_lean_angles(bf_angles.x, bf_angles.y, angle_max, attitude_control->get_althold_lean_angle_max_cd());
 
     if (quality_filtered >= flow_min_quality &&
         AP_HAL::millis() - copter.arm_time_ms > 3000) {
@@ -347,7 +347,7 @@ void ModeFlowHold::run()
  */
 void ModeFlowHold::update_height_estimate(void)
 {
-    float ins_height = copter.inertial_nav.get_altitude() * 0.01;
+    float ins_height = copter.inertial_nav.get_position_z_up_cm() * 0.01;
 
 #if 1
     // assume on ground when disarmed, or if we have only just started spooling the motors up
@@ -492,7 +492,7 @@ void ModeFlowHold::update_height_estimate(void)
 // @Field: LastInsH: Last used INS height in optical flow sensor height estimation calculations 
 // @Field: DTms: Time between optical flow sensor updates. This should be less than 500ms for performing the height estimation calculations
 
-    AP::logger().Write("FHXY", "TimeUS,DFx,DFy,DVx,DVy,Hest,DH,Hofs,InsH,LastInsH,DTms", "QfffffffffI",
+    AP::logger().WriteStreaming("FHXY", "TimeUS,DFx,DFy,DVx,DVy,Hest,DH,Hofs,InsH,LastInsH,DTms", "QfffffffffI",
                                            AP_HAL::micros64(),
                                            (double)delta_flowrate.x,
                                            (double)delta_flowrate.y,
@@ -509,4 +509,4 @@ void ModeFlowHold::update_height_estimate(void)
     last_ins_height = ins_height;
 }
 
-#endif // OPTFLOW == ENABLED
+#endif // AP_OPTICALFLOW_ENABLED

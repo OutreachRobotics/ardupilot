@@ -37,6 +37,13 @@ Protocol:
  - in the case that we don't have ESC telemetry, consider probing ESCs periodically with an "OK"-request while disarmed
 */
 
+<<<<<<< HEAD
+=======
+#include <AP_HAL/AP_HAL.h>
+
+extern const AP_HAL::HAL& hal;
+
+>>>>>>> Copter-4.2.3
 #include <AP_Math/AP_Math.h>
 
 #include "SIM_FETtecOneWireESC.h"
@@ -227,7 +234,11 @@ void FETtecOneWireESC::running_handle_config_message(FETtecOneWireESC::ESC &esc)
     case ConfigMessageType::NOT_OK:
         break;
     case ConfigMessageType::BL_START_FW:       // BL only
+<<<<<<< HEAD
         ::fprintf(stderr, "received unexpected BL_START_FW message\n");
+=======
+        hal.console->printf("received unexpected BL_START_FW message\n");
+>>>>>>> Copter-4.2.3
         AP_HAL::panic("received unexpected BL_START_FW message");
         return;
     case ConfigMessageType::BL_PAGES_TO_FLASH: // BL only

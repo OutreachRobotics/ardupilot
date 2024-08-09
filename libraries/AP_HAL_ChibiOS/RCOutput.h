@@ -26,7 +26,7 @@
 
 #if HAL_USE_PWM == TRUE
 
-#if !STM32_DMA_ADVANCED && !defined(STM32G4)
+#if !STM32_DMA_ADVANCED && !defined(STM32G4) && !defined(STM32L4)
 #define DISABLE_DSHOT
 #endif
 
@@ -70,6 +70,11 @@ public:
     void set_output_mode(uint16_t mask, const enum output_mode mode) override;
     bool get_output_mode_banner(char banner_msg[], uint8_t banner_msg_len) const override;
 
+    /*
+     * return mask of channels that must be disabled because they share a group with a digital channel
+     */
+    uint16_t get_disabled_channels(uint16_t digital_mask) override;
+
     float scale_esc_to_unity(uint16_t pwm) override {
         return 2.0 * ((float) pwm - _esc_pwm_min) / (_esc_pwm_max - _esc_pwm_min) - 1.0;
     }
@@ -86,12 +91,6 @@ public:
       force the safety switch off, enabling PWM output from the IO board
      */
     void force_safety_off(void) override;
-
-    /*
-      set PWM to send to a set of channels when the safety switch is
-      in the safe state
-     */
-    void set_safety_pwm(uint32_t chmask, uint16_t period_us) override;
 
     bool enable_px4io_sbus_out(uint16_t rate_hz) override;
 
@@ -148,6 +147,7 @@ public:
     /*
       enable telemetry request for a mask of channels. This is used
       with Dshot to get telemetry feedback
+      The mask uses servo channel numbering
      */
     void set_telem_request_mask(uint16_t mask) override { telem_request_mask = (mask >> chan_offset); }
 
@@ -155,6 +155,7 @@ public:
     /*
       enable bi-directional telemetry request for a mask of channels. This is used
       with Dshot to get telemetry feedback
+      The mask uses servo channel numbering
      */
     void set_bidir_dshot_mask(uint16_t mask) override;
 
@@ -170,7 +171,7 @@ public:
     /*
       Set/get the dshot esc_type
      */
-    void set_dshot_esc_type(DshotEscType dshot_esc_type) override { _dshot_esc_type = dshot_esc_type; }
+    void set_dshot_esc_type(DshotEscType dshot_esc_type) override;
 
     DshotEscType get_dshot_esc_type() const override { return _dshot_esc_type; }
 #endif
@@ -193,19 +194,22 @@ public:
 #ifndef DISABLE_DSHOT
     /*
      * mark the channels in chanmask as reversible. This is needed for some ESC types (such as Dshot)
-     * so that output scaling can be performed correctly. The chanmask passed is added (ORed) into
-     * any existing mask.
+     * so that output scaling can be performed correctly. The chanmask passed is added (ORed) into any existing mask.
+     * The mask uses servo channel numbering
      */
     void set_reversible_mask(uint16_t chanmask) override;
 
     /*
-     * mark the channels in chanmask as reversed. The chanmask passed is added (ORed) into
-     * any existing mask.
+     * mark the channels in chanmask as reversed.
+     * The chanmask passed is added (ORed) into any existing mask.
+     * The mask uses servo channel numbering
      */
     void set_reversed_mask(uint16_t chanmask) override;
+    uint16_t get_reversed_mask() override { return _reversed_mask << chan_offset; }
 
     /*
       mark escs as active for the purpose of sending dshot commands
+      The mask uses servo channel numbering
      */
     void set_active_escs_mask(uint16_t chanmask) override { _active_escs_mask |= (chanmask >> chan_offset); }
 
@@ -219,6 +223,12 @@ public:
      * Update channel masks at 1Hz allowing for actions such as dshot commands to be sent
      */
     void update_channel_masks() override;
+
+    /*
+     * Allow channel mask updates to be temporarily suspended
+     */
+    void disable_channel_mask_updates() override { _disable_channel_mask_updates = true; }
+    void enable_channel_mask_updates() override { _disable_channel_mask_updates = false; }
 #endif
 
     /*
@@ -242,6 +252,11 @@ public:
       rcout thread
      */
     void rcout_thread();
+
+    /*
+     timer information
+     */
+    void timer_info(ExpandingString &str) override;
 
 private:
     enum class DshotState {
@@ -277,6 +292,7 @@ private:
         uint8_t chan[4]; // chan number, zero based, 255 for disabled
         PWMConfig pwm_cfg;
         PWMDriver* pwm_drv;
+        uint8_t timer_id;
         bool have_up_dma; // can we do DMAR outputs for DShot?
         uint8_t dma_up_stream_id;
         uint8_t dma_up_channel;
@@ -289,7 +305,6 @@ private:
 #endif
         uint8_t alt_functions[4];
         ioline_t pal_lines[4];
-
         // below this line is not initialised by hwdef.h
         enum output_mode current_mode;
         uint16_t frequency_hz;
@@ -327,7 +342,7 @@ private:
         // serial output
         struct {
             // expected time per bit
-            uint32_t bit_time_us;
+            uint16_t bit_time_us;
 
             // channel to output to within group (0 to 3)
             uint8_t chan;
@@ -406,7 +421,7 @@ private:
         ioline_t line;
 
         // time the current byte started
-        uint32_t byte_start_tick;
+        uint16_t byte_start_tick;
 
         // number of bits we have read in this byte
         uint8_t nbits;
@@ -418,7 +433,7 @@ private:
         uint16_t byteval;
 
         // expected time per bit in micros
-        uint32_t bit_time_tick;
+        uint16_t bit_time_tick;
 
         // the bit value of the last bit received
         uint8_t last_bit;
@@ -495,12 +510,14 @@ private:
 
     DshotEscType _dshot_esc_type;
 
+    // control updates to channel masks
+    bool _disable_channel_mask_updates;
+
     bool dshot_command_is_active(const pwm_group& group) const {
       return (_dshot_current_command.chan == RCOutput::ALL_CHANNELS || (group.ch_mask & (1UL << _dshot_current_command.chan)))
                 && _dshot_current_command.cycle > 0;
     }
 #endif
-    uint16_t safe_pwm[max_channels]; // pwm to use when safety is on
     bool corked;
     // mask of channels that are running in high speed
     uint16_t fast_channel_mask;
@@ -590,10 +607,10 @@ private:
     void dma_cancel(pwm_group& group);
     bool mode_requires_dma(enum output_mode mode) const;
     bool setup_group_DMA(pwm_group &group, uint32_t bitrate, uint32_t bit_width, bool active_high,
-    const uint16_t buffer_length, bool choose_high, uint32_t pulse_time_us);
+                         const uint16_t buffer_length, uint32_t pulse_time_us,
+                         bool is_dshot);
     void send_pulses_DMAR(pwm_group &group, uint32_t buffer_length);
     void set_group_mode(pwm_group &group);
-    static bool is_dshot_protocol(const enum output_mode mode);
     static uint32_t protocol_bitrate(const enum output_mode mode);
     void print_group_setup_error(pwm_group &group, const char* error_string);
 

@@ -1,4 +1,6 @@
 #include "AP_InertialSensor.h"
+
+#if HAL_INS_ENABLED
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Logger/AP_Logger.h>
 
@@ -57,7 +59,7 @@ void AP_InertialSensor::BatchSampler::init()
     _required_count -= _required_count % 32; // round down to nearest multiple of 32
 
     const uint32_t total_allocation = 3*_required_count*sizeof(uint16_t);
-    gcs().send_text(MAV_SEVERITY_DEBUG, "INS: alloc %u bytes for ISB (free=%u)", (unsigned int)total_allocation, (unsigned int)hal.util->available_memory());
+    GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "INS: alloc %u bytes for ISB (free=%u)", (unsigned int)total_allocation, (unsigned int)hal.util->available_memory());
 
     data_x = (int16_t*)calloc(_required_count, sizeof(int16_t));
     data_y = (int16_t*)calloc(_required_count, sizeof(int16_t));
@@ -69,7 +71,7 @@ void AP_InertialSensor::BatchSampler::init()
         data_x = nullptr;
         data_y = nullptr;
         data_z = nullptr;
-        gcs().send_text(MAV_SEVERITY_WARNING, "Failed to allocate %u bytes for IMU batch sampling", (unsigned int)total_allocation);
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "Failed to allocate %u bytes for IMU batch sampling", (unsigned int)total_allocation);
         return;
     }
 
@@ -263,6 +265,7 @@ bool AP_InertialSensor::BatchSampler::should_log(uint8_t _instance, IMU_SENSOR_T
 
 void AP_InertialSensor::BatchSampler::sample(uint8_t _instance, AP_InertialSensor::IMU_SENSOR_TYPE _type, uint64_t sample_us, const Vector3f &_sample)
 {
+#if HAL_LOGGING_ENABLED
     if (!should_log(_instance, _type)) {
         return;
     }
@@ -275,4 +278,6 @@ void AP_InertialSensor::BatchSampler::sample(uint8_t _instance, AP_InertialSenso
     data_z[data_write_offset] = multiplier*_sample.z;
 
     data_write_offset++; // may unblock the reading process
+#endif
 }
+#endif //#if HAL_INS_ENABLED

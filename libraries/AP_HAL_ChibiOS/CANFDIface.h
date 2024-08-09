@@ -221,7 +221,7 @@ public:
     bool set_event_handle(AP_HAL::EventHandle* handle) override;
 #endif
 
-#if !defined(HAL_BUILD_AP_PERIPH) && !defined(HAL_BOOTLOADER_BUILD)
+#if !defined(HAL_BOOTLOADER_BUILD)
     // fetch stats text and return the size of the same,
     // results available via @SYS/can0_stats.txt or @SYS/can1_stats.txt 
     void get_stats(ExpandingString &str) override;
@@ -240,6 +240,15 @@ public:
     // CAN Peripheral register structure, pointing at base
     // register. Indexed by locical interface number
     static constexpr CanType* const Can[HAL_NUM_CAN_IFACES] = { HAL_CAN_BASE_LIST };
+
+protected:
+    bool add_to_rx_queue(const CanRxItem &rx_item) override {
+        return rx_queue_.push(rx_item);
+    }
+
+    int8_t get_iface_num(void) const override {
+        return self_index_;
+    }
 };
 
 
