@@ -86,10 +86,7 @@ public:
         OPTION_NODMA_TX           = (1U<<9), // don't use DMA for TX
         OPTION_MAVLINK_NO_FORWARD = (1U<<10), // don't forward MAVLink data to or from this device
         OPTION_NOFIFO             = (1U<<11), // disable hardware FIFO
-<<<<<<< HEAD
-=======
         OPTION_NOSTREAMOVERRIDE   = (1U<<12), // don't allow GCS to override streamrates
->>>>>>> Copter-4.2.3
     };
 
     enum flow_control {

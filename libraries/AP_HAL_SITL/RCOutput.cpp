@@ -89,11 +89,7 @@ void RCOutput::push(void)
     }
 
     // do not overwrite FETTec simulation's ESC telemetry data:
-<<<<<<< HEAD
-    SITL::SITL *sitl = AP::sitl();
-=======
     SITL::SIM *sitl = AP::sitl();
->>>>>>> Copter-4.2.3
     if (sitl != nullptr &&
         sitl->fetteconewireesc_sim.enabled()) {
         return;

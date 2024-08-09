@@ -671,14 +671,9 @@ void NavEKF3_core::readGpsData()
     }
 
     if (gpsGoodToAlign && !have_table_earth_field) {
-<<<<<<< HEAD
-        const auto *compass = dal.get_compass();
-        if (compass && compass->have_scale_factor(magSelectIndex) && compass->auto_declination_enabled()) {
-=======
         const auto &compass = dal.compass();
         if (compass.have_scale_factor(magSelectIndex) &&
             compass.auto_declination_enabled()) {
->>>>>>> Copter-4.2.3
             getEarthFieldTable(gpsloc);
             if (frontend->_mag_ef_limit > 0) {
                 // initialise earth field from tables
@@ -697,13 +692,8 @@ void NavEKF3_core::readGpsData()
             gpsDataNew.hgt = 0.01 * (gpsloc.alt - EKF_origin.alt);
         }
         storedGPS.push(gpsDataNew);
-<<<<<<< HEAD
-        // declare GPS available for use
-        gpsNotAvailable = false;
-=======
         // declare GPS in use
         gpsIsInUse = true;
->>>>>>> Copter-4.2.3
     }
 }
 
@@ -799,11 +789,7 @@ void NavEKF3_core::correctEkfOriginHeight()
     } else if (activeHgtSource == AP_NavEKF_Source::SourceZ::RANGEFINDER) {
         // use the worse case expected terrain gradient and vehicle horizontal speed
         const ftype maxTerrGrad = 0.25;
-<<<<<<< HEAD
-        ekfOriginHgtVar += sq(maxTerrGrad * norm(stateStruct.velocity.x , stateStruct.velocity.y) * deltaTime);
-=======
         ekfOriginHgtVar += sq(maxTerrGrad * stateStruct.velocity.xy().length() * deltaTime);
->>>>>>> Copter-4.2.3
     } else {
         // by definition our height source is absolute so cannot run this filter
         return;

@@ -379,11 +379,7 @@ ftype Location::get_bearing(const struct Location &loc2) const
 {
     const int32_t off_x = diff_longitude(loc2.lng,lng);
     const int32_t off_y = (loc2.lat - lat) / loc2.longitude_scale((lat+loc2.lat)/2);
-<<<<<<< HEAD
-    int32_t bearing = 9000 + atan2f(-off_y, off_x) * DEGX100;
-=======
     ftype bearing = (M_PI*0.5) + atan2F(-off_y, off_x);
->>>>>>> Copter-4.2.3
     if (bearing < 0) {
         bearing += 2*M_PI;
     }

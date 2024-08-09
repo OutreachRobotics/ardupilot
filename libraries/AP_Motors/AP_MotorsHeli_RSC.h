@@ -100,18 +100,6 @@ public:
 
     // is_spooldown_complete
     bool        is_spooldown_complete() const { return _spooldown_complete; }
-<<<<<<< HEAD
-
-    // set_ramp_time
-    void        set_ramp_time(int8_t ramp_time) { _ramp_time = ramp_time; }
-
-    // set_runup_time
-    void        set_runup_time(int8_t runup_time) { _runup_time = runup_time; }
-
-    // set_throttle_curve
-    void        set_throttle_curve();
-=======
->>>>>>> Copter-4.2.3
 
     // set_collective. collective for throttle curve calculation
     void        set_collective(float collective) { _collective_in = collective; }
@@ -170,12 +158,9 @@ private:
     bool            _in_autorotation;             // true if vehicle is currently in an autorotation
     int16_t         _rsc_arot_bailout_pct;        // the throttle percentage sent to the external governor to signal that autorotation bailout ramp should be used
     bool            _spooldown_complete;          // flag for determining if spooldown is complete
-<<<<<<< HEAD
-=======
     float           _fast_idle_timer;             // cooldown timer variable
     uint8_t         _governor_fault_count;        // variable for tracking governor speed sensor faults
     float           _governor_torque_reference;   // governor reference for load calculations
->>>>>>> Copter-4.2.3
 
     // update_rotor_ramp - slews rotor output scalar between 0 and 1, outputs float scalar to _rotor_ramp_output
     void            update_rotor_ramp(float rotor_ramp_input, float dt);

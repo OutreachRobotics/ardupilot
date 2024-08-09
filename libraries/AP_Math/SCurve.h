@@ -53,25 +53,15 @@ public:
     void init();
 
     // calculate the segment times for the trigonometric S-Curve path defined by:
-<<<<<<< HEAD
-    // tj - duration of the raised cosine jerk profile (aka jerk time)
-    // Jm - maximum value of the raised cosine jerk profile (aka jerk max)
-=======
     // Sm - maximum value of the snap profile
     // Jm - maximum value of the raised cosine jerk profile
->>>>>>> Copter-4.2.3
     // V0 - initial velocity magnitude
     // Am - maximum constant acceleration
     // Vm - maximum constant velocity
     // L - Length of the path
-<<<<<<< HEAD
-    // this is an internal function, static for test suite
-    static void calculate_path(float tj, float Jm, float V0, float Am, float Vm, float L, float &Jm_out, float &t2_out, float &t4_out, float &t6_out);
-=======
     // tj_out, t2_out, t4_out, t6_out are the segment durations needed to achieve the kinematic path specified by the input variables
     // this is an internal function, static for test suite
     static void calculate_path(float Sm, float Jm, float V0, float Am, float Vm, float L, float &Jm_out, float &tj_out, float &t2_out, float &t4_out, float &t6_out);
->>>>>>> Copter-4.2.3
 
     // generate a trigonometric track in 3D space that moves over a straight line
     // between two points defined by the origin and destination

@@ -649,8 +649,6 @@ void UARTDriver::set_blocking_writes(bool blocking)
 }
 
 bool UARTDriver::tx_pending() { return _writebuf.available() > 0; }
-<<<<<<< HEAD
-=======
 
 
 /*
@@ -665,7 +663,6 @@ uint32_t UARTDriver::get_usb_baud() const
 #endif
     return 0;
 }
->>>>>>> Copter-4.2.3
 
 /* Empty implementations of Stream virtual methods */
 uint32_t UARTDriver::available() {

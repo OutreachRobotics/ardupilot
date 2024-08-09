@@ -784,13 +784,8 @@ void SCurve::add_segments(float L)
 // Am - maximum constant acceleration
 // Vm - maximum constant velocity
 // L - Length of the path
-<<<<<<< HEAD
-// t2_out, t4_out, t6_out are the segment durations needed to achieve the kinematic path specified by the input variables
-void SCurve::calculate_path(float tj, float Jm, float V0, float Am, float Vm, float L, float &Jm_out, float &t2_out, float &t4_out, float &t6_out)
-=======
 // tj_out, t2_out, t4_out, t6_out are the segment durations needed to achieve the kinematic path specified by the input variables
 void SCurve::calculate_path(float Sm, float Jm, float V0, float Am, float Vm, float L,float &Jm_out, float &tj_out,  float &t2_out, float &t4_out, float &t6_out)
->>>>>>> Copter-4.2.3
 {
     // init outputs
     Jm_out = 0.0f;

@@ -67,11 +67,7 @@ public:
     void        rotation_matrix(Matrix3f &m) const;
     void        rotation_matrix(Matrix3d &m) const;
 
-<<<<<<< HEAD
-    // return the rotation matrix equivalent for this quaternion
-=======
     // make this quaternion equivalent to the supplied matrix
->>>>>>> Copter-4.2.3
     void		from_rotation_matrix(const Matrix3<T> &m);
 
     // create a quaternion from a given rotation
@@ -85,10 +81,7 @@ public:
 
     // create a quaternion from Euler angles
     void        from_euler(T roll, T pitch, T yaw);
-<<<<<<< HEAD
-=======
     void        from_euler(const Vector3<T> &v);
->>>>>>> Copter-4.2.3
 
     // create a quaternion from Euler angles applied in yaw, roll, pitch order
     // instead of the normal yaw, pitch, roll order
@@ -137,10 +130,7 @@ public:
     // create eulers from a quaternion
     Vector3<T>    to_vector312(void) const;
 
-<<<<<<< HEAD
-=======
     T length_squared(void) const;
->>>>>>> Copter-4.2.3
     T length(void) const;
     void normalize();
 

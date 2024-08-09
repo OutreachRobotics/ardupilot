@@ -305,11 +305,7 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     // @Param: _DRV_OPTIONS
     // @DisplayName: driver options
     // @Description: Additional backend specific options
-<<<<<<< HEAD
-    // @Bitmask: 0:Use UART2 for moving baseline on ublox,1:Use base station for GPS yaw on SBF,2:Use baudrate 115200
-=======
     // @Bitmask: 0:Use UART2 for moving baseline on ublox,1:Use base station for GPS yaw on SBF,2:Use baudrate 115200,3:Use dedicated CAN port b/w GPSes for moving baseline
->>>>>>> Copter-4.2.3
     // @User: Advanced
     AP_GROUPINFO("_DRV_OPTIONS", 22, AP_GPS, _driver_options, 0),
 #endif
@@ -689,16 +685,10 @@ void AP_GPS::detect_instance(uint8_t instance)
                 // link to the flight controller
                 static const char blob[] = UBLOX_SET_BINARY_460800;
                 send_blob_start(instance, blob, sizeof(blob));
-<<<<<<< HEAD
-            } else if (_type[instance] == GPS_TYPE_UBLOX && (_driver_options & AP_GPS_Backend::DriverOptions::UBX_Use115200)) {
-                static const char blob[] = UBLOX_SET_BINARY_115200;
-                send_blob_start(instance, blob, sizeof(blob));
-=======
 #if AP_GPS_NMEA_ENABLED
             } else if (_type[instance] == GPS_TYPE_HEMI) {
                 send_blob_start(instance, AP_GPS_NMEA_HEMISPHERE_INIT_STRING, strlen(AP_GPS_NMEA_HEMISPHERE_INIT_STRING));
 #endif // AP_GPS_NMEA_ENABLED        
->>>>>>> Copter-4.2.3
             } else {
                 send_blob_start(instance, _initialisation_blob, sizeof(_initialisation_blob));
             }
@@ -1105,13 +1095,8 @@ void AP_GPS::update_primary(void)
     // rover as it typically is in fix type 6 (RTK) whereas base is
     // usually fix type 3
     for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
-<<<<<<< HEAD
-        if (_type[i] == GPS_TYPE_UBLOX_RTK_BASE &&
-            _type[i^1] == GPS_TYPE_UBLOX_RTK_ROVER &&
-=======
         if (((_type[i] == GPS_TYPE_UBLOX_RTK_BASE) || (_type[i] == GPS_TYPE_UAVCAN_RTK_BASE)) &&
             ((_type[i^1] == GPS_TYPE_UBLOX_RTK_ROVER) || (_type[i^1] == GPS_TYPE_UAVCAN_RTK_ROVER)) &&
->>>>>>> Copter-4.2.3
             ((state[i].status >= GPS_OK_FIX_3D) || (state[i].status >= state[i^1].status))) {
             if (primary_instance != i) {
                 _last_instance_swap_ms = now;
@@ -1123,10 +1108,7 @@ void AP_GPS::update_primary(void)
         }
     }
 
-<<<<<<< HEAD
-=======
 #if defined(GPS_BLENDED_INSTANCE)
->>>>>>> Copter-4.2.3
     // handling switching away from blended GPS
     if (primary_instance == GPS_BLENDED_INSTANCE) {
         primary_instance = 0;
@@ -1399,16 +1381,12 @@ void AP_GPS::send_mavlink_gps2_raw(mavlink_channel_t chan)
         num_sats(1),
         state[1].rtk_num_sats,
         state[1].rtk_age_ms,
-<<<<<<< HEAD
-        gps_yaw_cdeg(1));
-=======
         gps_yaw_cdeg(1),
         height_elipsoid_mm,   // Elipsoid height in mm
         hacc * 1000,          // one-sigma standard deviation in mm
         vacc * 1000,          // one-sigma standard deviation in mm
         sacc * 1000,          // one-sigma standard deviation in mm/s
         0);                    // TODO one-sigma heading accuracy standard deviation
->>>>>>> Copter-4.2.3
 }
 #endif // GPS_MAX_RECEIVERS
 
@@ -2044,24 +2022,16 @@ bool AP_GPS::prepare_for_arming(void) {
 bool AP_GPS::backends_healthy(char failure_msg[], uint16_t failure_msg_len) {
     for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
 #if HAL_ENABLE_LIBUAVCAN_DRIVERS
-<<<<<<< HEAD
-        if (_type[i] == GPS_TYPE_UAVCAN) {
-=======
         if (_type[i] == GPS_TYPE_UAVCAN ||
             _type[i] == GPS_TYPE_UAVCAN_RTK_BASE ||
             _type[i] == GPS_TYPE_UAVCAN_RTK_ROVER) {
->>>>>>> Copter-4.2.3
             if (!AP_GPS_UAVCAN::backends_healthy(failure_msg, failure_msg_len)) {
                 return false;
             }
         }
 #endif
-<<<<<<< HEAD
-        if (_type[i] == GPS_TYPE_UBLOX_RTK_ROVER) {
-=======
         if (_type[i] == GPS_TYPE_UBLOX_RTK_ROVER ||
             _type[i] == GPS_TYPE_UAVCAN_RTK_ROVER) {
->>>>>>> Copter-4.2.3
             if (AP_HAL::millis() - state[i].gps_yaw_time_ms > 15000) {
                 hal.util->snprintf(failure_msg, failure_msg_len, "GPS[%u] yaw not available", unsigned(i+1));
                 return false;
@@ -2176,13 +2146,8 @@ bool AP_GPS::gps_yaw_deg(uint8_t instance, float &yaw_deg, float &accuracy_deg, 
 {
 #if GPS_MAX_RECEIVERS > 1
     if (instance < GPS_MAX_RECEIVERS &&
-<<<<<<< HEAD
-        _type[instance] == GPS_TYPE_UBLOX_RTK_BASE &&
-        _type[instance^1] == GPS_TYPE_UBLOX_RTK_ROVER) {
-=======
         ((_type[instance] == GPS_TYPE_UBLOX_RTK_BASE) || (_type[instance] == GPS_TYPE_UAVCAN_RTK_BASE)) &&
         ((_type[instance^1] == GPS_TYPE_UBLOX_RTK_ROVER) || (_type[instance^1] == GPS_TYPE_UAVCAN_RTK_ROVER))) {
->>>>>>> Copter-4.2.3
         // return the yaw from the rover
         instance ^= 1;
     }

@@ -217,12 +217,11 @@ public:
     virtual bool set_circle_rate(float rate_dps) { return false; }
 
     // circle mode controls (only used by scripting with Copter)
-    virtual bool get_circle_radius(float &radius_m) { return false; }
-    virtual bool set_circle_rate(float rate_dps) { return false; }
+    // virtual bool get_circle_radius(float &radius_m) { return false; }
+    // virtual bool set_circle_rate(float rate_dps) { return false; }
 
     // set steering and throttle (-1 to +1) (for use by scripting with Rover)
     virtual bool set_steering_and_throttle(float steering, float throttle) { return false; }
-#endif // ENABLE_SCRIPTING
 
 
     // set turn rate in deg/sec and speed in meters/sec (for use by scripting with Rover)

@@ -292,10 +292,7 @@ void JSON::recv_fdm(const struct sitl_input &input)
     velocity_ef = state.velocity;
     position = state.position;
     position.xy() += origin.get_distance_NE_double(home);
-<<<<<<< HEAD
-=======
     use_time_sync = !state.no_time_sync;
->>>>>>> Copter-4.2.3
 
     // deal with euler or quaternion attitude
     if ((received_bitmask & QUAT_ATT) != 0) {

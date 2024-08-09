@@ -37,10 +37,6 @@ public:
         ICM42605,
         ICM40605,
         IIM42652,
-<<<<<<< HEAD
-=======
-        ICM42670,
->>>>>>> Copter-4.2.3
     };
 
     // acclerometers on Invensense sensors will return values up to 32G

@@ -88,21 +88,13 @@ void NavEKF3_core::EstimateTerrainOffset(const of_elements &ofDataDelayed)
         inhibitGndState = false;
 
         // propagate ground position state noise each time this is called using the difference in position since the last observations and an RMS gradient assumption
-<<<<<<< HEAD
-        // limit distance to prevent intialisation afer bad gps causing bad numerical conditioning
-=======
         // limit distance to prevent intialisation after bad gps causing bad numerical conditioning
->>>>>>> Copter-4.2.3
         ftype distanceTravelledSq = sq(stateStruct.position[0] - prevPosN) + sq(stateStruct.position[1] - prevPosE);
         distanceTravelledSq = MIN(distanceTravelledSq, 100.0f);
         prevPosN = stateStruct.position[0];
         prevPosE = stateStruct.position[1];
 
-<<<<<<< HEAD
-        // in addition to a terrain gradient error model, we also have the growth in uncertainty due to the copters vertical velocity
-=======
         // in addition to a terrain gradient error model, we also have the growth in uncertainty due to the copter's vertical velocity
->>>>>>> Copter-4.2.3
         ftype timeLapsed = MIN(0.001f * (imuSampleTime_ms - timeAtLastAuxEKF_ms), 1.0f);
         ftype Pincrement = (distanceTravelledSq * sq(frontend->_terrGradMax)) + sq(timeLapsed)*P[6][6];
         Popt += Pincrement;
@@ -110,15 +102,10 @@ void NavEKF3_core::EstimateTerrainOffset(const of_elements &ofDataDelayed)
 
         // fuse range finder data
         if (rangeDataToFuse) {
-<<<<<<< HEAD
-            // predict range
-            ftype predRngMeas = MAX((terrainState - stateStruct.position[2]),rngOnGnd) / prevTnb.c.z;
-=======
             // reset terrain state if rangefinder data not fused for 5 seconds
             if (imuSampleTime_ms - gndHgtValidTime_ms > 5000) {
                 terrainState = MAX(rangeDataDelayed.rng * prevTnb.c.z, rngOnGnd) + stateStruct.position.z;
             }
->>>>>>> Copter-4.2.3
 
             // predict range
             ftype predRngMeas = MAX((terrainState - stateStruct.position[2]),rngOnGnd) / prevTnb.c.z;
@@ -290,11 +277,6 @@ void NavEKF3_core::EstimateTerrainOffset(const of_elements &ofDataDelayed)
 void NavEKF3_core::FuseOptFlow(const of_elements &ofDataDelayed, bool really_fuse)
 {
     Vector24 H_LOS;
-<<<<<<< HEAD
-    Vector3F relVelSensor;
-    Vector14 SH_LOS;
-=======
->>>>>>> Copter-4.2.3
     Vector2 losPred;
 
     // Copy required states to local variable names
@@ -309,10 +291,6 @@ void NavEKF3_core::FuseOptFlow(const of_elements &ofDataDelayed, bool really_fus
 
     // constrain height above ground to be above range measured on ground
     ftype heightAboveGndEst = MAX((terrainState - pd), rngOnGnd);
-<<<<<<< HEAD
-    ftype ptd = pd + heightAboveGndEst;
-=======
->>>>>>> Copter-4.2.3
 
     // calculate range from ground plain to centre of sensor fov assuming flat earth
     ftype range = constrain_ftype((heightAboveGndEst/prevTnb.c.z),rngOnGnd,1000.0f);
@@ -328,20 +306,6 @@ void NavEKF3_core::FuseOptFlow(const of_elements &ofDataDelayed, bool really_fus
 
     // Fuse X and Y axis measurements sequentially assuming observation errors are uncorrelated
     for (uint8_t obsIndex=0; obsIndex<=1; obsIndex++) { // fuse X axis data first
-<<<<<<< HEAD
-        // calculate range from ground plain to centre of sensor fov assuming flat earth
-        ftype range = constrain_ftype((heightAboveGndEst/prevTnb.c.z),rngOnGnd,1000.0f);
-
-        // correct range for flow sensor offset body frame position offset
-        // the corrected value is the predicted range from the sensor focal point to the
-        // centre of the image on the ground assuming flat terrain
-        Vector3F posOffsetBody = ofDataDelayed.body_offset - accelPosOffset;
-        if (!posOffsetBody.is_zero()) {
-            Vector3F posOffsetEarth = prevTnb.mul_transpose(posOffsetBody);
-            range -= posOffsetEarth.z / prevTnb.c.z;
-        }
-=======
->>>>>>> Copter-4.2.3
 
         // calculate relative velocity in sensor frame including the relative motion due to rotation
         const Vector3F relVelSensor = (prevTnb * stateStruct.velocity) + (ofDataDelayed.bodyRadXYZ % posOffsetBody);
@@ -707,11 +671,7 @@ void NavEKF3_core::FuseOptFlow(const of_elements &ofDataDelayed, bool really_fus
         }
 
         // calculate the innovation consistency test ratio
-<<<<<<< HEAD
-        flowTestRatio[obsIndex] = sq(innovOptFlow[obsIndex]) / (sq(MAX(0.01f * (ftype)frontend->_flowInnovGate, 1.0f)) * varInnovOptFlow[obsIndex]);
-=======
         flowTestRatio[obsIndex] = sq(flowInnov[obsIndex]) / (sq(MAX(0.01f * (ftype)frontend->_flowInnovGate, 1.0f)) * flowVarInnov[obsIndex]);
->>>>>>> Copter-4.2.3
 
         // Check the innovation for consistency and don't fuse if out of bounds or flow is too fast to be reliable
         if (really_fuse && (flowTestRatio[obsIndex]) < 1.0f && (ofDataDelayed.flowRadXY.x < frontend->_maxFlowRate) && (ofDataDelayed.flowRadXY.y < frontend->_maxFlowRate)) {

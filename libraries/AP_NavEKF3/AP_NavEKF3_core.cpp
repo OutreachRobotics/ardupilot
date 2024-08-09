@@ -90,11 +90,7 @@ bool NavEKF3_core::setup_core(uint8_t _imu_index, uint8_t _core_index)
     // set the observation buffer length to handle the minimum time of arrival between observations in combination
     // with the worst case delay from current time to ekf fusion time
     // allow for worst case 50% extension of the ekf fusion time horizon delay due to timing jitter
-<<<<<<< HEAD
-    uint16_t ekf_delay_ms = maxTimeDelay_ms + (int)(ceilF((float)maxTimeDelay_ms * 0.5f));
-=======
     uint16_t ekf_delay_ms = maxTimeDelay_ms + (int)(ceilF((ftype)maxTimeDelay_ms * 0.5f));
->>>>>>> Copter-4.2.3
     obs_buffer_length = (ekf_delay_ms / frontend->sensorIntervalMin_ms) + 1;
 
     // limit to be no longer than the IMU buffer (we can't process data faster than the EKF prediction rate)
@@ -942,11 +938,7 @@ void NavEKF3_core::calcOutputStates()
 
         // calculate a gain that provides tight tracking of the estimator states and
         // adjust for changes in time delay to maintain consistent damping ratio of ~0.7
-<<<<<<< HEAD
-        ftype timeDelay = 1e-3f * (float)(imuDataNew.time_ms - imuDataDelayed.time_ms);
-=======
         ftype timeDelay = 1e-3f * (ftype)(imuDataNew.time_ms - imuDataDelayed.time_ms);
->>>>>>> Copter-4.2.3
         timeDelay = MAX(timeDelay, dtIMUavg);
         ftype errorGain = 0.5f / timeDelay;
 
@@ -957,8 +949,6 @@ void NavEKF3_core::calcOutputStates()
         // calculate velocity and position tracking errors
         Vector3F velErr = (stateStruct.velocity - outputDataDelayed.velocity);
         Vector3F posErr = (stateStruct.position - outputDataDelayed.position);
-<<<<<<< HEAD
-=======
 
         if (badIMUdata) {
             // When IMU accel is bad,  calculate an integral that will be used to drive the difference
@@ -967,7 +957,6 @@ void NavEKF3_core::calcOutputStates()
         } else {
             badImuVelErrIntegral = velErrintegral.z;
         }
->>>>>>> Copter-4.2.3
 
         // collect magnitude tracking error for diagnostics
         outputTrackError.x = deltaAngErr.length();
@@ -983,10 +972,6 @@ void NavEKF3_core::calcOutputStates()
         // use a PI feedback to calculate a correction that will be applied to the output state history
         posErrintegral += posErr;
         velErrintegral += velErr;
-<<<<<<< HEAD
-        Vector3F velCorrection = velErr * velPosGain + velErrintegral * sq(velPosGain) * 0.1f;
-        Vector3F posCorrection = posErr * velPosGain + posErrintegral * sq(velPosGain) * 0.1f;
-=======
         Vector3F posCorrection = posErr * velPosGain + posErrintegral * sq(velPosGain) * 0.1F;
         Vector3F velCorrection;
         velCorrection.x = velErr.x * velPosGain + velErrintegral.x * sq(velPosGain) * 0.1F;
@@ -997,7 +982,6 @@ void NavEKF3_core::calcOutputStates()
         } else {
             velCorrection.z = velErr.z * velPosGain + velErrintegral.z * sq(velPosGain) * 0.1F;
         }
->>>>>>> Copter-4.2.3
 
         // loop through the output filter state history and apply the corrections to the velocity and position states
         // this method is too expensive to use for the attitude states due to the quaternion operations required
@@ -1961,11 +1945,7 @@ void NavEKF3_core::ConstrainVariances()
         zeroCols(P,13,15);
         zeroRows(P,13,15);
         for (uint8_t i=0; i<=2; i++) {
-<<<<<<< HEAD
-            const uint8_t stateIndex = 1 + 13;
-=======
             const uint8_t stateIndex = i + 13;
->>>>>>> Copter-4.2.3
             P[stateIndex][stateIndex] = fmaxF(P[stateIndex][stateIndex], minStateVarTarget);
         }
     }

@@ -51,11 +51,7 @@ void QuaternionT<T>::rotation_matrix(Matrix3d &m) const
     m.c.z = 1.0f-2.0f*(q2q2 + q3q3);
 }
 
-<<<<<<< HEAD
-// return the rotation matrix equivalent for this quaternion
-=======
 // populate the supplied rotation matrix equivalent from this quaternion
->>>>>>> Copter-4.2.3
 template <typename T>
 void QuaternionT<T>::rotation_matrix(Matrix3f &m) const
 {
@@ -451,11 +447,7 @@ template <typename T>
 void QuaternionT<T>::from_axis_angle(Vector3<T> v)
 {
     const T theta = v.length();
-<<<<<<< HEAD
-    if (is_zero(theta)) {
-=======
     if (::is_zero(theta)) {
->>>>>>> Copter-4.2.3
         q1 = 1.0f;
         q2=q3=q4=0.0f;
         return;
@@ -499,11 +491,7 @@ void QuaternionT<T>::to_axis_angle(Vector3<T> &v) const
 {
     const T l = sqrtF(sq(q2)+sq(q3)+sq(q4));
     v = Vector3<T>(q2,q3,q4);
-<<<<<<< HEAD
-    if (!is_zero(l)) {
-=======
     if (!::is_zero(l)) {
->>>>>>> Copter-4.2.3
         v /= l;
         v *= wrap_PI(2.0f * atan2F(l,q1));
     }
@@ -515,11 +503,7 @@ template <typename T>
 void QuaternionT<T>::from_axis_angle_fast(Vector3<T> v)
 {
     const T theta = v.length();
-<<<<<<< HEAD
-    if (is_zero(theta)) {
-=======
     if (::is_zero(theta)) {
->>>>>>> Copter-4.2.3
         q1 = 1.0f;
         q2=q3=q4=0.0f;
         return;
@@ -549,11 +533,7 @@ template <typename T>
 void QuaternionT<T>::rotate_fast(const Vector3<T> &v)
 {
     const T theta = v.length();
-<<<<<<< HEAD
-    if (is_zero(theta)) {
-=======
     if (::is_zero(theta)) {
->>>>>>> Copter-4.2.3
         return;
     }
     const T t2 = 0.5*theta;
@@ -631,8 +611,6 @@ template <typename T>
 T QuaternionT<T>::length(void) const
 {
     return sqrtF(sq(q1) + sq(q2) + sq(q3) + sq(q4));
-<<<<<<< HEAD
-=======
 }
 
 // gets the length squared of the quaternion
@@ -640,7 +618,6 @@ template <typename T>
 T QuaternionT<T>::length_squared() const
 {
     return (T)(q1*q1 + q2*q2 + q3*q3 + q4*q4);
->>>>>>> Copter-4.2.3
 }
 
 // return the reverse rotation of this quaternion
@@ -663,11 +640,7 @@ template <typename T>
 void QuaternionT<T>::normalize(void)
 {
     const T quatMag = length();
-<<<<<<< HEAD
-    if (!is_zero(quatMag)) {
-=======
     if (!::is_zero(quatMag)) {
->>>>>>> Copter-4.2.3
         const T quatMagInv = 1.0f/quatMag;
         q1 *= quatMagInv;
         q2 *= quatMagInv;
@@ -679,17 +652,6 @@ void QuaternionT<T>::normalize(void)
     }
 }
 
-<<<<<<< HEAD
-template <typename T>
-QuaternionT<T> QuaternionT<T>::operator*(const QuaternionT<T> &v) const
-{
-    QuaternionT<T> ret;
-    const T &w1 = q1;
-    const T &x1 = q2;
-    const T &y1 = q3;
-    const T &z1 = q4;
-
-=======
 // Checks if each element of the quaternion is zero
 template <typename T>
 bool QuaternionT<T>::is_zero(void) const {
@@ -726,7 +688,6 @@ QuaternionT<T> QuaternionT<T>::operator*(const QuaternionT<T> &v) const
     const T &y1 = q3;
     const T &z1 = q4;
 
->>>>>>> Copter-4.2.3
     const T w2 = v.q1;
     const T x2 = v.q2;
     const T y2 = v.q3;
@@ -798,14 +759,11 @@ QuaternionT<T> QuaternionT<T>::operator/(const QuaternionT<T> &v) const
     const T &quat2 = q3;
     const T &quat3 = q4;
 
-<<<<<<< HEAD
-=======
     if (is_zero()) {
         // The code goes here if the quaternion is [0,0,0,0]. This shouldn't happen.
         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
     }
 
->>>>>>> Copter-4.2.3
     const T rquat0 = v.q1;
     const T rquat1 = v.q2;
     const T rquat2 = v.q3;

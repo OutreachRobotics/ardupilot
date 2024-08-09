@@ -1157,8 +1157,6 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.p1 = packet.param1; // Resume repeat distance (m)
         break;
 
-<<<<<<< HEAD
-=======
     case MAV_CMD_DO_SPRAYER:
         cmd.p1 = packet.param1;                        // action 0=disable, 1=enable
         break;
@@ -1181,7 +1179,6 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.p1 = packet.param1;
         break;
         
->>>>>>> Copter-4.2.3
     default:
         // unrecognised command
         return MAV_MISSION_UNSUPPORTED;
@@ -1621,8 +1618,6 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param1 = cmd.p1; // Resume repeat distance (m)
         break;
 
-<<<<<<< HEAD
-=======
     case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
         packet.param1 = cmd.p1;
         packet.param2 = cmd.content.scripting.p1;
@@ -1641,7 +1636,6 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param1 = cmd.p1;
         break;
         
->>>>>>> Copter-4.2.3
     default:
         // unrecognised command
         return false;
@@ -2350,8 +2344,6 @@ const char *AP_Mission::Mission_Command::type() const
         return "MountControl";
     case MAV_CMD_DO_WINCH:
         return "Winch";
-<<<<<<< HEAD
-=======
     case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
         return "Scripting";
     case MAV_CMD_DO_JUMP:
@@ -2362,7 +2354,6 @@ const char *AP_Mission::Mission_Command::type() const
         return "NavScriptTime";
     case MAV_CMD_DO_PAUSE_CONTINUE:
         return "PauseContinue";
->>>>>>> Copter-4.2.3
 
     default:
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL

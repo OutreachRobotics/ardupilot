@@ -391,11 +391,7 @@ bool NavEKF2_core::getMagOffsets(uint8_t mag_idx, Vector3f &magOffsets) const
             !inhibitMagStates &&
             compass.healthy(magSelectIndex) &&
             variancesConverged) {
-<<<<<<< HEAD
-        magOffsets = dal.get_compass()->get_offsets(magSelectIndex) - (stateStruct.body_magfield*1000.0).tofloat();
-=======
         magOffsets = compass.get_offsets(magSelectIndex) - (stateStruct.body_magfield*1000.0).tofloat();
->>>>>>> Copter-4.2.3
         return true;
     } else {
         magOffsets = compass.get_offsets(magSelectIndex);
@@ -435,11 +431,8 @@ bool NavEKF2_core::getVariances(float &velVar, float &posVar, float &hgtVar, Vec
     magVar.z = sqrtF(MAX(magTestRatio.z,yawTestRatio));
     tasVar   = sqrtF(tasTestRatio);
     offset   = posResetNE.tofloat();
-<<<<<<< HEAD
-=======
 
     return true;
->>>>>>> Copter-4.2.3
 }
 
 

@@ -134,11 +134,7 @@ void AP_AHRS_View::Write_AttitudeView(const Vector3f &targets) const
         yaw             : (uint16_t)wrap_360_cd(yaw_sensor),
         error_rp        : (uint16_t)(get_error_rp() * 100),
         error_yaw       : (uint16_t)(get_error_yaw() * 100),
-<<<<<<< HEAD
-        active          : AP::ahrs().get_active_AHRS_type(),
-=======
         active          : AP::ahrs().get_active_AHRS_type()
->>>>>>> Copter-4.2.3
     };
     AP::logger().WriteBlock(&pkt, sizeof(pkt));
 }
@@ -155,7 +151,6 @@ void AP_AHRS_View::Write_Rate(const AP_Motors &motors, const AC_AttitudeControl 
         time_us         : AP_HAL::micros64(),
         control_roll    : thrust.x,
         roll            : degrees(get_gyro().x),
-<<<<<<< HEAD
         roll_out        : degrees(filtered_ang.x),
         control_pitch   : thrust.y,
         pitch           : degrees(get_gyro().y),
@@ -166,18 +161,6 @@ void AP_AHRS_View::Write_Rate(const AP_Motors &motors, const AC_AttitudeControl 
         control_accel   : degrees(delekf_euler.x),
         accel           : degrees(delekf_euler.y),
         accel_out       : degrees(delekf_euler.z)
-=======
-        roll_out        : motors.get_roll()+motors.get_roll_ff(),
-        control_pitch   : degrees(rate_targets.y),
-        pitch           : degrees(get_gyro().y),
-        pitch_out       : motors.get_pitch()+motors.get_pitch_ff(),
-        control_yaw     : degrees(rate_targets.z),
-        yaw             : degrees(get_gyro().z),
-        yaw_out         : motors.get_yaw()+motors.get_yaw_ff(),
-        control_accel   : (float)accel_target.z,
-        accel           : (float)(-(get_accel_ef_blended().z + GRAVITY_MSS) * 100.0f),
-        accel_out       : motors.get_throttle()
->>>>>>> Copter-4.2.3
     };
     AP::logger().WriteBlock(&pkt_rate, sizeof(pkt_rate));
 }

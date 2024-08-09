@@ -394,11 +394,7 @@ bool NavEKF3_core::getMagOffsets(uint8_t mag_idx, Vector3f &magOffsets) const
             !inhibitMagStates &&
             compass.healthy(magSelectIndex) &&
             variancesConverged) {
-<<<<<<< HEAD
-        magOffsets = dal.get_compass()->get_offsets(magSelectIndex) - stateStruct.body_magfield.tofloat()*1000.0;
-=======
         magOffsets = compass.get_offsets(magSelectIndex) - stateStruct.body_magfield.tofloat()*1000.0;
->>>>>>> Copter-4.2.3
         return true;
     } else {
         magOffsets = compass.get_offsets(magSelectIndex);

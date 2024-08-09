@@ -249,11 +249,7 @@ struct Vector2
         } else {
             const T expected_slope = (seg_end.y-seg_start.y)/expected_run;
             const T intersection_slope = (point.y-seg_start.y)/intersection_run;
-<<<<<<< HEAD
-            if (fabsf(expected_slope - intersection_slope) > FLT_EPSILON) {
-=======
             if (fabsF(expected_slope - intersection_slope) > FLT_EPSILON) {
->>>>>>> Copter-4.2.3
                 return false;
             }
         }

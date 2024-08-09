@@ -534,11 +534,7 @@ class AutoTestPlane(AutoTest):
         self.wait_waypoint(1, num_wp, max_dist=60, timeout=mission_timeout)
         self.wait_groundspeed(0, 0.5, timeout=mission_timeout)
         if quadplane:
-<<<<<<< HEAD
-            self.wait_statustext("Throttle disarmed", timeout=70)
-=======
             self.wait_statustext("Throttle disarmed", timeout=200)
->>>>>>> Copter-4.2.3
         else:
             self.wait_statustext("Auto disarmed", timeout=60)
         self.progress("Mission OK")
@@ -3249,8 +3245,6 @@ function'''
             True,
             True)
 
-<<<<<<< HEAD
-=======
     def WatchdogHome(self):
         if self.gdb:
             # we end up signalling the wrong process.  I think.
@@ -3355,28 +3349,18 @@ function'''
         self.change_mode('FBWA')
         self.fly_home_land_and_disarm(timeout=tdelta+240)
 
->>>>>>> Copter-4.2.3
     def fly_landing_baro_drift(self):
 
         self.customise_SITL_commandline([], wipe=True)
 
-<<<<<<< HEAD
-=======
         self.set_analog_rangefinder_parameters()
 
->>>>>>> Copter-4.2.3
         self.set_parameters({
             "SIM_BARO_DRIFT": -0.02,
             "SIM_TERRAIN": 0,
             "RNGFND_LANDING": 1,
-<<<<<<< HEAD
-            "RNGFND1_MAX_CM": 4000,
-            "LAND_SLOPE_RCALC": 2,
-            "LAND_ABORT_DEG": 2,
-=======
             "LAND_SLOPE_RCALC": 2,
             "LAND_ABORT_DEG": 1,
->>>>>>> Copter-4.2.3
         })
 
         self.reboot_sitl()
@@ -3384,9 +3368,6 @@ function'''
         self.wait_ready_to_arm()
         self.arm_vehicle()
 
-<<<<<<< HEAD
-        self.fly_mission("ap-circuit.txt", mission_timeout=1200)
-=======
         # Load and start mission
         self.load_mission("ap-circuit.txt", strict=True)
         self.set_current_waypoint(1, check_afterwards=True)
@@ -3544,7 +3525,6 @@ function'''
         self.wait_disarmed(timeout=600)
 
         self.progress("Mission OK")
->>>>>>> Copter-4.2.3
 
     def tests(self):
         '''return list of all tests'''
@@ -3763,8 +3743,6 @@ function'''
              "Test RC DisableAirspeedUse option",
              self.RCDisableAirspeedUse),
 
-<<<<<<< HEAD
-=======
             ("AHRS_ORIENTATION",
              "Test AHRS_ORIENTATION parameter",
              self.AHRS_ORIENTATION),
@@ -3773,13 +3751,10 @@ function'''
              "AHRS trim testing",
              self.ahrstrim),
 
->>>>>>> Copter-4.2.3
             ("Landing-Drift",
              "Circuit with baro drift",
              self.fly_landing_baro_drift),
 
-<<<<<<< HEAD
-=======
             ("ForcedDCM",
              "Switch to DCM mid-flight",
              self.ForcedDCM),
@@ -3812,7 +3787,6 @@ function'''
              "Test rebuild glide slope if above and climbing",
              self.test_glide_slope_threshold),
 
->>>>>>> Copter-4.2.3
             ("LogUpload",
              "Log upload",
              self.log_upload),

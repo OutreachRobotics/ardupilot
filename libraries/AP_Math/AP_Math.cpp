@@ -429,17 +429,6 @@ void fill_nanf(float *f, uint16_t count)
     while (count--) {
         *f++ = n;
     }
-<<<<<<< HEAD
-}
-
-void fill_nanf(double *f, uint16_t count)
-{
-    while (count--) {
-        *f++ = std::numeric_limits<double>::signaling_NaN();
-    }
-}
-=======
->>>>>>> Copter-4.2.3
 #endif
 }
 

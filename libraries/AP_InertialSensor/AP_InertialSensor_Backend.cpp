@@ -783,10 +783,7 @@ bool AP_InertialSensor_Backend::should_log_imu_raw() const
 // log an unexpected change in a register for an IMU
 void AP_InertialSensor_Backend::log_register_change(uint32_t bus_id, const AP_HAL::Device::checkreg &reg)
 {
-<<<<<<< HEAD
-=======
 #if HAL_LOGGING_ENABLED
->>>>>>> Copter-4.2.3
     AP::logger().Write("IREG", "TimeUS,DevID,Bank,Reg,Val", "QIBBB",
                        AP_HAL::micros64(),
                        bus_id,

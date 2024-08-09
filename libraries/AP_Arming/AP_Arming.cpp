@@ -41,13 +41,9 @@
 #include <AP_VisualOdom/AP_VisualOdom.h>
 #include <AP_Parachute/AP_Parachute.h>
 #include <AP_OSD/AP_OSD.h>
-<<<<<<< HEAD
-#include <AP_FETtecOneWire/AP_FETtecOneWire.h>
-=======
 #include <AP_Button/AP_Button.h>
 #include <AP_FETtecOneWire/AP_FETtecOneWire.h>
 #include <AP_OpenDroneID/AP_OpenDroneID.h>
->>>>>>> Copter-4.2.3
 
 #if HAL_MAX_CAN_PROTOCOL_DRIVERS
   #include <AP_CANManager/AP_CANManager.h>
@@ -1049,10 +1045,7 @@ bool AP_Arming::can_checks(bool report)
                 case AP_CANManager::Driver_Type_EFI_NWPMU:
                 case AP_CANManager::Driver_Type_USD1:
                 case AP_CANManager::Driver_Type_None:
-<<<<<<< HEAD
-=======
                 case AP_CANManager::Driver_Type_Scripting:
->>>>>>> Copter-4.2.3
                 case AP_CANManager::Driver_Type_Benewake:
                     break;
             }
@@ -1127,21 +1120,13 @@ bool AP_Arming::osd_checks(bool display_failure) const
 
 bool AP_Arming::fettec_checks(bool display_failure) const
 {
-<<<<<<< HEAD
-#if HAL_AP_FETTEC_ONEWIRE_ENABLED
-=======
 #if AP_FETTEC_ONEWIRE_ENABLED
->>>>>>> Copter-4.2.3
     const AP_FETtecOneWire *f = AP_FETtecOneWire::get_singleton();
     if (f == nullptr) {
         return true;
     }
 
-<<<<<<< HEAD
-    // check camera is ready
-=======
     // check ESCs are ready
->>>>>>> Copter-4.2.3
     char fail_msg[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN+1];
     if (!f->pre_arm_check(fail_msg, ARRAY_SIZE(fail_msg))) {
         check_failed(ARMING_CHECK_ALL, display_failure, "FETtec: %s", fail_msg);

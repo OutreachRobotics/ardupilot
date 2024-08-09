@@ -661,23 +661,6 @@ struct PACKED log_PSCE {
     float accel_desired;
     float accel_target;
     float accel;
-<<<<<<< HEAD
-};
-
-// position controller Down axis logging
-struct PACKED log_PSCD {
-    LOG_PACKET_HEADER;
-    uint64_t time_us;
-    float pos_target;
-    float pos;
-    float vel_desired;
-    float vel_target;
-    float vel;
-    float accel_desired;
-    float accel_target;
-    float accel;
-=======
->>>>>>> Copter-4.2.3
 };
 
 // position controller Down axis logging
@@ -1261,8 +1244,6 @@ struct PACKED log_VER {
 // @Field: DAD: Desired acceleration Down
 // @Field: TAD: Target acceleration Down
 // @Field: AD: Acceleration Down
-<<<<<<< HEAD
-=======
 
 // @LoggerMessage: STAK
 // @Description: Stack information
@@ -1289,7 +1270,6 @@ struct PACKED log_VER {
 // @Field: ThLimit: Throttle limit set due to battery current limitations
 // @Field: ThrAvMx: Maximum average throttle that can be used to maintain attitude controll, derived from throttle mix params
 // @Field: FailFlags: bit 0 motor failed, bit 1 motors balanced, should be 2 in normal flight
->>>>>>> Copter-4.2.3
 
 // messages for all boards
 #define LOG_COMMON_STRUCTURES \
@@ -1398,44 +1378,6 @@ LOG_STRUCTURE_FROM_VISUALODOM \
       "ERR",   "QBB",         "TimeUS,Subsys,ECode", "s--", "F--" }, \
     { LOG_WINCH_MSG, sizeof(log_Winch), \
       "WINC", "QBBBBBfffHfb", "TimeUS,Heal,ThEnd,Mov,Clut,Mode,DLen,Len,DRate,Tens,Vcc,Temp", "s-----mmn?vO", "F-----000000" }, \
-<<<<<<< HEAD
-      { LOG_PSCN_MSG, sizeof(log_PSCN), \
-        "PSCN", "Qffffffff", "TimeUS,TPN,PN,DVN,TVN,VN,DAN,TAN,AN", "smmnnnooo", "F00000000" }, \
-      { LOG_PSCE_MSG, sizeof(log_PSCE), \
-        "PSCE", "Qffffffff", "TimeUS,TPE,PE,DVE,TVE,VE,DAE,TAE,AE", "smmnnnooo", "F00000000" }, \
-      { LOG_PSCD_MSG, sizeof(log_PSCD), \
-        "PSCD", "Qffffffff", "TimeUS,TPD,PD,DVD,TVD,VD,DAD,TAD,AD", "smmnnnooo", "F00000000" }
-
-// @LoggerMessage: SBPH
-// @Description: Swift Health Data
-// @Field: TimeUS: Time since system startup
-// @Field: CrcError: Number of packet CRC errors on serial connection
-// @Field: LastInject: Timestamp of last raw data injection to GPS
-// @Field: IARhyp: Current number of integer ambiguity hypotheses
-
-// @LoggerMessage: SBRH
-// @Description: Swift Raw Message Data
-// @Field: TimeUS: Time since system startup
-// @Field: msg_flag: Swift message type
-// @Field: 1: Sender ID
-// @Field: 2: index; always 1
-// @Field: 3: pages; number of pages received
-// @Field: 4: msg length; number of bytes received
-// @Field: 5: unused; always zero
-// @Field: 6: data received from device
-
-#define LOG_SBP_STRUCTURES \
-    { LOG_MSG_SBPHEALTH, sizeof(log_SbpHealth), \
-      "SBPH", "QIII", "TimeUS,CrcError,LastInject,IARhyp", "s---", "F---" }, \
-    { LOG_MSG_SBPRAWH, sizeof(log_SbpRAWH), \
-      "SBRH", "QQQQQQQQ", "TimeUS,msg_flag,1,2,3,4,5,6", "s--b----", "F--0----" }, \
-    { LOG_MSG_SBPRAWM, sizeof(log_SbpRAWM), \
-      "SBRM", "QQQQQQQQQQQQQQQ", "TimeUS,msg_flag,1,2,3,4,5,6,7,8,9,10,11,12,13", "s??????????????", "F??????????????" }, \
-    { LOG_MSG_SBPEVENT, sizeof(log_SbpEvent), \
-      "SBRE", "QHIiBB", "TimeUS,GWk,GMS,ns_residual,level,quality", "s?????", "F?????" }
-
-#define LOG_COMMON_STRUCTURES LOG_BASE_STRUCTURES, LOG_SBP_STRUCTURES
-=======
     { LOG_PSCN_MSG, sizeof(log_PSCN), \
       "PSCN", "Qffffffff", "TimeUS,TPN,PN,DVN,TVN,VN,DAN,TAN,AN", "smmnnnooo", "F00000000" }, \
     { LOG_PSCE_MSG, sizeof(log_PSCE), \
@@ -1453,7 +1395,6 @@ LOG_STRUCTURE_FROM_AIS, \
       "VER",   "QBHBBBBIZH", "TimeUS,BT,BST,Maj,Min,Pat,FWT,GH,FWS,APJ", "s---------", "F---------", false }, \
     { LOG_MOTBATT_MSG, sizeof(log_MotBatt), \
       "MOTB", "QffffB",  "TimeUS,LiftMax,BatVolt,ThLimit,ThrAvMx,FailFlags", "s-----", "F-----" , true }
->>>>>>> Copter-4.2.3
 
 // message types 0 to 63 reserved for vehicle specific use
 

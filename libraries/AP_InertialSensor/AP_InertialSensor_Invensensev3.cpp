@@ -19,14 +19,9 @@
    ICM-40609
    ICM-42688
    ICM-42605
-<<<<<<< HEAD
-   ICM-40605
-   IIM-42652
-=======
    ICM-40605 - EOL
    IIM-42652
    ICM-42670
->>>>>>> Copter-4.2.3
 
   Note that this sensor includes 32kHz internal sampling and an
   anti-aliasing filter, which means this driver can be a lot simpler
@@ -109,13 +104,7 @@ static const float GYRO_SCALE = (0.0174532f / 16.4f);
 #define INV3_ID_ICM42605      0x42
 #define INV3_ID_ICM42688      0x47
 #define INV3_ID_IIM42652      0x6f
-<<<<<<< HEAD
-
-// run output data at 2kHz
-#define INV3_ODR 2000
-=======
 #define INV3_ID_ICM42670      0x67
->>>>>>> Copter-4.2.3
 
 /*
   really nice that this sensor has an option to request little-endian
@@ -172,15 +161,6 @@ AP_InertialSensor_Backend *AP_InertialSensor_Invensensev3::probe(AP_InertialSens
 
 void AP_InertialSensor_Invensensev3::fifo_reset()
 {
-<<<<<<< HEAD
-    // FIFO_MODE stop-on-full
-    register_write(INV3REG_FIFO_CONFIG, 0x80);
-    // FIFO partial disable, enable accel, gyro, temperature
-    register_write(INV3REG_FIFO_CONFIG1, fifo_config1);
-    // little-endian, fifo count in records, last data hold for ODR mismatch
-    register_write(INV3REG_INTF_CONFIG0, 0xC0);
-    register_write(INV3REG_SIGNAL_PATH_RESET, 2);
-=======
     if (inv3_type == Invensensev3_Type::ICM42670) {
         // FIFO_FLUSH
         register_write(INV3REG_70_SIGNAL_PATH_RESET, 0x04);
@@ -193,7 +173,6 @@ void AP_InertialSensor_Invensensev3::fifo_reset()
         register_write(INV3REG_INTF_CONFIG0, 0xC0);
         register_write(INV3REG_SIGNAL_PATH_RESET, 2);
     }
->>>>>>> Copter-4.2.3
 
     notify_accel_fifo_reset(accel_instance);
     notify_gyro_fifo_reset(gyro_instance);
@@ -228,13 +207,10 @@ void AP_InertialSensor_Invensensev3::start()
         devtype = DEVTYPE_INS_ICM40605;
         fifo_config1 = 0x0F;
         temp_sensitivity = 1.0 * 128 / 115.49;
-<<<<<<< HEAD
-=======
         break;
     case Invensensev3_Type::ICM42670:
         devtype = DEVTYPE_INS_ICM42670;
         temp_sensitivity = 1.0 / 2.0;
->>>>>>> Copter-4.2.3
         break;
     case Invensensev3_Type::ICM40609:
     default:
@@ -247,10 +223,6 @@ void AP_InertialSensor_Invensensev3::start()
     // always use FIFO
     fifo_reset();
 
-<<<<<<< HEAD
-    if (!_imu.register_gyro(gyro_instance, INV3_ODR, dev->get_bus_id_devtype(devtype)) ||
-        !_imu.register_accel(accel_instance, INV3_ODR, dev->get_bus_id_devtype(devtype))) {
-=======
     // setup on-sensor filtering and scaling and backend rate
     if (inv3_type == Invensensev3_Type::ICM42670) {
         set_filter_and_scaling_icm42670();
@@ -260,7 +232,6 @@ void AP_InertialSensor_Invensensev3::start()
 
     if (!_imu.register_gyro(gyro_instance, backend_rate_hz, dev->get_bus_id_devtype(devtype)) ||
         !_imu.register_accel(accel_instance, backend_rate_hz, dev->get_bus_id_devtype(devtype))) {
->>>>>>> Copter-4.2.3
         return;
     }
 
@@ -667,13 +638,10 @@ bool AP_InertialSensor_Invensensev3::check_whoami(void)
         inv3_type = Invensensev3_Type::IIM42652;
         accel_scale = (GRAVITY_MSS / 2048);
         return true;
-<<<<<<< HEAD
-=======
     case INV3_ID_ICM42670:
         inv3_type = Invensensev3_Type::ICM42670;
         accel_scale = (GRAVITY_MSS / 2048);
         return true;
->>>>>>> Copter-4.2.3
     }
     // not a value WHOAMI result
     return false;
@@ -702,10 +670,7 @@ bool AP_InertialSensor_Invensensev3::hardware_init(void)
     case Invensensev3_Type::IIM42652:
     case Invensensev3_Type::ICM42605:
     case Invensensev3_Type::ICM40605:
-<<<<<<< HEAD
-=======
     case Invensensev3_Type::ICM42670:
->>>>>>> Copter-4.2.3
         _clip_limit = 15.5f * GRAVITY_MSS;
         break;
     }

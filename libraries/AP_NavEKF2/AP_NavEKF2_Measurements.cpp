@@ -621,14 +621,9 @@ void NavEKF2_core::readGpsData()
             }
 
             if (gpsGoodToAlign && !have_table_earth_field) {
-<<<<<<< HEAD
-                const auto *compass = dal.get_compass();
-                if (compass && compass->have_scale_factor(magSelectIndex) && compass->auto_declination_enabled()) {
-=======
                 const auto &compass = dal.compass();
                 if (compass.have_scale_factor(magSelectIndex) &&
                     compass.auto_declination_enabled()) {
->>>>>>> Copter-4.2.3
                     table_earth_field_ga = AP_Declination::get_earth_field_ga(gpsloc).toftype();
                     table_declination = radians(AP_Declination::get_declination(gpsloc.lat*1.0e-7,
                                                                                 gpsloc.lng*1.0e-7));
@@ -740,11 +735,7 @@ void NavEKF2_core::correctEkfOriginHeight()
     } else if (activeHgtSource == HGT_SOURCE_RNG) {
         // use the worse case expected terrain gradient and vehicle horizontal speed
         const ftype maxTerrGrad = 0.25f;
-<<<<<<< HEAD
-        ekfOriginHgtVar += sq(maxTerrGrad * norm(stateStruct.velocity.x , stateStruct.velocity.y) * deltaTime);
-=======
         ekfOriginHgtVar += sq(maxTerrGrad * stateStruct.velocity.xy().length() * deltaTime);
->>>>>>> Copter-4.2.3
     } else {
         // by definition our height source is absolute so cannot run this filter
         return;

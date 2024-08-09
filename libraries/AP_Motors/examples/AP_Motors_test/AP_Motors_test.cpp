@@ -43,15 +43,11 @@ void setup()
 
     // motor initialisation
     motors.set_update_rate(490);
-<<<<<<< HEAD
-    motors.init(AP_Motors::MOTOR_FRAME_MAMBA, AP_Motors::MOTOR_FRAME_TYPE_PROTO1);
-=======
     motors.init(AP_Motors::MOTOR_FRAME_QUAD, AP_Motors::MOTOR_FRAME_TYPE_X);
 #if HELI_TEST == 0
     motors.update_throttle_range();
     motors.set_throttle_avg_max(0.5f);
 #endif
->>>>>>> Copter-4.2.3
     motors.output_min();
 
     hal.scheduler->delay(1000);

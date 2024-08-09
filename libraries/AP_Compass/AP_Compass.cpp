@@ -551,11 +551,7 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @User: Standard
     // @RebootRequired: True
     // @Values: 0:Disabled,1:Enabled
-<<<<<<< HEAD
-    AP_GROUPINFO("ENABLE", 39, Compass, _enabled, 0),
-=======
     AP_GROUPINFO("ENABLE", 39, Compass, _enabled, AP_COMPASS_ENABLE_DEFAULT),
->>>>>>> Copter-4.2.3
 
 #ifndef HAL_BUILD_AP_PERIPH
     // @Param: SCALE

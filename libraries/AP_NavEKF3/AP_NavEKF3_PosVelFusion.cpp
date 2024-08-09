@@ -690,10 +690,6 @@ void NavEKF3_core::FuseVelPosNED()
             // calculate innovations for height and vertical GPS vel measurements
             const ftype hgtErr  = stateStruct.position.z - velPosObs[5];
             const ftype velDErr = stateStruct.velocity.z - velPosObs[2];
-<<<<<<< HEAD
-            // check if they are the same sign and both more than 3-sigma out of bounds
-            if ((hgtErr*velDErr > 0.0f) && (sq(hgtErr) > 9.0f * R_OBS[5]) && (sq(velDErr) > 9.0f * R_OBS[2])) {
-=======
             // Check if they are the same sign and both more than 3-sigma out of bounds
             // Step the test threshold up in stages from 1 to 2 to 3 sigma after exiting
             // from a previous bad IMU event so that a subsequent error is caught more quickly.
@@ -707,16 +703,11 @@ void NavEKF3_core::FuseVelPosNED()
                 R_gain = 1.0F;
             }
             if ((hgtErr*velDErr > 0.0f) && (sq(hgtErr) > R_gain * R_OBS[5]) && (sq(velDErr) >R_gain * R_OBS[2])) {
->>>>>>> Copter-4.2.3
                 badIMUdata_ms = imuSampleTime_ms;
             } else {
                 goodIMUdata_ms = imuSampleTime_ms;
             }
-<<<<<<< HEAD
-            if (imuSampleTime_ms - badIMUdata_ms < BAD_IMU_DATA_HOLD_MS) {
-=======
             if (timeSinceLastBadIMU_ms < BAD_IMU_DATA_HOLD_MS) {
->>>>>>> Copter-4.2.3
                 badIMUdata = true;
                 stateStruct.velocity.z = gpsDataDelayed.vel.z;
             } else {
@@ -852,11 +843,7 @@ void NavEKF3_core::FuseVelPosNED()
                 if (onGround) {
                     ftype dtBaro = (imuSampleTime_ms - lastHgtPassTime_ms) * 1.0e-3;
                     const ftype hgtInnovFiltTC = 2.0;
-<<<<<<< HEAD
-                    ftype alpha = constrain_float(dtBaro/(dtBaro+hgtInnovFiltTC), 0.0, 1.0);
-=======
                     ftype alpha = constrain_ftype(dtBaro/(dtBaro+hgtInnovFiltTC), 0.0, 1.0);
->>>>>>> Copter-4.2.3
                     hgtInnovFiltState += (innovVelPos[5] - hgtInnovFiltState)*alpha;
                 } else {
                     hgtInnovFiltState = 0.0f;
@@ -1109,11 +1096,7 @@ void NavEKF3_core::selectHeightForFusion()
         bool dontTrustTerrain, trustTerrain;
         if (filterStatus.flags.horiz_vel) {
             // We can use the velocity estimate
-<<<<<<< HEAD
-            ftype horizSpeed = norm(stateStruct.velocity.x, stateStruct.velocity.y);
-=======
             ftype horizSpeed = stateStruct.velocity.xy().length();
->>>>>>> Copter-4.2.3
             dontTrustTerrain = (horizSpeed > frontend->_useRngSwSpd) || !terrainHgtStable;
             ftype trust_spd_trigger = MAX((frontend->_useRngSwSpd - 1.0f),(frontend->_useRngSwSpd * 0.5f));
             trustTerrain = (horizSpeed < trust_spd_trigger) && terrainHgtStable;
@@ -1256,12 +1239,8 @@ void NavEKF3_core::selectHeightForFusion()
     // set height timeout period based on whether we have vertical GPS velocity available to constrain drift
     hgtRetryTime_ms = ((useGpsVertVel || useExtNavVel) && !velTimeout) ? frontend->hgtRetryTimeMode0_ms : frontend->hgtRetryTimeMode12_ms;
     if (imuSampleTime_ms - lastHgtPassTime_ms > hgtRetryTime_ms ||
-<<<<<<< HEAD
-        (badIMUdata && (imuSampleTime_ms - goodIMUdata_ms < BAD_IMU_DATA_TIMEOUT_MS))) {
-=======
         (badIMUdata &&
         (imuSampleTime_ms - goodIMUdata_ms > BAD_IMU_DATA_TIMEOUT_MS))) {
->>>>>>> Copter-4.2.3
         hgtTimeout = true;
     } else {
         hgtTimeout = false;

@@ -424,12 +424,9 @@ public:
     // returns true when the state estimates are significantly degraded by vibration
     bool isVibrationAffected() const { return badIMUdata; }
 
-<<<<<<< HEAD
-=======
     // get a yaw estimator instance
     const EKFGSF_yaw *get_yawEstimator(void) const { return yawEstimator; }
 
->>>>>>> Copter-4.2.3
 private:
     EKFGSF_yaw *yawEstimator;
     AP_DAL &dal;
@@ -1063,11 +1060,7 @@ private:
     bool needMagBodyVarReset;       // we need to reset mag body variances at next CovariancePrediction
     bool needEarthBodyVarReset;     // we need to reset mag earth variances at next CovariancePrediction
     bool inhibitDelAngBiasStates;   // true when IMU delta angle bias states are inactive
-<<<<<<< HEAD
-    bool gpsNotAvailable;           // bool true when valid GPS data is not available
-=======
     bool gpsIsInUse;                // bool true when GPS data is being used to correct states estimates
->>>>>>> Copter-4.2.3
     struct Location EKF_origin;     // LLH origin of the NED axis system, internal only
     struct Location &public_origin; // LLH origin of the NED axis system, public functions
     bool validOrigin;               // true when the EKF origin is valid
@@ -1105,10 +1098,7 @@ private:
     Vector3F delAngCorrection;      // correction applied to delta angles used by output observer to track the EKF
     Vector3F velErrintegral;        // integral of output predictor NED velocity tracking error (m)
     Vector3F posErrintegral;        // integral of output predictor NED position tracking error (m.sec)
-<<<<<<< HEAD
-=======
     ftype badImuVelErrIntegral;     // integral of output predictor D velocity tracking error when bad IMU data is detected (m)
->>>>>>> Copter-4.2.3
     ftype innovYaw;                 // compass yaw angle innovation (rad)
     uint32_t timeTasReceived_ms;    // time last TAS data was received (msec)
     bool gpsGoodToAlign;            // true when the GPS quality can be used to initialise the navigation system
@@ -1191,23 +1181,15 @@ private:
     uint32_t rngValidMeaTime_ms;    // time stamp from latest valid range measurement (msec)
     uint32_t flowMeaTime_ms;        // time stamp from latest flow measurement (msec)
     uint32_t gndHgtValidTime_ms;    // time stamp from last terrain offset state update (msec)
-<<<<<<< HEAD
-    Matrix3F Tbn_flow;              // transformation matrix from body to nav axes at the middle of the optical flow sample period
-    Vector2 varInnovOptFlow;        // optical flow innovations variances (rad/sec)^2
-    Vector2 innovOptFlow;           // optical flow LOS innovations (rad/sec)
-=======
     Vector2 flowVarInnov;           // optical flow innovations variances (rad/sec)^2
     Vector2 flowInnov;              // optical flow LOS innovations (rad/sec)
     uint32_t flowInnovTime_ms;      // system time that optical flow innovations and variances were recorded (to detect timeouts)
->>>>>>> Copter-4.2.3
     ftype Popt;                     // Optical flow terrain height state covariance (m^2)
     ftype terrainState;             // terrain position state (m)
     ftype prevPosN;                 // north position at last measurement
     ftype prevPosE;                 // east position at last measurement
     ftype varInnovRng;              // range finder observation innovation variance (m^2)
     ftype innovRng;                 // range finder observation innovation (m)
-<<<<<<< HEAD
-=======
     struct {
         uint32_t timestamp_ms;      // system timestamp of last correct optical flow sample (used for calibration)
         Vector2f flowRate;          // latest corrected optical flow flow rate (used for calibration)
@@ -1215,7 +1197,6 @@ private:
         Vector2f losPred;           // EKF estimated component of flowRate that comes from vehicle movement (not rotation)
     } flowCalSample;
 
->>>>>>> Copter-4.2.3
     ftype hgtMea;                   // height measurement derived from either baro, gps or range finder data (m)
     bool inhibitGndState;           // true when the terrain position state is to remain constant
     uint32_t prevFlowFuseTime_ms;   // time both flow measurement components passed their innovation consistency checks

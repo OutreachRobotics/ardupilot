@@ -174,12 +174,9 @@ public:
         DISABLE_FTP = (1<<1),
         ALLOW_SET_INTERNAL_PARM = (1<<2),
         BOARD_OPTION_DEBUG_ENABLE = (1<<3),
-<<<<<<< HEAD
-=======
         UNLOCK_FLASH = (1<<4),
         WRITE_PROTECT_FLASH = (1<<5),
         WRITE_PROTECT_BOOTLOADER = (1<<6),
->>>>>>> Copter-4.2.3
     };
 
     // return true if ftp is disabled

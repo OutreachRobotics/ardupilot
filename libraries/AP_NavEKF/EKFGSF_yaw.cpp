@@ -167,13 +167,8 @@ void EKFGSF_yaw::fuseVelData(const Vector2F &vel, const ftype velAcc)
             if (!state_update_failed) {
                 // Calculate weighting for each model assuming a normal error distribution
                 const ftype min_weight = 1e-5f;
-<<<<<<< HEAD
-                uint8_t n_clips = 0;
-                for (uint8_t mdl_idx = 0; mdl_idx < N_MODELS_EKFGSF; mdl_idx ++) {
-=======
                 n_clips = 0;
                 for (uint8_t mdl_idx = 0; mdl_idx < N_MODELS_EKFGSF; mdl_idx++) {
->>>>>>> Copter-4.2.3
                     newWeight[mdl_idx] = gaussianDensity(mdl_idx) * GSF.weights[mdl_idx];
                     if (newWeight[mdl_idx] < min_weight) {
                         n_clips++;
@@ -630,14 +625,10 @@ Matrix3F EKFGSF_yaw::updateRotMat(const Matrix3F &R, const Vector3F &g) const
     return ret;
 }
 
-<<<<<<< HEAD
-bool EKFGSF_yaw::getYawData(ftype &yaw, ftype &yawVariance) const
-=======
 // returns true if a yaw estimate is available.  yaw and its variance
 // is returned, as well as the number of models which are *not* being
 // used to snthesise the yaw.
 bool EKFGSF_yaw::getYawData(ftype &yaw, ftype &yawVariance, uint8_t *_n_clips) const
->>>>>>> Copter-4.2.3
 {
     if (!vel_fuse_running) {
         return false;

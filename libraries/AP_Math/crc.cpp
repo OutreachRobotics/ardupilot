@@ -131,8 +131,6 @@ uint8_t crc8_dvb_update(uint8_t crc, const uint8_t* buf, const uint16_t buf_len)
     return crc;
 }
 
-<<<<<<< HEAD
-=======
 /*
  CRC8-Maxim implementation based on FastCRC library
  see https://github.com/FrankBoesing/FastCRC
@@ -184,7 +182,6 @@ uint8_t crc8_maxim(const uint8_t *data, uint16_t length)
     return crc;
 }
 
->>>>>>> Copter-4.2.3
 /*
   xmodem CRC thanks to avr-liberty
   https://github.com/dreamiurg/avr-liberty

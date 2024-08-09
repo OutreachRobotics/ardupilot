@@ -181,11 +181,7 @@ struct PACKED log_Video_Stabilisation {
     { LOG_POS_MSG, sizeof(log_POS), \
         "POS","QLLfff","TimeUS,Lat,Lng,Alt,RelHomeAlt,RelOriginAlt", "sDUmmm", "FGG000" , true }, \
     { LOG_RATE_MSG, sizeof(log_Rate), \
-<<<<<<< HEAD
-        "RATE", "Qffffffffffff",  "TimeUS,FX,gyroX,arduX,FY,gyroY,arduY,MZ,gyroZ,gyroZ,EKFX,EKFY,EKZ", "sNkdNkdNkdddd", "F????????????" },
-=======
         "RATE", "Qffffffffffff",  "TimeUS,RDes,R,ROut,PDes,P,POut,YDes,Y,YOut,ADes,A,AOut", "skk-kk-kk-oo-", "F?????????BB-" , true }, \
     { LOG_VIDEO_STABILISATION_MSG, sizeof(log_Video_Stabilisation), \
         "VSTB", "Qffffffffff",  "TimeUS,GyrX,GyrY,GyrZ,AccX,AccY,AccZ,Q1,Q2,Q3,Q4", "sEEEooo????", "F000000????" },
 
->>>>>>> Copter-4.2.3

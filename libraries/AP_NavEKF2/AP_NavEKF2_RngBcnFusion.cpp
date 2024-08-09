@@ -322,15 +322,9 @@ void NavEKF2_core::FuseRngBcnStatic()
                 // calculate the delta to the estimated receiver position
                 ftype delta = receiverPos.z - bcnMidPosD;
 
-<<<<<<< HEAD
-                // calcuate the two hypothesis for our vertical position
-                ftype receverPosDownMax;
-                ftype receverPosDownMin;
-=======
                 // calculate the two hypothesis for our vertical position
                 ftype receiverPosDownMax;
                 ftype receiverPosDownMin;
->>>>>>> Copter-4.2.3
                 if (delta >= 0.0f) {
                     receiverPosDownMax = receiverPos.z;
                     receiverPosDownMin = receiverPos.z - 2.0f * delta;

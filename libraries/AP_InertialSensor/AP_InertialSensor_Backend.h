@@ -120,12 +120,9 @@ public:
         DEVTYPE_INS_ICM42605 = 0x35,
         DEVTYPE_INS_ICM40605 = 0x36,
         DEVTYPE_INS_IIM42652 = 0x37,
-<<<<<<< HEAD
-=======
         DEVTYPE_BMI270       = 0x38,
         DEVTYPE_INS_BMI085   = 0x39,
         DEVTYPE_INS_ICM42670 = 0x3A,
->>>>>>> Copter-4.2.3
     };
 
 protected:
