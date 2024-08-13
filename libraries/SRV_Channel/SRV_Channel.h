@@ -558,7 +558,7 @@ private:
     AP_RobotisServo robotis;
     static AP_RobotisServo *robotis_ptr;
     
-#if HAL_SUPPORT_RCOUT_SERIAL
+#if 0
     // support for BLHeli protocol
     AP_BLHeli blheli;
     static AP_BLHeli *blheli_ptr;

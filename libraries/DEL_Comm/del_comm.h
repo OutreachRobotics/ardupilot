@@ -10,6 +10,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <RC_Channel/RC_Channel.h>
+#include <SRV_Channel/SRV_Channel.h>
 #include <DEL_Helper/del_helper.h>
 
 /***************************************************************************
@@ -50,6 +51,13 @@
 #define MAMBA_DYNA_OFFSET   50
 #define WRIST_DEADBAND      50
 #define WRIST_SPEED_FACTOR  17
+
+#define GRASPING_CH         SRV_Channel::k_scripting1
+#define GRASPING_CLOSE      1200
+#define GRASPING_OPEN       1900
+#define GRASPING_RC         9
+#define MID_VALUE           1500
+#define GRASPING_DEBOUNCE   5
 
 
 /***************************************************************************
@@ -98,6 +106,9 @@ private:
     uint8_t landMode;
     uint64_t calibTimer;
     uint8_t calibPrevious;
+    uint16_t graspingPWM;
+    uint16_t graspingCnt;
+    uint8_t graspingStatus;
 
     AP_HAL::UARTDriver *sampler_port;
     AP_HAL::UARTDriver *fcu_port;

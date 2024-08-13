@@ -36,32 +36,26 @@ void DEL_Comm::init()
     landMode = 0;
     calibPrevious = 0;
     calibTimer = AP_HAL::millis();
+
+    SRV_Channels::set_output_pwm(GRASPING_CH, GRASPING_CLOSE);
+    graspingCnt = 0;
+    graspingStatus = true;
+
 }
 
 uint8_t DEL_Comm::manageSamplerInput()
 {
-    while(sampler_port->available()>1)
-    {
-        uint8_t temp = sampler_port->read();
-        if(temp == StatusMessage && sampler_port->available()>=SAMPLER_MSG_SIZE-1)
-        {
-            for(uint8_t i=0;i<SAMPLER_MSG_SIZE-1;i++)
-			{
-				statusMsg[i] = sampler_port->read();
-			}    
-        }
-        else if(temp == TextMessage && sampler_port->available())
-        {
-            uint8_t status_message = sampler_port->read();
-            return status_message;           
-        }
-    }
+    graspingCnt = hal.rcin->read(GRASPING_RC) > MID_VALUE ? graspingCnt+1 : 0;
+    graspingStatus = graspingCnt==GRASPING_DEBOUNCE ? !graspingStatus : graspingStatus;
+    SRV_Channels::set_output_pwm(GRASPING_CH, graspingStatus ? GRASPING_CLOSE : GRASPING_OPEN);
+    hal.console->printf("Count: %d\r\n", graspingCnt);
+    hal.console->printf("Status: %d\r\n", graspingStatus);
+    hal.console->printf("RC: %d\r\n", hal.rcin->read(GRASPING_RC));
     return NoMessage;
 }
 
 uint8_t DEL_Comm::manageFCUInput()
 {
-    hal.console->printf("TESTTEST\r\n");
     while(fcu_port->available()>1)
     {
         uint8_t temp = fcu_port->read();
@@ -77,8 +71,6 @@ uint8_t DEL_Comm::manageFCUInput()
             uint8_t status_message = fcu_port->read();
             return status_message;           
         }
-        uint16_t voltage = ((uint16_t)statusMsg[STATUS_BATT_HIGH] << 8) | statusMsg[STATUS_BATT_LOW];
-        hal.console->printf("Test %d\r\n", voltage);
     }
     return NoMessage;
 }

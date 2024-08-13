@@ -109,7 +109,7 @@
 
 // we support RC serial for BLHeli pass-thru
 #ifndef HAL_SUPPORT_RCOUT_SERIAL
-#define HAL_SUPPORT_RCOUT_SERIAL !defined(HAL_BUILD_AP_PERIPH)
+#define HAL_SUPPORT_RCOUT_SERIAL 0
 #endif
 
 #ifndef HAL_DSHOT_ALARM

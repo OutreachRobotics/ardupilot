@@ -180,9 +180,9 @@ void GCS::handleDelComm()
 		noSDWarning = false;
     }
 
-    // TextMessageID textMessage = (TextMessageID)del_comm.manageSamplerInput();
+    TextMessageID textMessage = (TextMessageID)del_comm.manageSamplerInput();
     // handleDelMessage(textMessage);
-    TextMessageID textMessage = (TextMessageID)del_comm.manageFCUInput();
+    textMessage = (TextMessageID)del_comm.manageFCUInput();
     handleDelMessage(textMessage);
     
     // del_comm.sendCommand(camera_switch);  
