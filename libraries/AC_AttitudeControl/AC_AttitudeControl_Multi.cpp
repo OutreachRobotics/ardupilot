@@ -690,16 +690,17 @@ void AC_AttitudeControl_Multi::deleaves_controller_angVelHold_LQR(float lateral,
             target_yaw += yaw*YAW_SENSITIVITY;
         }
 
+        float sensitivity = hal.rcin->read(WRIST_CHANNEL) < MID_PPM_VALUE ? PITCH_SENSITIVITY : PITCH_SENSITIVITY*8.0f;
         // Forward control, velocity on move, angular on hold
         if(abs(forward) > DEADBAND)
         {
-            target_forward += forward*PITCH_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
+            target_forward += forward*sensitivity/((gcs().get_rope_length()/uint8_t(5)));
         }
         
         // Lateral control, based on the same principle as forward control
         if(abs(lateral) > DEADBAND)
         {
-            target_lateral += lateral*ROLL_SENSITIVITY/((gcs().get_rope_length()/uint8_t(5)));
+            target_lateral += lateral*sensitivity/((gcs().get_rope_length()/uint8_t(5)));
         }
     }    
     target_forward = constrain_value(target_forward, MIN_PITCH, MAX_PITCH);
