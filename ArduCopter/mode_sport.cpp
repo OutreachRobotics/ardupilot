@@ -136,10 +136,30 @@ void ModeSport::run()
             lateral_target = 0.0f;
             forward_target = 0.0f;
         }
+        else if(now-forwardSequenceStart<13000)
+        {
+            lateral_target = 0.0f;
+            forward_target = 0.1f;            
+        }
+        else if(now-forwardSequenceStart<16000)
+        {
+            lateral_target = 0.0f;
+            forward_target = 0.2f;            
+        }
+         else if(now-forwardSequenceStart<19000)
+        {
+            lateral_target = 0.0f;
+            forward_target = 0.3f;            
+        }
+        else if(now-forwardSequenceStart<22000)
+        {
+            lateral_target = 0.0f;
+            forward_target = 0.4f;            
+        }       
         else
         {
             lateral_target = 0.0f;
-            forward_target = 0.8f;
+            forward_target = 0.5f;
         }
     }
     else if(approachSequenceArmed)
@@ -202,7 +222,7 @@ void ModeSport::run()
             }
             else if(!motors->get_coax_enable() && attitude_control->getDelEKFOrientation().y>COAX_ANGLE_MIN && attitude_control->getPitchCommand()>COAX_ANGLE_MAX)
             {
-                motors->set_coax_enable(true);
+                motors->set_coax_enable(false);
             }
             attitude_control->deleaves_controller_step_LQR(lateral_target, forward_target, yaw_input, thrust_input, motors->armed());
         }
